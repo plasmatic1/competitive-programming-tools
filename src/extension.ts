@@ -1,9 +1,10 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import * as optView from './optionsView';
 
 interface BuildRunVars {
-	srcFile: String;
+	srcFile: string;
 }
 
 // this method is called when your extension is activated
@@ -12,14 +13,12 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
-		console.log('Congratulations, your extension "cp-tools" is now active!');
+	console.log('Congratulations, your extension "cp-tools" is now active!');
 
 	// The command has been defined in the package.json file
 	// Now provide the implementation of the command with registerCommand
 	// The commandId parameter must match the command field in package.json
 	let buildRunCommand = vscode.commands.registerCommand('cp-tools.buildAndRun', () => {
-		// The code you place here will be executed every time your command is executed
-
 		let currEditor = vscode.window.activeTextEditor;
 
 		if (currEditor === undefined) {
@@ -40,6 +39,8 @@ export function activate(context: vscode.ExtensionContext) {
 			srcFile: currEditor.document.uri.fsPath
 		});
 	});
+
+	let optionsView = vscode.window.registerTreeDataProvider('options.general', new optView.OptionsNodeProvider());
 
 	context.subscriptions.push(buildRunCommand);
 }

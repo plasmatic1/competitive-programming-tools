@@ -26,7 +26,7 @@
 			"activitybar": [
 				{
 					"id": "options",
-					"title": "Configuration Options",
+					"title": "Options",
 					"icon": "icons/settings.svg"
 				}
 			]
