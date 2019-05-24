@@ -1,8 +1,8 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import * as optView from './optionsView';
-import { OptionManager } from './options';
+import * as options from './options/register';
+import { OptionManager } from './options/options';
 import { errorIfUndefined } from './undefinedutils';
 import { isUndefined } from 'util';
 
@@ -27,11 +27,11 @@ interface BuildRunVars {
 export function activate(context: vscode.ExtensionContext) {
 	console.log('Congratulations, your extension "cp-tools" is now active!');
 
-	// Registering views
-	let optionsNodeProvider = new optView.OptionsNodeProvider()
-	vscode.window.registerTreeDataProvider('buildAndRunOptions', optionsNodeProvider);
+	// Setting context
+	_extensionContext = context;
+	_optionManager = new OptionManager(_extensionContext);
 
-	// Command Bodies
+	// Build and Run Command Bodies
 	let buildRunCommand = vscode.commands.registerCommand('cp-tools.buildAndRun', () => {
 		let currEditor = vscode.window.activeTextEditor;
 
@@ -54,30 +54,10 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 	});
 
-	let editOptionCommand = vscode.commands.registerCommand('cp-tools.editOption', (option: optView.OptionNode) => {
-		option.properties.setFunction().then((value) => {	
-			if (!isUndefined(value)) {
-				optionManager().set(option.key, value);
-				optionsNodeProvider.refresh();
-			}
-		});
-	});
-
-	let resetOptionsCommand = vscode.commands.registerCommand('cp-tools.resetOptions', () => {
-		for (const [key, properties] of optionManager().entries) {
-			optionManager().set(key, properties.defaultValue);
-		}
-		optionsNodeProvider.refresh();
-	});
-
-	// Registering Commands
 	context.subscriptions.push(buildRunCommand);
-	context.subscriptions.push(editOptionCommand);
-	context.subscriptions.push(resetOptionsCommand);
-	
-	// Setting context
-	_extensionContext = context;
-	_optionManager = new OptionManager(_extensionContext);
+
+	// Registering Other Commands
+	options.registerViewsAndCommands(context);
 }
 
 function getBuildRunHTML(vars: BuildRunVars) {

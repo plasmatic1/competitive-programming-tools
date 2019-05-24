@@ -13,6 +13,8 @@ interface IResult {
     type: ResultType; // Type of result
     typeDetail?: string; // Any other details associated with the result type.  Ommitted for Success
     output?: string; // The output of the program.  Ommitted if result was TIMEOUT
+    execTime: number; // Execution Time
+    memoryUsage: number; // Memory Usage
 }
 
 interface IExecutor {
@@ -47,9 +49,8 @@ class CPPExecutor implements IExecutor {
         }
 
         const ret = sub.spawnSync(this.execFile, {timeout: 2});
-        // ret.
 
-        return {type: ResultType.SUCCESS};
+        return {type: ResultType.SUCCESS, execTime:0, memoryUsage:0};
     }
 
     postExec() {
@@ -71,7 +72,7 @@ class PYExecutor implements IExecutor {
     preExec(): string { return this.srcFile; }
 
     exec(input: string): IResult {
-        return {type: ResultType.SUCCESS};
+        return {type: ResultType.SUCCESS, execTime:0, memoryUsage:0};
     }
 
     postExec() {}

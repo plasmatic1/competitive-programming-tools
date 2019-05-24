@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { optionManager } from './extension';
+import { optionManager } from '../extension';
 import { OptionProperties } from './options';
 import * as path from 'path';
 
@@ -7,9 +7,7 @@ export class OptionsNodeProvider implements vscode.TreeDataProvider<OptionNode> 
     private changeEmitter: vscode.EventEmitter<OptionNode | undefined> = new vscode.EventEmitter<OptionNode | undefined>();
     onDidChangeTreeData?: vscode.Event<OptionNode | null | undefined> | undefined = this.changeEmitter.event;   
     
-    constructor() {
-        
-    }
+    constructor() {}
 
     refresh(): void {
         this.changeEmitter.fire();
@@ -47,6 +45,6 @@ export class OptionNode extends vscode.TreeItem {
     }
 
     get iconPath(): string {
-        return path.join(__filename, '..', '..', 'icons', 'types', `${this.properties.type}.svg`);
+        return path.join(__filename, '..', '..', '..', 'icons', 'types', `${this.properties.type}.svg`);
     }
 }

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { isUndefined } from 'util';
-import { errorIfUndefined } from './undefinedutils';
+import { errorIfUndefined } from '../undefinedutils';
 
 export interface OptionProperties {
     defaultValue: string | number | undefined; // Default value for this option
