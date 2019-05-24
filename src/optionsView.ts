@@ -1,28 +1,52 @@
 import * as vscode from 'vscode';
+import { optionManager } from './extension';
+import { OptionProperties } from './options';
+import * as path from 'path';
 
-export class OptionsNodeProvider implements vscode.TreeDataProvider<ConfigOption> {
-    onDidChangeTreeData?: vscode.Event<ConfigOption | null | undefined> | undefined = undefined;   
+export class OptionsNodeProvider implements vscode.TreeDataProvider<OptionNode> {
+    private changeEmitter: vscode.EventEmitter<OptionNode | undefined> = new vscode.EventEmitter<OptionNode | undefined>();
+    onDidChangeTreeData?: vscode.Event<OptionNode | null | undefined> | undefined = this.changeEmitter.event;   
     
     constructor() {
         
     }
-    
-    getTreeItem(element: ConfigOption): vscode.TreeItem | Thenable<vscode.TreeItem> {
-        throw new Error("Method not implemented.");
+
+    refresh(): void {
+        this.changeEmitter.fire();
     }
     
-    getChildren(element?: ConfigOption | undefined): vscode.ProviderResult<ConfigOption[]> {
-        throw new Error("Method not implemented.");
+    getTreeItem(element: OptionNode): vscode.TreeItem | Thenable<vscode.TreeItem> {
+        return element;
+    }
+    
+    getChildren(element?: OptionNode | undefined): vscode.ProviderResult<OptionNode[]> {
+        if (element) {
+            return [];
+        } else {
+            return optionManager().entries.map(([key, properties]) => new OptionNode(key, properties));
+        }
     }
 }
 
-export class ConfigOption extends vscode.TreeItem {
-    key: String;
-    value: String;
+export class OptionNode extends vscode.TreeItem {
+    constructor(
+        public readonly key: string, public readonly properties: OptionProperties) {
+        super(properties.label + ': ', vscode.TreeItemCollapsibleState.None);
+    }
 
-    constructor(key: string, value: any, collapsedState: vscode.TreeItemCollapsibleState) {
-        super((String)(key.split('.').pop()), collapsedState);
-        this.key = key;
-        this.value = value;
+    get description(): string {
+        return this.value.toString();
+    }
+
+    get value(): string | number {
+        return optionManager().get(this.key);
+    }
+
+    get tooltip(): string {
+        return this.properties.description;
+    }
+
+    get iconPath(): string {
+        return path.join(__filename, '..', '..', 'icons', 'types', `${this.properties.type}.svg`);
     }
 }

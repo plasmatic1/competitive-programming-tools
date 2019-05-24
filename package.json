@@ -11,7 +11,8 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:cp-tools.buildAndRun"
+		"onCommand:cp-tools.buildAndRun",
+		"onView:buildAndRunOptions"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -20,6 +21,18 @@
 				"command": "cp-tools.buildAndRun",
 				"title": "Build and Run",
 				"category": "CP Tools"
+			},
+			{
+				"command": "cp-tools.editOption",
+				"title": "Edit Option",
+				"category": "CP Tools",
+				"icon": "icons/edit-light.svg"
+			},
+			{
+				"command": "cp-tools.resetOptions",
+				"title": "Reset Options",
+				"category": "CP Tools",
+				"icon": "icons/refresh.svg"
 			}
 		],
 		"viewsContainers": {
@@ -34,8 +47,23 @@
 		"views": {
 			"options": [
 				{
-					"id": "general",
-					"name": "General"
+					"id": "buildAndRunOptions",
+					"name": "Build and Run"
+				}
+			]
+		},
+		"menus": {
+			"view/item/context": [
+				{
+					"command": "cp-tools.editOption",
+					"group": "inline",
+					"when": "view == buildAndRunOptions"
+				}
+			],
+			"view/title": [
+				{
+					"command": "cp-tools.resetOptions",
+					"group": "navigation"
 				}
 			]
 		}

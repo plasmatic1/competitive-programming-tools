@@ -1,17 +1,21 @@
 import * as sub from 'child_process';
 import * as fs from 'fs';
+import { isUndefined } from 'util';
 
-export enum ResultType {
+// -----------------------------------------------------------------------------------------------------------------------------
+// Result Interfaces
+// -----------------------------------------------------------------------------------------------------------------------------
+enum ResultType {
     SUCCESS, TIMEOUT, RTE
 }
 
-export interface IResult {
+interface IResult {
     type: ResultType; // Type of result
     typeDetail?: string; // Any other details associated with the result type.  Ommitted for Success
     output?: string; // The output of the program.  Ommitted if result was TIMEOUT
 }
 
-export interface IExecutor {
+interface IExecutor {
     srcFile: string; // Source file
     execFile?: string | undefined; // Executable file.  Null if not compiled yet
     preExec: () => string; // Compilation - Returns file name of executable created (to be run)
@@ -19,6 +23,9 @@ export interface IExecutor {
     postExec: () => void; // Post execution - Any 
 }
 
+// -----------------------------------------------------------------------------------------------------------------------------
+// Executors
+// -----------------------------------------------------------------------------------------------------------------------------
 class CPPExecutor implements IExecutor {
     srcFile: string;
     execFile: string | undefined;
@@ -35,7 +42,7 @@ class CPPExecutor implements IExecutor {
     }
 
     exec(input: string): IResult {
-        if (this.execFile === undefined) {
+        if (isUndefined(this.execFile)) {
             throw new Error('File not compiled yet!');
         }
 
@@ -46,7 +53,7 @@ class CPPExecutor implements IExecutor {
     }
 
     postExec() {
-        if (this.execFile === undefined) {
+        if (isUndefined(this.execFile)) {
             throw new Error('File not compiled yet!');
         }
 
@@ -71,6 +78,6 @@ class PYExecutor implements IExecutor {
 }
 
 export const executors: Map<string, Function> = new Map([
-    ["cpp", CPPExecutor.constructor],
-    ["py", PYExecutor.constructor]
+    ['cpp', CPPExecutor.constructor],
+    ['py', PYExecutor.constructor]
 ]);

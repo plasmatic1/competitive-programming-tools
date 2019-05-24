@@ -2,26 +2,40 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import * as optView from './optionsView';
+import { OptionManager } from './options';
+import { errorIfUndefined } from './undefinedutils';
+import { isUndefined } from 'util';
+
+// -----------------------------------------------------------------------------------------------------------------------------
+// Globals to export
+// -----------------------------------------------------------------------------------------------------------------------------
+
+var _extensionContext: vscode.ExtensionContext | undefined = undefined;
+var _optionManager: OptionManager | undefined = undefined;
+
+export function extensionContext(): vscode.ExtensionContext { return errorIfUndefined(_extensionContext, 'Extension not activated!'); }
+export function optionManager(): OptionManager { return errorIfUndefined(_optionManager, 'Extension not activated!'); }
+
+// -----------------------------------------------------------------------------------------------------------------------------
+// Activation Registration n stuff
+// -----------------------------------------------------------------------------------------------------------------------------
 
 interface BuildRunVars {
 	srcFile: string;
 }
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
 	console.log('Congratulations, your extension "cp-tools" is now active!');
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
+	// Registering views
+	let optionsNodeProvider = new optView.OptionsNodeProvider()
+	vscode.window.registerTreeDataProvider('buildAndRunOptions', optionsNodeProvider);
+
+	// Command Bodies
 	let buildRunCommand = vscode.commands.registerCommand('cp-tools.buildAndRun', () => {
 		let currEditor = vscode.window.activeTextEditor;
 
-		if (currEditor === undefined) {
+		if (isUndefined(currEditor)) {
 			vscode.window.showErrorMessage('No open file!');
 			return;
 		}
@@ -31,7 +45,7 @@ export function activate(context: vscode.ExtensionContext) {
 			'Build and Run',
 			vscode.ViewColumn.Active,
 			{
-				"enableScripts": true
+				'enableScripts': true
 			}
 		);
 
@@ -40,9 +54,30 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 	});
 
-	let optionsView = vscode.window.registerTreeDataProvider('options.general', new optView.OptionsNodeProvider());
+	let editOptionCommand = vscode.commands.registerCommand('cp-tools.editOption', (option: optView.OptionNode) => {
+		option.properties.setFunction().then((value) => {	
+			if (!isUndefined(value)) {
+				optionManager().set(option.key, value);
+				optionsNodeProvider.refresh();
+			}
+		});
+	});
 
+	let resetOptionsCommand = vscode.commands.registerCommand('cp-tools.resetOptions', () => {
+		for (const [key, properties] of optionManager().entries) {
+			optionManager().set(key, properties.defaultValue);
+		}
+		optionsNodeProvider.refresh();
+	});
+
+	// Registering Commands
 	context.subscriptions.push(buildRunCommand);
+	context.subscriptions.push(editOptionCommand);
+	context.subscriptions.push(resetOptionsCommand);
+	
+	// Setting context
+	_extensionContext = context;
+	_optionManager = new OptionManager(_extensionContext);
 }
 
 function getBuildRunHTML(vars: BuildRunVars) {
