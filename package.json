@@ -12,7 +12,7 @@
 	],
 	"activationEvents": [
 		"onCommand:cp-tools.buildAndRun",
-		"onView:buildAndRunOptions"
+		"onView:options"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -27,6 +27,12 @@
 				"title": "Edit Option",
 				"category": "CP Tools",
 				"icon": "icons/edit-light.svg"
+			},
+			{
+				"command": "cp-tools.resetCategory",
+				"title": "Reset Category",
+				"category": "CP Tools",
+				"icon": "icons/refresh.svg"
 			},
 			{
 				"command": "cp-tools.resetOptions",
@@ -47,7 +53,7 @@
 		"views": {
 			"options": [
 				{
-					"id": "buildAndRunOptions",
+					"id": "options",
 					"name": "Build and Run"
 				}
 			]
@@ -57,7 +63,12 @@
 				{
 					"command": "cp-tools.editOption",
 					"group": "inline",
-					"when": "view == buildAndRunOptions"
+					"when": "viewItem == key"
+				},
+				{
+					"command": "cp-tools.resetCategory",
+					"group": "inline",
+					"when": "viewItem == category"
 				}
 			],
 			"view/title": [
@@ -81,5 +92,8 @@
 		"tslint": "^5.12.1",
 		"@types/node": "^10.12.21",
 		"@types/mocha": "^2.2.42"
+	},
+	"dependencies": {
+		"@types/pidusage": "^2.0.1"
 	}
 }

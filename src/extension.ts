@@ -2,8 +2,9 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import * as options from './options/register';
+import { executors, interpretReturnBuffer, Executor, Result } from './executors';
 import { OptionManager } from './options/options';
-import { errorIfUndefined } from './undefinedutils';
+import { errorIfUndefined, popUnsafe } from './undefinedutils';
 import { isUndefined } from 'util';
 
 // -----------------------------------------------------------------------------------------------------------------------------
@@ -32,7 +33,7 @@ export function activate(context: vscode.ExtensionContext) {
 	_optionManager = new OptionManager(_extensionContext);
 
 	// Build and Run Command Bodies
-	let buildRunCommand = vscode.commands.registerCommand('cp-tools.buildAndRun', () => {
+	let buildRunCommand = vscode.commands.registerCommand('cp-tools.buildAndRun', async () => {
 		let currEditor = vscode.window.activeTextEditor;
 
 		if (isUndefined(currEditor)) {
@@ -49,8 +50,35 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 		);
 
+		// Getting input
+		var inputs: string[] = [];
+
+		// Compiling and running program
+		const srcFile: string = currEditor.document.uri.fsPath, 
+			ext: string = popUnsafe(popUnsafe(srcFile.split('\\')).split('.')), 
+			executorConstructor: (new(srcFile: string) => Executor) | undefined = executors.get(ext);
+		console.log(`Compiling ${srcFile}, extension ${ext}...`);
+
+		if (isUndefined(executorConstructor)) {
+			vscode.window.showErrorMessage('Extension not supported yet!');
+			return;
+		}
+
+		const executor: Executor = new executorConstructor(srcFile);
+		executor.preExec();
+
+		var results: Result[] = [];
+		for (const input of inputs) {
+			results.push(await interpretReturnBuffer(executor.exec(input)));
+		}
+
+		executor.postExec();
+
+		console.log(results);
+
+		// Creating HTML result
 		runPanel.webview.html = getBuildRunHTML({
-			srcFile: currEditor.document.uri.fsPath
+			srcFile
 		});
 	});
 

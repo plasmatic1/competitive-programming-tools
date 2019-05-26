@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as ext from './../extension';
 import { isUndefined } from 'util';
 import { errorIfUndefined } from '../undefinedutils';
 
@@ -10,42 +11,78 @@ export interface OptionProperties {
     setFunction: () => Thenable<string | number | undefined>; // Function called to set this option.  Return `undefined` if the set attempt failed
 }
 
-const OPTIONS: Map<string, OptionProperties> = new Map([
-    ['inputFile', {
-        defaultValue: 'input.txt',
-        label: 'Input File',
-        description: 'Path to the Input File',
-        type: 'string',
-        setFunction: async () => {
-            let uris = await vscode.window.showOpenDialog({canSelectMany: false});
+export interface CategoryProperties {
+    label: string;
+    description: string;
+}
 
-            if (isUndefined(uris)) {
-                return undefined;
+const OPTIONS: Map<string, Map<string, OptionProperties>> = new Map([
+    ['buildAndRun', new Map([
+        ['inputFile', {
+            defaultValue: 'input.txt',
+            label: 'Input File',
+            description: 'Path to the Input File',
+            type: 'string',
+            setFunction: async () => {
+                let uris = await vscode.window.showOpenDialog({canSelectMany: false});
+    
+                if (isUndefined(uris)) {
+                    return undefined;
+                }
+                return uris[0].fsPath;
             }
-            return uris[0].fsPath;
-        }
-    }],
-    ['timeout', {
-        defaultValue: 2000,
-        label: 'Timeout (ms)',
-        description: 'Maximum program execution time.  The program will timeout if this threshold is reached',
-        type: 'number',
-        setFunction: async () => {
-            let timeout = await vscode.window.showInputBox({
-                prompt: 'New Timeout',
-                placeHolder: 'timeout (ms)',
-                value: '2000'
-            });
-
-            if (isUndefined(timeout) || isNaN(parseInt(timeout))) {
-                return undefined;
+        }],
+        ['timeout', {
+            defaultValue: 2000,
+            label: 'Timeout (ms)',
+            description: 'Maximum program execution time.  The program will timeout if this threshold is reached',
+            type: 'number',
+            setFunction: async () => {
+                let timeout = await vscode.window.showInputBox({
+                    prompt: 'New Timeout',
+                    placeHolder: 'timeout (ms)',
+                    value: ext.optionManager().get('buildAndRun', 'timeout')
+                });
+    
+                if (isUndefined(timeout) || isNaN(parseInt(timeout))) {
+                    return undefined;
+                }
+                return parseInt(timeout);
             }
-            return parseInt(timeout);
-        }
-    }]
+        }]
+    ])],
+    ['compilerArgs', new Map([
+        ['cpp', {
+            defaultValue: '-Wall -static -DLOCAL',
+            label: 'C++',
+            description: 'Compiler args for the C++ executor',
+            type: 'string',
+            setFunction: async () => {
+                let args = await vscode.window.showInputBox({
+                    prompt: 'New Compiler Args',
+                    placeHolder: 'C++ compiler args (space separated)',
+                    value: ext.optionManager().get('compilerArgs', 'cpp')
+                });
+    
+                if (isUndefined(args)) {
+                    return undefined;
+                }
+                return args;
+            }
+        }]
+    ])]
 ]);
 
-const ENTRIES: [string, OptionProperties][] = [...OPTIONS.entries()];
+const CATEGORY_PROPERTIES: Map<string, CategoryProperties> = new Map([
+    ['buildAndRun', {
+        label: 'Build and Run',
+        description: 'Build and Run Options'
+    }],
+    ['compilerArgs', {
+        label: 'Compiler/Interpreter Arguments',
+        description: 'Arguments for compilers/interpreters'
+    }]
+]);
 
 // -----------------------------------------------------------------------------------------------------------------------------
 // Class to export
@@ -56,26 +93,38 @@ export class OptionManager {
         private extensionContext: vscode.ExtensionContext
     ) {}
 
-    get(key: string): any {
+    private getProperties(category: string, key: string): OptionProperties {
+        return errorIfUndefined(errorIfUndefined(OPTIONS.get(category), 'Invalid Category!').get(key), 'Invalid key!');
+    }
+
+    getDefault(category: string, key: string): any {
+        return this.getProperties(category, key).defaultValue;
+    }
+
+    get(category: string, key: string): any {
         const val = this.extensionContext.workspaceState.get(key);
         if (isUndefined(val)) {
-            return errorIfUndefined(OPTIONS.get(key), 'Invalid key!').defaultValue;
+            return this.getDefault(category, key);
         }
         return val;
     }
 
-    set(key: string, value: any): void {
-        if (typeof value !== errorIfUndefined(OPTIONS.get(key), 'Invalid Key!').type) {
+    set(category: string, key: string, value: any): void {
+        if (typeof value !== this.getProperties(category, key).type) {
             throw new Error('Incorrect type!');
         }
         this.extensionContext.workspaceState.update(key, value);
     }
 
-    defaultFor(key: string): any {
-        return errorIfUndefined(OPTIONS.get(key), 'Invalid key!').defaultValue;
+    entriesFor(category: string): [string, OptionProperties][] {
+        return [...errorIfUndefined(OPTIONS.get(category), 'Invalid Category!').entries()];
     }
 
-    get entries(): [string, OptionProperties][] {
-        return ENTRIES;
+    propertiesFor(category: string): CategoryProperties {
+        return errorIfUndefined(CATEGORY_PROPERTIES.get(category), 'Invalid Category!');
+    }
+
+    get categories(): string[] {
+        return [...OPTIONS.keys()];
     }
 }

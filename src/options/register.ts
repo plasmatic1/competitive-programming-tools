@@ -5,26 +5,40 @@ import { optionManager } from '../extension';
 
 export function registerViewsAndCommands(context: vscode.ExtensionContext): void {
     // Registering views
-	let optionsNodeProvider = new optView.OptionsNodeProvider();
-    vscode.window.registerTreeDataProvider('buildAndRunOptions', optionsNodeProvider);
+    let optionsNodeProvider = new optView.OptionsNodeProvider();
+    vscode.window.registerTreeDataProvider('options', optionsNodeProvider);
     
     // Commands
-    let editOptionCommand = vscode.commands.registerCommand('cp-tools.editOption', (option: optView.OptionNode) => {
-		option.properties.setFunction().then((value) => {	
-			if (!isUndefined(value)) {
-				optionManager().set(option.key, value);
-				optionsNodeProvider.refresh();
-			}
-		});
-	});
+    let editOptionCommand = vscode.commands.registerCommand('cp-tools.editOption', (option: optView.OptionNode | optView.OptionNodeCategory) => {
+        if (option instanceof optView.OptionNode) {
+            option.properties.setFunction().then((value) => {	
+                if (!isUndefined(value)) {
+                    optionManager().set(option.category, option.key, value);
+                    optionsNodeProvider.refresh();
+                }
+            });
+        }
+    });
+    
+    let resetOptionsCommand = vscode.commands.registerCommand('cp-tools.resetOptions', () => {
+        for (const category of optionManager().categories) {
+            for (const [key, properties] of optionManager().entriesFor(category)) {
+                optionManager().set(category, key, properties.defaultValue);
+            }
+        }
+        
+        optionsNodeProvider.refresh();
+    });
 
-	let resetOptionsCommand = vscode.commands.registerCommand('cp-tools.resetOptions', () => {
-		for (const [key, properties] of optionManager().entries) {
-			optionManager().set(key, properties.defaultValue);
-		}
-		optionsNodeProvider.refresh();
+    let resetCategoryCommand = vscode.commands.registerCommand('cp-tools.resetCategory', (option: optView.OptionNodeCategory) => {
+        for (const [key, properties] of optionManager().entriesFor(option.category)) {
+            optionManager().set(option.category, key, properties.defaultValue);
+        }
+        
+        optionsNodeProvider.refresh();
     });
     
     context.subscriptions.push(editOptionCommand);
-	context.subscriptions.push(resetOptionsCommand);
+    context.subscriptions.push(resetOptionsCommand);
+    context.subscriptions.push(resetCategoryCommand);
 }
