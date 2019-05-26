@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { optionManager } from '../extension';
 import { OptionProperties, CategoryProperties } from './options';
 import * as path from 'path';
+import { errorIfUndefined } from '../undefinedutils';
 
 export class OptionsNodeProvider implements vscode.TreeDataProvider<OptionNode | OptionNodeCategory> {
     private changeEmitter: vscode.EventEmitter<OptionNode | OptionNodeCategory | undefined> = new vscode.EventEmitter<OptionNode | OptionNodeCategory | undefined>();
@@ -39,7 +40,7 @@ export class OptionNodeCategory extends vscode.TreeItem {
     }
 
     get value(): string { return ''; }
-    get tooltip(): string { return ''; }
+    get tooltip(): string { return errorIfUndefined(this.label, 'Undefined label! (WTF are you doing?)'); }
 
     get iconPath(): string {
         return path.join(__filename, '..', '..', '..', 'icons', 'category.svg');
@@ -65,7 +66,7 @@ export class OptionNode extends vscode.TreeItem {
     }
 
     get tooltip(): string {
-        return this.properties.description;
+        return `${this.properties.description}\nCurrent Value: ${this.value}`;
     }
 
     get iconPath(): string {

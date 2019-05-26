@@ -1,0 +1,13 @@
+#include <bits/stdc++.h>
+
+using namespace std;
+
+int main() {
+    cout << "Hello, World!\n";
+
+    while (true) {
+        //
+    }
+
+    return 0;
+}

@@ -32,6 +32,21 @@ const OPTIONS: Map<string, Map<string, OptionProperties>> = new Map([
                 return uris[0].fsPath;
             }
         }],
+        ['caseDelimeter', {
+            defaultValue: '---',
+            label: 'Case Delimeter',
+            description: 'The delimeter that separates cases in the input file',
+            type: 'string',
+            setFunction: async () => {
+                let args = await vscode.window.showInputBox({
+                    prompt: 'This is the string that\'s used to separate cases in the input file',
+                    placeHolder: 'New Case Delimeter',
+                    value: ext.optionManager().get('buildAndRun', 'caseDelimeter')
+                });
+
+                return args;
+            }
+        }],
         ['timeout', {
             defaultValue: 2000,
             label: 'Timeout (ms)',
@@ -55,7 +70,7 @@ const OPTIONS: Map<string, Map<string, OptionProperties>> = new Map([
         ['cpp', {
             defaultValue: '-Wall -static -DLOCAL',
             label: 'C++',
-            description: 'Compiler args for the C++ executor',
+            description: 'Compiler: g++ -o <executable> <source file> <args>',
             type: 'string',
             setFunction: async () => {
                 let args = await vscode.window.showInputBox({
@@ -63,10 +78,7 @@ const OPTIONS: Map<string, Map<string, OptionProperties>> = new Map([
                     placeHolder: 'C++ compiler args (space separated)',
                     value: ext.optionManager().get('compilerArgs', 'cpp')
                 });
-    
-                if (isUndefined(args)) {
-                    return undefined;
-                }
+
                 return args;
             }
         }]
@@ -80,7 +92,7 @@ const CATEGORY_PROPERTIES: Map<string, CategoryProperties> = new Map([
     }],
     ['compilerArgs', {
         label: 'Compiler/Interpreter Arguments',
-        description: 'Arguments for compilers/interpreters'
+        description: 'Arguments for compilers/interpreters.  Hover over them to see how they are used'
     }]
 ]);
 
