@@ -64,6 +64,24 @@ const OPTIONS: Map<string, Map<string, OptionProperties>> = new Map([
                 }
                 return parseInt(timeout);
             }
+        }],
+        ['memSample', {
+            defaultValue: 20,
+            label: 'Memory + Time Sample Interval',
+            description: 'How quickly memory and time are sampled when a program is running',
+            type: 'number',
+            setFunction: async () => {
+                let sampleInterval = await vscode.window.showInputBox({
+                    prompt: 'New Timeout',
+                    placeHolder: 'sampleInterval (ms)',
+                    value: ext.optionManager().get('buildAndRun', 'memSample')
+                });
+    
+                if (isUndefined(sampleInterval) || isNaN(parseInt(sampleInterval))) {
+                    return undefined;
+                }
+                return parseInt(sampleInterval);
+            }
         }]
     ])],
     ['compilerArgs', new Map([

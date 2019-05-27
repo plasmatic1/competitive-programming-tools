@@ -1,83 +1,22 @@
 import * as sub from 'child_process';
 import * as fs from 'fs';
-import * as pidusage from 'pidusage';
 import { optionManager } from '../extension';
-import { isUndefined, isNull } from 'util';
+import { isUndefined } from 'util';
+import { Result, ResultType } from './events';
 
 // -----------------------------------------------------------------------------------------------------------------------------
 // Result Interfaces
 // -----------------------------------------------------------------------------------------------------------------------------
-export enum ResultType {
-    SUCCESS = 'Success', 
-    TIMEOUT = 'Timeout', 
-    RUNTIME_ERROR = 'Runtime Error', 
-    INTERNAL_ERROR = 'Internal Error (spawn() call failed)',
-    COMPILE_ERROR = 'Compile Error'
-}
-
-export interface Result {
-    exitType: ResultType; // Type of result
-    exitDetail: string; // Any other details associated with the result type.  Ommitted for Success
-    error?: string; // The error of the program.
-    output?: string; // The output of the program.  Ommitted if result was TIMEOUT
-    execTime?: number; // Execution Time
-    memoryUsage?: number; // Memory Usage
-}
 
 export interface Executor {
     srcFile: string; // Source file
     execFile?: string | undefined; // Executable file.  Null if not compiled yet
-    resultIfCE?: Result | undefined; // The result if there was a compile error.  Otherwise undefined
+    compileError?: string | undefined; // The result if there was a compile error.  Otherwise undefined
     preExec: () => void; // Compilation - Returns file name of executable created (to be run)
-    exec: (input: string) => sub.SpawnSyncReturns<Buffer>; // Execution - Runs the file with the input, and returns the SpawnSyncBuffer returned
+    exec: () => sub.ChildProcess; // Execution - Runs the file with the input, and returns the SpawnSyncBuffer returned
     postExec: () => void; // Post execution - Any 
 }
-
-export async function interpretReturnBuffer(ret: sub.SpawnSyncReturns<Buffer>): Promise<Result> {
-    // const stats = await pidusage(ret.pid), execTime = stats.elapsed, memoryUsage = stats.memory / 1024.;
-    const execTime = 0.0, memoryUsage= 6969;
-
-    if (!isUndefined(ret.error)) {
-        return {
-            exitType: ResultType.INTERNAL_ERROR,
-            exitDetail: `spawn() call failed: ${ret.error.name}: ${ret.error.message}`,
-            execTime,
-            memoryUsage
-        };
-    }
-
-    const output = isNull(ret.stdout) ? 'No Output' : ret.stdout.toString(), 
-            error = isNull(ret.stderr) ? 'No Errors' : ret.stderr.toString();
-
-    if (!isNull(ret.signal)) {
-        return {
-            exitType: ret.signal === 'SIGTERM' ? ResultType.TIMEOUT : ResultType.RUNTIME_ERROR,
-            exitDetail: `Killed by Signal: ${ret.signal}` + (ret.signal === 'SIGTERM' ? ' (Possible timeout?)' : ''),
-            output,
-            error,
-            execTime,
-            memoryUsage
-        };
-    }
-
-    var exitDetail: string = `Exit code: ${ret.status}`;
-    if (ret.status > 255) {
-        exitDetail += ' (Possible Segmentation Fault?)';
-    }
-
-    return {
-        exitType: ret.status !== 0 ? ResultType.RUNTIME_ERROR : ResultType.SUCCESS,
-        exitDetail,
-        output,
-        error,
-        execTime,
-        memoryUsage
-    };
-}
-
-function getTimeoutOption(): number {
-    return optionManager().get('buildAndRun', 'timeout');
-}
+// Note: If `execFile` is never defined, `compileError` should never be either as a defined `compilerError` and undefined `execFile` causes the program to think that the compile failed
 
 function splitArgs(args: string): string[] {
     if (args === '') {
@@ -92,7 +31,7 @@ function splitArgs(args: string): string[] {
 class CPPExecutor implements Executor {
     srcFile: string;
     execFile: string | undefined;
-    resultIfCE: Result | undefined = undefined;
+    compileError: string | undefined;
 
     constructor(srcFile: string) {
         this.srcFile = srcFile;
@@ -107,29 +46,21 @@ class CPPExecutor implements Executor {
         
         if (compileProcStderr !== '') {
             this.execFile = undefined;
-            this.resultIfCE = {
-                exitType: ResultType.COMPILE_ERROR,
-                exitDetail: compileProcStderr,
-            };
+            this.compileError = compileProcStderr;
         }
     }
 
-    exec(input: string): sub.SpawnSyncReturns<Buffer> {
+    exec(): sub.ChildProcess {
         if (isUndefined(this.execFile)) {
             throw new Error('File not compiled yet! (Or compile failed and you still tried to execute this)');
         }
-
-        return sub.spawnSync(this.execFile, {
-            timeout: getTimeoutOption(),
-            input: input
-        });
+        return sub.spawn(this.execFile);
     }
 
     postExec(): void {
         if (isUndefined(this.execFile)) {
             throw new Error('File not compiled yet!');
         }
-
         fs.unlinkSync(this.execFile);
     }
 }
@@ -143,11 +74,8 @@ class PYExecutor implements Executor {
 
     preExec(): void {}
 
-    exec(input: string): sub.SpawnSyncReturns<Buffer> {
-        return sub.spawnSync('py', [this.srcFile], {
-            timeout: getTimeoutOption(),
-            input: input
-        });
+    exec(): sub.ChildProcess {
+        return sub.spawn('py', [this.srcFile], {});
     }
 
     postExec(): void {}

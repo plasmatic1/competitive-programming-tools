@@ -1,13 +1,26 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { interpretReturnBuffer, Executor, executors, Result, ResultType } from './executors';
+import { Executor, executors } from './executors';
 import { isUndefined } from 'util';
 import { popUnsafe } from '../undefinedutils';
 import { optionManager } from '../extension';
+import { ChildProcess } from 'child_process';
+import * as exe from './events';
+
+// -----------------------------------------------------------------------------------------------------------------------------
+// Utility Functions
+// -----------------------------------------------------------------------------------------------------------------------------
+
+function getTime(): number {
+    return new Date().getTime();
+}
+
+// -----------------------------------------------------------------------------------------------------------------------------
+// Registering
+// -----------------------------------------------------------------------------------------------------------------------------
 
 interface BuildRunVars {
     srcFile: string;
-    results: Result[];
 }
 
 export function registerViewsAndCommands(context: vscode.ExtensionContext): void {
@@ -19,17 +32,21 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
 			return;
         }
         
-        // Getting input
+        // -----------------------------------------------------------------------------------------------------------------------------
+        // Validating and getting input
+        // -----------------------------------------------------------------------------------------------------------------------------
         const inputFilePath = optionManager().get('buildAndRun', 'inputFile');
         
         if (!fs.existsSync(inputFilePath)) {
             vscode.window.showErrorMessage(`Could not find input file ${inputFilePath}`);
             return;
-        }
+        }        
 
         const inputs: string[] = fs.readFileSync(inputFilePath).toString().split(optionManager().get('buildAndRun', 'caseDelimeter'));
 
-		// Getting Executor
+		// -----------------------------------------------------------------------------------------------------------------------------
+        // Validating and getting executor
+        // -----------------------------------------------------------------------------------------------------------------------------
 		const srcFile: string = currEditor.document.uri.fsPath, 
 			ext: string = popUnsafe(popUnsafe(srcFile.split('\\')).split('.')), 
 			executorConstructor: (new(srcFile: string) => Executor) | undefined = executors.get(ext);
@@ -38,45 +55,91 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
 		if (isUndefined(executorConstructor)) {
 			vscode.window.showErrorMessage('File extension not supported yet!');
 			return;
-		}
-
-        // Compiling and running program
-        const executor: Executor = new executorConstructor(srcFile);
-        var results: Result[] = [];
+        }
         
-        executor.preExec();
-
-        if (!isUndefined(executor.resultIfCE)) {
-            results.push(executor.resultIfCE);
-        }
-        else {
-            for (const input of inputs) {
-                results.push(await interpretReturnBuffer(executor.exec(input)));
-            }
-            executor.postExec();
-        }
-		
-
-		console.log(results);
-
-        // Creating HTML result
-        const runPanel = vscode.window.createWebviewPanel(
+        // -----------------------------------------------------------------------------------------------------------------------------
+        // Initializing Web Panel
+        // -----------------------------------------------------------------------------------------------------------------------------
+        const display = vscode.window.createWebviewPanel(
 			'buildAndRun',
 			'Build and Run',
 			vscode.ViewColumn.Active,
 			{
 				'enableScripts': true
 			}
-		);
+        );
 
-		runPanel.webview.html = getBuildRunHTML({
-            srcFile,
-            results
-		});
+        display.webview.html = getBuildRunHTML({
+            srcFile
+        });
+        
+        // -----------------------------------------------------------------------------------------------------------------------------
+        // Web Panel Utility Functions
+        // -----------------------------------------------------------------------------------------------------------------------------
+        const emitEvent = display.webview.postMessage;
+
+        // -----------------------------------------------------------------------------------------------------------------------------
+        // Compiling and Running Program
+        // -----------------------------------------------------------------------------------------------------------------------------
+        const executor: Executor = new executorConstructor(srcFile), timeout: number = optionManager().get('buildAndRun', 'timeout'),
+            memSampleRate: number = optionManager().get('buildAndRun', 'memSample');
+        
+        executor.preExec();
+
+        if (!isUndefined(executor.compileError)) {
+            const fatal: boolean = !!executor.execFile;
+            emitEvent(new exe.CompileErrorEvent(executor.compileError, fatal));
+
+            if (fatal) {
+                return;
+            }
+        }
+        else {
+            for (const input of inputs) {
+                var proc: ChildProcess = executor.exec();
+                proc.stdin.write(input);
+
+                const beginTime: number = getTime();
+                var error: string | undefined = undefined, done: boolean = false;
+
+                proc.on('error', (error_: Error) => {
+                    error = error_.message;
+                });
+
+                proc.on('exit', (code: number, signal: string) => {
+                    done = true;
+                    emitEvent(new exe.UpdateTimeEvent(getTime() - beginTime));
+                });
+
+                proc.stdout.on('readable', () => {
+                    emitEvent(new exe.UpdateStdoutEvent(proc.stdout.read()));
+                });
+
+                proc.stderr.on('readable', () => {
+                    emitEvent(new exe.UpdateStderrEvent(proc.stderr.read()));
+                });
+
+                setTimeout(() => {
+                    if (!done) {
+                        proc.kill();
+                    }
+                }, timeout);
+
+                const memCheckTimeout = setTimeout(() => {
+                    
+                }, memSampleRate);
+
+                // wheeeee
+            }
+            executor.postExec();
+        }
     });
     
     context.subscriptions.push(buildRunCommand);
 }
+
+//TODO: CHANGE TO TRUE IF EXPORTING
+const debugDisplayPanel: boolean = true;
 
 function getBuildRunHTML(vars: BuildRunVars) {
 	let srcName = vars.srcFile.split('\\').pop();
@@ -86,11 +149,14 @@ function getBuildRunHTML(vars: BuildRunVars) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cat Coding</title>
+    <title>Output of "${srcName}"</title>
 </head>
 <body>
     <h1>Output of "${srcName}"</h1>
-    <p>${JSON.stringify(vars.results)}</p>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue${debugDisplayPanel ? '' : '.min'}.js"></script>
+    <script>
+        ${fs.readFileSync('display.js')}
+    </script>
 </body>
 </html>`;
 }
