@@ -21,8 +21,8 @@ const compileErrorApp = new Vue({
     }
 });
 
-window.addEventListener('message', event => {
-    const type = event.type;
+window.addEventListener('message', event_ => {
+    const event = event_.data, type = event.type;
     console.log(`Event: ${JSON.stringify(event)}`);
 
     if (type == 'compilerError') {
@@ -54,12 +54,14 @@ window.addEventListener('message', event => {
         curCase.memory = event.newMemory.toString();
     }
     else if (type == 'updateStdout') {
-        curCase.stdout += event.data;
+        curCase.stdout += event.data.toString();
     }
     else if (type == 'updateStderr') {
-        curCase.stderr += event.data;
+        curCase.stderr += event.data.toString();
     }
     else if (type == 'end') {
         curCase.exitInfo = event.endMsg;
+
+        console.log(JSON.stringify(cases));
     }
 });
