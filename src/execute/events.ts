@@ -1,6 +1,3 @@
-import { isUndefined, isNull } from "util";
-import * as sub from 'child_process';
-
 export enum ResultType {
     SUCCESS = 'Success', 
     TIMEOUT = 'Timeout', 
@@ -53,7 +50,7 @@ export class UpdateStderrEvent implements Event {
     constructor(public readonly data: string) {}
 }
 
-export class FinishedEvent implements Event {
+export class EndEvent implements Event {
     type: EventType = EventType.END;
     constructor(public readonly endMsg: string){}
 }
@@ -65,46 +62,4 @@ export interface Result {
     output?: string; // The output of the program.  Ommitted if result was TIMEOUT
     execTime?: number; // Execution Time
     memoryUsage?: number; // Memory Usage
-}
-
-export async function interpretReturnBuffer(ret: sub.SpawnSyncReturns<Buffer>): Promise<Result> {
-    // const stats = await pidusage(ret.pid), execTime = stats.elapsed, memoryUsage = stats.memory / 1024.;
-    const execTime = 0.0, memoryUsage= 6969;
-
-    if (!isUndefined(ret.error)) {
-        return {
-            exitType: ResultType.INTERNAL_ERROR,
-            exitDetail: `spawn() call failed: ${ret.error.name}: ${ret.error.message}`,
-            execTime,
-            memoryUsage
-        };
-    }
-
-    const output = isNull(ret.stdout) ? 'No Output' : ret.stdout.toString(), 
-            error = isNull(ret.stderr) ? 'No Errors' : ret.stderr.toString();
-
-    if (!isNull(ret.signal)) {
-        return {
-            exitType: ret.signal === 'SIGTERM' ? ResultType.TIMEOUT : ResultType.RUNTIME_ERROR,
-            exitDetail: `Killed by Signal: ${ret.signal}` + (ret.signal === 'SIGTERM' ? ' (Possible timeout?)' : ''),
-            output,
-            error,
-            execTime,
-            memoryUsage
-        };
-    }
-
-    var exitDetail: string = `Exit code: ${ret.status}`;
-    if (ret.status > 255) {
-        exitDetail += ' (Possible Segmentation Fault?)';
-    }
-
-    return {
-        exitType: ret.status !== 0 ? ResultType.RUNTIME_ERROR : ResultType.SUCCESS,
-        exitDetail,
-        output,
-        error,
-        execTime,
-        memoryUsage
-    };
 }

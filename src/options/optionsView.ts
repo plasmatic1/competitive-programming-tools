@@ -5,8 +5,8 @@ import { OptionProperties, CategoryProperties } from './options';
 import { errorIfUndefined } from '../undefinedutils';
 
 export class OptionsNodeProvider implements vscode.TreeDataProvider<OptionNode | OptionNodeCategory> {
-    private changeEmitter = new vscode.EventEmitter<OptionNode | OptionNodeCategory | undefined>();
-        onDidChangeTreeData = this.changeEmitter.event;   
+    private changeEmitter: vscode.EventEmitter<OptionNode | OptionNodeCategory | undefined> = new vscode.EventEmitter<OptionNode | OptionNodeCategory | undefined>();
+        onDidChangeTreeData: vscode.Event<OptionNode | OptionNodeCategory | undefined | null> = this.changeEmitter.event;   
     
     constructor() {}
 

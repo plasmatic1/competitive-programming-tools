@@ -66,7 +66,7 @@ const OPTIONS: Map<string, Map<string, OptionProperties>> = new Map([
             }
         }],
         ['memSample', {
-            defaultValue: 20,
+            defaultValue: 100,
             label: 'Memory + Time Sample Interval',
             description: 'How quickly memory and time are sampled when a program is running',
             type: 'number',

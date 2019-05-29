@@ -1,11 +1,13 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { Executor, executors } from './executors';
-import { isUndefined } from 'util';
-import { popUnsafe } from '../undefinedutils';
-import { optionManager } from '../extension';
-import { ChildProcess } from 'child_process';
 import * as exe from './events';
+import * as pidusage from 'pidusage';
+import { join } from 'path';
+import { Executor, executors } from './executors';
+import { isUndefined, isNull } from 'util';
+import { popUnsafe } from '../undefinedutils';
+import { optionManager, extensionContext } from '../extension';
+import { ChildProcess } from 'child_process';
 
 // -----------------------------------------------------------------------------------------------------------------------------
 // Utility Functions
@@ -71,7 +73,7 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
 
         display.webview.html = getBuildRunHTML({
             srcFile
-        });
+        }, context);
         
         // -----------------------------------------------------------------------------------------------------------------------------
         // Web Panel Utility Functions
@@ -100,15 +102,36 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
                 proc.stdin.write(input);
 
                 const beginTime: number = getTime();
-                var error: string | undefined = undefined, done: boolean = false;
+                var done: boolean = false;
 
-                proc.on('error', (error_: Error) => {
-                    error = error_.message;
+                async function checkDone() {
+                    return new Promise((resolve, _) => {
+                        if (done) {
+                            resolve();
+                        }
+                    });
+                }
+
+                // Event handlers and timed processes
+                proc.on('error', (error: Error) => {
+                    done = true;
+                    emitEvent(new exe.CompileErrorEvent(`${error.name}: ${error.message}`, true));
                 });
 
                 proc.on('exit', (code: number, signal: string) => {
                     done = true;
                     emitEvent(new exe.UpdateTimeEvent(getTime() - beginTime));
+
+                    var exitMsg = '';
+
+                    if (!isNull(signal)) {
+                        exitMsg = `Killed by Signal: ${signal}` + (signal === 'SIGTERM' ? ' (Possible timeout?)' : '');
+                    }
+                    else {
+                        exitMsg = `Exit code: ${code}` + (code > 255 ? ' (Possible Segmentation Fault?)' : '');
+                    }
+
+                    emitEvent(new exe.EndEvent(exitMsg));
                 });
 
                 proc.stdout.on('readable', () => {
@@ -119,17 +142,30 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
                     emitEvent(new exe.UpdateStderrEvent(proc.stderr.read()));
                 });
 
+                function updateMemAndTime() {
+                    pidusage(proc.pid)
+                    .then(stat => {
+                        emitEvent(new exe.UpdateTimeEvent(stat.elapsed));
+                        emitEvent(new exe.UpdateMemoryEvent(stat.memory));
+                    })
+                    .catch(_ => {
+                        clearInterval(memCheckInterval);
+                    });
+                }
+
+                updateMemAndTime();
+                const memCheckInterval = setInterval(() => {
+                    updateMemAndTime();
+                }, memSampleRate);
+
                 setTimeout(() => {
                     if (!done) {
                         proc.kill();
                     }
                 }, timeout);
 
-                const memCheckTimeout = setTimeout(() => {
-                    
-                }, memSampleRate);
-
-                // wheeeee
+                // Awaiting termination
+                await checkDone();
             }
             executor.postExec();
         }
@@ -141,8 +177,8 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
 //TODO: CHANGE TO TRUE IF EXPORTING
 const debugDisplayPanel: boolean = true;
 
-function getBuildRunHTML(vars: BuildRunVars) {
-	let srcName = vars.srcFile.split('\\').pop();
+function getBuildRunHTML(vars: BuildRunVars, context: vscode.ExtensionContext) {
+    let srcName = vars.srcFile.split('\\').pop();
 
 	return `<!DOCTYPE html>
 <html lang="en">
@@ -153,9 +189,52 @@ function getBuildRunHTML(vars: BuildRunVars) {
 </head>
 <body>
     <h1>Output of "${srcName}"</h1>
+
+    <div id="compileError" v-if="data !== ''">
+        <h2>Compile Errors</h2>
+        {{ data }}
+    </div>
+
+    <div id="cases" v-if="visible">
+        <div v-for="curCase in cases">
+            <h2>Case #{{ curCase.id }}</h2>
+            
+            <div v-if="curCase.stdinVisible">
+                <h3>Input</h3>
+                <pre><code>
+                    {{ curCase.stdin }}
+                </code></pre>
+            </div>
+            <button v-on:click="toggleVar.bind(undefined, curCase.id, 'stdinVisible')">Toggle Input</button>
+            
+            <div v-if="curCase.stdoutVisible">
+                <h3>Output</h3>
+                <pre><code>
+                    {{ curCase.stdout }}
+                </code></pre>
+            </div>
+            <button v-on:click="toggleVar.bind(undefined, curCase.id, 'stdoutVisible')">Toggle Output</button>
+
+            <div v-if="curCase.stderrVisible">
+                <h3>Errors</h3>
+                <pre><code>
+                    {{ curCase.stderr }}
+                </code></pre>
+            </div>
+            <button v-on:click="toggleVar.bind(undefined, curCase.id, 'stderrVisible')">Toggle Errors</button>
+
+            <div>
+                <h4>Info</h4>
+                <p>Time Elapsed: {{ curCase.time }}ms</p>
+                <p>Memory Usage: {{ Math.round(curCase.memory / 1024 * 1000) / 1000 }}
+                <p v-if="curCase.exitInfo !== ''">{{ curCase.exitInfo }}</p>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue${debugDisplayPanel ? '' : '.min'}.js"></script>
     <script>
-        ${fs.readFileSync('display.js')}
+        ${fs.readFileSync(join(context.extensionPath, 'src', 'execute', 'display.js'))}
     </script>
 </body>
 </html>`;

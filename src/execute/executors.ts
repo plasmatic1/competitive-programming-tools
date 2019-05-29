@@ -2,7 +2,6 @@ import * as sub from 'child_process';
 import * as fs from 'fs';
 import { optionManager } from '../extension';
 import { isUndefined } from 'util';
-import { Result, ResultType } from './events';
 
 // -----------------------------------------------------------------------------------------------------------------------------
 // Result Interfaces
