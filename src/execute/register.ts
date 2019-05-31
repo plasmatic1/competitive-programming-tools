@@ -6,11 +6,8 @@ import { join } from 'path';
 import { Executor, executors } from './executors';
 import { isUndefined, isNull } from 'util';
 import { popUnsafe } from '../undefinedutils';
-import { optionManager, extensionContext } from '../extension';
+import { optionManager } from '../extension';
 import { ChildProcess } from 'child_process';
-import { on } from 'cluster';
-import { AssertionError } from 'assert';
-
 // -----------------------------------------------------------------------------------------------------------------------------
 // Utility Functions
 // -----------------------------------------------------------------------------------------------------------------------------
@@ -191,64 +188,9 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
     const debugDisplayPanel: boolean = true;
     
     function getBuildRunHTML(vars: BuildRunVars, context: vscode.ExtensionContext) {
-        let srcName = vars.srcFile.split('\\').pop();
+        let srcName = popUnsafe(vars.srcFile.split('\\'));
         
-        return `<!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Output of "${srcName}"</title>
-        </head>
-        <body>
-            <h1>Output of "${srcName}"</h1>
-        
-            <div id="compileError" v-if="data !== ''">
-                <h2>Compile Errors</h2>
-                {{ data }}
-            </div>
-        
-            <div id="cases" v-if="visible">
-                <div v-for="curCase in cases">
-                    <h2>Case #{{ curCase.id }}</h2>
-        
-                    <div v-if="curCase.stdinVisible">
-                        <h3>Input</h3>
-                        <pre><code>
-                            {{ curCase.stdin }}
-                        </code></pre>
-                    </div>
-                    <button v-on:click="toggleVar.bind(undefined, curCase.id, 'stdinVisible')">Toggle Input</button>
-        
-                    <div v-if="curCase.stdoutVisible">
-                        <h3>Output</h3>
-                        <pre><code>
-                            {{ curCase.stdout }}
-                        </code></pre>
-                    </div>
-                    <button v-on:click="toggleVar.bind(undefined, curCase.id, 'stdoutVisible')">Toggle Output</button>
-        
-                    <div v-if="curCase.stderrVisible">
-                        <h3>Errors</h3>
-                        <pre><code>
-                            {{ curCase.stderr }}
-                        </code></pre>
-                    </div>
-                    <button v-on:click="toggleVar.bind(undefined, curCase.id, 'stderrVisible')">Toggle Errors</button>
-        
-                    <div>
-                        <h4>Info</h4>
-                        <p>Time Elapsed: {{ curCase.time }}ms</p>
-                        <p>Memory Usage: {{ Math.round(curCase.memory / 1024 * 1000) / 1000 }}
-                        <p v-if="curCase.exitInfo !== ''">{{ curCase.exitInfo }}</p>
-                    </div>
-                </div>
-            </div>
-        
-            <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue${debugDisplayPanel ? '' : '.min'}.js"></script>
-            <script>
-                ${fs.readFileSync(join(context.extensionPath, 'src', 'execute', 'display.js'))}
-            </script>
-        </body>
-        </html>`;
+        return fs.readFileSync(join(context.extensionPath, 'src', 'execute', 'display.html'))
+            .toString()
+            .replace(/\$\{srcName\}/g, srcName);
     }

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Output of "${srcName}"</title>
+    </head>
+    <body>
+        <h1>Output of "${srcName}"</h1>
+        
+        <div id="compileError" v-if="data !== ''">
+            <h2>Compile Errors</h2>
+            {{ data }}
+        </div>
+        
+        <div id="cases" v-if="visible">
+            <div v-for="curCase in cases">
+                <h2>Case #{{ curCase.id }}</h2>
+        
+                <div v-if="curCase.stdinVisible">
+                    <h3>Input</h3>
+                    <pre><code>
+                        {{ curCase.stdin }}
+                    </code></pre>
+                </div>
+                <button v-on:click="toggleVar.bind(undefined, curCase.id, 'stdinVisible')">Toggle Input</button>
+        
+                <div v-if="curCase.stdoutVisible">
+                    <h3>Output</h3>
+                    <pre><code>
+                        {{ curCase.stdout }}
+                    </code></pre>
+                </div>
+                <button v-on:click="toggleVar.bind(undefined, curCase.id, 'stdoutVisible')">Toggle Output</button>
+        
+                <div v-if="curCase.stderrVisible">
+                    <h3>Errors</h3>
+                    <pre><code>
+                        {{ curCase.stderr }}
+                    </code></pre>
+                </div>
+                <button v-on:click="toggleVar.bind(undefined, curCase.id, 'stderrVisible')">Toggle Errors</button>
+        
+                <div>
+                    <h4>Info</h4>
+                    <p>Time Elapsed: {{ curCase.time }}ms</p>
+                    <p>Memory Usage: {{ Math.round(curCase.memory / 1024 * 1000) / 1000 }}
+                    <p v-if="curCase.exitInfo !== ''">{{ curCase.exitInfo }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+        <script>
+            const casesElement = document.getElementById('cases');
+            var caseId = -1, curCase = undefined;
+            
+            const casesApp = new Vue({
+                el: '#cases',
+                data: {
+                    visible: true,
+                    cases: []
+                },
+                methods: {
+                    toggleVar: function(id, key) {
+                        this.cases[id][key] = !this.cases[id][key];
+                    }
+                }
+            });
+            
+            const compileErrorApp = new Vue({
+                el: '#compileError',
+                data: {
+                    data: ''
+                }
+            });
+            
+            window.addEventListener('message', event_ => {
+                const event = event_.data, type = event.type;
+                console.log(`Event: ${JSON.stringify(event)}`);
+                
+                if (type == 'compilerError') {
+                    compileErrorApp.data = event.data;
+                    if (event.fatal) {
+                        casesApp.visible = false;
+                    }
+                }
+                else if (type == 'beginCase') {
+                    caseId++;
+                    curCase = {
+                        id: caseId,
+                        stdin: event.input,
+                        stdinVisible: false,
+                        stdout: '',
+                        stdoutVisible: true,
+                        stderr: '',
+                        stderrVisible: false,
+                        time: 'negligible',
+                        memory: 'negligible',
+                        exitInfo: ''
+                    }
+                    casesApp.cases.push(curCase);
+                }
+                else if (type == 'updateTime') {
+                    curCase.time = event.newElapsed.toString();
+                }
+                else if (type == 'updateMemory') {
+                    curCase.memory = event.newMemory.toString();
+                }
+                else if (type == 'updateStdout') {
+                    curCase.stdout += event.data.toString();
+                }
+                else if (type == 'updateStderr') {
+                    curCase.stderr += event.data.toString();
+                }
+                else if (type == 'end') {
+                    curCase.exitInfo = event.endMsg;
+                    
+                    console.log(JSON.stringify(cases));
+                }
+            });
+        </script>
+    </body>
+</html>
