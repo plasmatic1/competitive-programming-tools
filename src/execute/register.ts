@@ -22,6 +22,7 @@ function getTime(): number {
 
 interface BuildRunVars {
     srcFile: string;
+    caseCount: number;
 }
 
 export function registerViewsAndCommands(context: vscode.ExtensionContext): void {
@@ -71,7 +72,8 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
             );
             
             display.webview.html = getBuildRunHTML({
-                srcFile
+                srcFile,
+                caseCount: inputs.length
             }, context);
             
             // -----------------------------------------------------------------------------------------------------------------------------
@@ -79,11 +81,21 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
             // -----------------------------------------------------------------------------------------------------------------------------
             function emitEvent(obj: any) {
                 // Has to be like this (likely because of some this shenanigans)
-                // This cannot simply be refractored to
-                // `const emitEvent = display.webview.postMessage;`
+                // This cannot simply be refractored to `const emitEvent = display.webview.postMessage;`
                 console.log(JSON.stringify(obj));
                 display.webview.postMessage(obj);
             }
+
+            // Await for the webview to be ready
+            await (async () => {
+                return new Promise((resolve, _) => {
+                    display.webview.onDidReceiveMessage(msg => {
+                        if (msg === 'ready') {
+                            resolve();
+                        }
+                    });
+                });
+            })();
             
             // -----------------------------------------------------------------------------------------------------------------------------
             // Compiling and Running Program
@@ -94,17 +106,19 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
             executor.preExec();
             
             if (!isUndefined(executor.compileError)) {
-                const fatal: boolean = !!executor.execFile;
-                emitEvent(new exe.CompileErrorEvent(executor.compileError, fatal));
+                const fatal: boolean = isUndefined(executor.execFile);
+                emitEvent(new exe.CompileErrorEvent(executor.compileError, fatal, -1));
                 
                 if (fatal) {
                     return;
                 }
             }
             
+            var caseNo = 0;
             for (const input of inputs) {
                 var proc: ChildProcess = executor.exec();
                 proc.stdin.write(input);
+                emitEvent(new exe.BeginCaseEvent(input, caseNo));
                 
                 const beginTime: number = getTime();
                 var done: boolean = false;
@@ -119,12 +133,12 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
                 // Event handlers and timed processes
                 proc.on('error', (error: Error) => {
                     done = true;
-                    emitEvent(new exe.CompileErrorEvent(`${error.name}: ${error.message}`, true));
+                    emitEvent(new exe.CompileErrorEvent(`${error.name}: ${error.message}`, true, -1));
                 });
                 
                 proc.on('exit', (code: number, signal: string) => {
                     done = true;
-                    emitEvent(new exe.UpdateTimeEvent(getTime() - beginTime));
+                    emitEvent(new exe.UpdateTimeEvent(getTime() - beginTime, caseNo));
                     
                     var exitMsg = '';
                     
@@ -132,23 +146,31 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
                         exitMsg = `Killed by Signal: ${signal}` + (signal === 'SIGTERM' ? ' (Possible timeout?)' : '');
                     }
                     else {
-                        exitMsg = `Exit code: ${code}` + (code > 255 ? ' (Possible Segmentation Fault?)' : '');
+                        var extra = '';
+                        if (code > 255) {
+                            extra = ' (Possible Segmentation Fault?)';
+                        }
+                        else if (code === 3) {
+                            extra = ' (Assertion failed!)';
+                        }
+
+                        exitMsg = `Exit code: ${code}` + extra;
                     }
                     
-                    emitEvent(new exe.EndEvent(exitMsg));
+                    emitEvent(new exe.EndEvent(exitMsg, caseNo));
                 });
                 
                 proc.stdout.on('readable', () => {
                     const data = proc.stdout.read();
                     if (data) {
-                        emitEvent(new exe.UpdateStdoutEvent(data));
+                        emitEvent(new exe.UpdateStdoutEvent(data.toString(), caseNo));
                     }
                 });
                 
                 proc.stderr.on('readable', () => {
                     const data = proc.stderr.read();
                     if (data) {
-                        emitEvent(new exe.UpdateStderrEvent(data));
+                        emitEvent(new exe.UpdateStderrEvent(data.toString(), caseNo));
                     }
                 });
                 
@@ -156,9 +178,9 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
                     pidusage(proc.pid)
                     .then(stat => {
                         if (!done) {
-                            emitEvent(new exe.UpdateTimeEvent(stat.elapsed));
+                            emitEvent(new exe.UpdateTimeEvent(stat.elapsed, caseNo));
                         }
-                        emitEvent(new exe.UpdateMemoryEvent(stat.memory));
+                        emitEvent(new exe.UpdateMemoryEvent(stat.memory, caseNo));
                     })
                     .catch(_ => {
                         clearInterval(memCheckInterval);
@@ -176,6 +198,9 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
                 
                 // Awaiting termination
                 await checkDone();
+
+                // Increment Caseno
+                caseNo++;
             }
             
             executor.postExec();
@@ -184,13 +209,11 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
         context.subscriptions.push(buildRunCommand);
     }
     
-    //TODO: CHANGE TO TRUE IF EXPORTING
-    const debugDisplayPanel: boolean = true;
-    
     function getBuildRunHTML(vars: BuildRunVars, context: vscode.ExtensionContext) {
         let srcName = popUnsafe(vars.srcFile.split('\\'));
         
         return fs.readFileSync(join(context.extensionPath, 'src', 'execute', 'display.html'))
             .toString()
-            .replace(/\$\{srcName\}/g, srcName);
+            .replace(/\$\{srcName\}/g, srcName)
+            .replace(/\$\{caseCount\}/g, vars.caseCount.toString());
     }

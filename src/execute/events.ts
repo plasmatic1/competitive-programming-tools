@@ -18,41 +18,42 @@ export enum EventType {
 
 export interface Event {
     readonly type: EventType;
+    readonly caseNo: number;
 }
 
 export class CompileErrorEvent implements Event {
     type: EventType = EventType.COMPILER_ERROR;
-    constructor(public readonly data: string, public readonly fatal: boolean) {}
+    constructor(public readonly data: string, public readonly fatal: boolean, public readonly caseNo: number) {}
 }
 
 export class BeginCaseEvent implements Event {
     type: EventType = EventType.BEGIN_CASE;
-    constructor(public readonly input: string) {}
+    constructor(public readonly input: string, public readonly caseNo: number) {}
 }
 
 export class UpdateTimeEvent implements Event {
     type: EventType = EventType.UPDATE_TIME;
-    constructor(public readonly newElapsed: number) {}
+    constructor(public readonly newElapsed: number, public readonly caseNo: number) {}
 }
 
 export class UpdateMemoryEvent implements Event {
     type: EventType = EventType.UPDATE_MEMORY;
-    constructor(public readonly newMemory: number) {}
+    constructor(public readonly newMemory: number, public readonly caseNo: number) {}
 }
 
 export class UpdateStdoutEvent implements Event {
     type: EventType = EventType.UPDATE_STDOUT;
-    constructor(public readonly data: string) {}
+    constructor(public readonly data: string, public readonly caseNo: number) {}
 }
 
 export class UpdateStderrEvent implements Event {
     type: EventType = EventType.UPDATE_STDERR;
-    constructor(public readonly data: string) {}
+    constructor(public readonly data: string, public readonly caseNo: number) {}
 }
 
 export class EndEvent implements Event {
     type: EventType = EventType.END;
-    constructor(public readonly endMsg: string){}
+    constructor(public readonly endMsg: string, public readonly caseNo: number){}
 }
 
 export interface Result {
