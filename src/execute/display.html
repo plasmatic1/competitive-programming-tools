@@ -96,6 +96,9 @@
                         <td>{{ curCase.exitInfo[0] }}</td>
                         <td><i>{{ curCase.exitInfo[1] }}</i></td>
                     </tr>
+                    <tr><td>
+                        <a id="row-{{ curCase.id }}" href="#row-{{ curCase.id }}" v-on:click="killProcess">Kill</a>
+                    </tr></td>
                 </table>
             </div>
         </div>
@@ -106,6 +109,7 @@
 
         <script>
             const caseCount = parseInt(document.getElementById('caseCountVar').innerHTML);
+            const vscode = acquireVsCodeApi();
 
             // Will use if needed later
             function replaceNewlines(string) { 
@@ -122,7 +126,8 @@
                 methods: {
                     toggleVar: function(id, key) {
                         this.cases[id][key] = !this.cases[id][key];
-                    }
+                    },
+                    killProcess: () => vscode.postMessage('kill')
                 }
             });
             
@@ -178,7 +183,7 @@
                 }
             });
 
-            const vscode = acquireVsCodeApi();
+            // When ready
             vscode.postMessage('ready');
         </script>
     </body>

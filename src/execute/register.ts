@@ -204,6 +204,12 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
                     proc.kill();
                 }
             }, timeout);
+
+            display.webview.onDidReceiveMessage(msg => {
+                if (msg === 'kill') {
+                    proc.kill();
+                }
+            });
                 
             // Awaiting termination
             await checkDone();
