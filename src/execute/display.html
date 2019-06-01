@@ -9,8 +9,24 @@
                 white-space: pre-line;
             }
 
+            hr {
+                color: #888;
+                background-color: #888;
+                margin-top: 15px;
+            }
+
             table {
-                border-spacing: 5px;
+                margin: 5px;
+            }
+
+            /* #processInfo {
+                border: 1px solid #888;
+            } */
+
+            .streamItem {
+                /* border: 1px solid #888; */
+                padding: 7px;
+                border-bottom: 1px solid #999;
             }
 
             .header {
@@ -34,12 +50,12 @@
                 props: ['title', 'visible'],
                 template: `
                 <tr id="std-row-{{ title }}">
-                    <td>
+                    <td class="streamItem">
                         <span class="header-small">{{ title }}</span><br>
                         <a href="#std-row-{{ title }}" v-on:click="() => visible = !visible">{{ visible ? 'Visible' : 'Hidden' }}</a>
                     </td>
-                    <td v-if="visible"><code><slot></slot></code></td>
-                    <td v-if="!visible"><code>Hidden.</code></td>
+                    <td v-if="visible" class="streamItem"><code><slot></slot></code></td>
+                    <td v-if="!visible" class="streamItem"><code>Hidden.</code></td>
                 </tr>`
             });
         </script>
@@ -56,17 +72,17 @@
                 <hr>
                 <h2>Case #{{ curCase.id + 1 }}</h2>
 
-                <table>
+                <table id="streamTable">
                     <std-row title="Input" v-bind:visible="false">{{ curCase.stdin }}</std-row>
                     <std-row title="Output" v-bind:visible="true">{{ curCase.stdout }}</std-row> 
-                    <std-row title="Errors" v-bind:visible="false">{{ curCase.stderr }}</std-row> 
+                    <std-row title="Errors" v-bind:visible="true">{{ curCase.stderr }}</std-row> 
                 </table>
         
-                <table>
-                    <tr><td class="header">Info</td></tr>
+                <table id="processInfo">
+                    <!-- <tr><td class="header">Info</td></tr> -->
                     <tr>
                         <td>Time Elapsed:</td>
-                        <td><i>{{ curCase.time !== -1 ? curCase.time.toString() + 'ms' : 'negligible' }}</i></td>
+                        <td><i>{{ curCase.time !== -1 ? curCase.time.toString() + 'ms' : 'Unknown' }}</i></td>
                     </tr>
                     <tr>
                         <td>Memory Usage:</td>
@@ -74,7 +90,7 @@
                     </tr>
                     <tr v-if="curCase.exitInfo[0] !== ''">
                         <td>{{ curCase.exitInfo[0] }}</td>
-                        <td>{{ curCase.exitInfo[1] }}</td>
+                        <td><i>{{ curCase.exitInfo[1] }}</i></td>
                     </tr>
                 </table>
             </div>
