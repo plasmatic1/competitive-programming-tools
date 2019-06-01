@@ -6,6 +6,11 @@ A set of tools to assist with Competitive Programming
 
 Easy build and run
 
+### Supported Languages
+
+* **C++:** Compiled using the `g++` command, exact specifications are shown below.  The `g++` command should be accessible from the command prompt.
+* **Python:** Interpreted using the `py` command in the format `py <file name>`.  The `py` command should be accessible from the command prompt
+
 ## Commands
 
 * **Build and Run (cp-tools.buildAndRun):** Compiles and runs the current open file on a set of predetermined test data.  See below in the configuration options for more information
@@ -50,4 +55,5 @@ There would be three separate cases with these respective inputs: `input 1`, `in
 * Better UI
 * Interactive stuff
 * Performance
+* Add more languages
 * Become less awkward
