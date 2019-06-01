@@ -118,8 +118,16 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
         var caseNo = 0;
         for (const input of inputs) {
             var proc: ChildProcess = executor.exec();
-            proc.stdin.write(input);
-            emitEvent(new exe.BeginCaseEvent(input, caseNo));
+            try {
+                proc.stdin.write(input);
+                emitEvent(new exe.BeginCaseEvent(input, caseNo));
+            }
+            catch (e) {
+                // console.log(JSON.stringify(e));
+                // if (e.message === 'write EPIPE') {
+                    emitEvent(new exe.BeginCaseEvent('Stdin of program closed prematurely.', caseNo));
+                // }
+            }
                 
             const beginTime: number = getTime();
             var done: boolean = false;
