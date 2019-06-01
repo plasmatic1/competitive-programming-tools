@@ -23,6 +23,10 @@
                 border: 1px solid #888;
             } */
 
+            .hiddenItem {
+                color: #777;
+            }
+
             .streamItem {
                 /* border: 1px solid #888; */
                 padding: 7px;
@@ -55,7 +59,7 @@
                         <a href="#std-row-{{ title }}" v-on:click="() => visible = !visible">{{ visible ? 'Visible' : 'Hidden' }}</a>
                     </td>
                     <td v-if="visible" class="streamItem"><code><slot></slot></code></td>
-                    <td v-if="!visible" class="streamItem"><code>Hidden.</code></td>
+                    <td v-if="!visible" class="streamItem hiddenItem"><i>Hidden.</i></td>
                 </tr>`
             });
         </script>

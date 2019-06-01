@@ -221,7 +221,7 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
 function getBuildRunHTML(vars: BuildRunVars, context: vscode.ExtensionContext) {
     let srcName = popUnsafe(vars.srcFile.split('\\'));
         
-    return fs.readFileSync(join(context.extensionPath, 'src', 'execute', 'display.html'))
+    return fs.readFileSync(join(context.extensionPath, 'out', 'execute', 'display.html'))
         .toString()
         .replace(/\$\{srcName\}/g, srcName)
         .replace(/\$\{caseCount\}/g, vars.caseCount.toString());
