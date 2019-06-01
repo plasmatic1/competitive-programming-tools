@@ -8,69 +8,86 @@
             code {
                 white-space: pre-line;
             }
+
+            table {
+                border-spacing: 5px;
+            }
+
+            .header {
+                font-size: 13pt;
+                font-weight: bold;
+            }
+
+            .header-small {
+                font-size: 11pt;
+                font-weight: bold;
+            }
         </style>
     </head>
     <body>
+        <!-- VUE.JS IMPORT - USE THE MINIFIED VERSION FOR PERFORMANCE IF POSSIBLE -->
+        <!-- <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script> -->
+        <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.min.js"></script>
+
+        <script>
+            Vue.component('std-row', {
+                props: ['title', 'visible'],
+                template: `
+                <tr>
+                    <td>
+                        <span class="header-small">{{ title }}</span><br>
+                        <a href='#' v-on:click="() => visible = !visible">{{ visible ? 'Visible' : 'Hidden' }}</a>
+                    </td>
+                    <td v-if="visible"><code><slot></slot></code></td>
+                    <td v-if="!visible"><code>Hidden.</code></td>
+                </tr>`
+            });
+        </script>
+
         <h1>Output of "${srcName}"</h1>
         
         <div id="compileError" v-if="data !== ''">
             <h2>Compile Errors</h2>
-            <code>
-                {{ data }}
-            </code>
+            <code>{{ data }}</code>
         </div>
         
         <div id="cases" v-if="visible">
             <div v-for="curCase in cases">
+                <hr>
                 <h2>Case #{{ curCase.id + 1 }}</h2>
+
+                <table>
+                    <std-row title="Input" v-bind:visible="false">{{ curCase.stdin }}</std-row>
+                    <std-row title="Output" v-bind:visible="true">{{ curCase.stdout }}</std-row> 
+                    <std-row title="Errors" v-bind:visible="false">{{ curCase.stderr }}</std-row> 
+                </table>
         
-                <div v-if="curCase.stdinVisible">
-                    <h3>Input</h3>
-                    <code>
-                        {{ curCase.stdin }}
-                    </code>
-                </div>
-                <button v-on:click="() => toggleVar(curCase.id, 'stdinVisible')">Toggle Input</button>
-                <br>
-        
-                <div v-if="curCase.stdoutVisible">
-                    <h3>Output</h3>
-                    <code>
-                        {{ curCase.stdout }}
-                    </code>
-                </div>
-                <button v-on:click="() => toggleVar(curCase.id, 'stdoutVisible')">Toggle Output</button>
-                <br>
-        
-                <div v-if="curCase.stderrVisible">
-                    <h3>Errors</h3>
-                    <code>
-                        {{ curCase.stderr }}
-                    </code>
-                </div>
-                <button v-on:click="() => toggleVar(curCase.id, 'stderrVisible')">Toggle Errors</button>
-                <br>
-        
-                <div>
-                    <h4>Info</h4>
-                    <p>Time Elapsed: {{ curCase.time !== -1 ? curCase.time.toString() + 'ms' : 'negligible' }}</p>
-                    <p>Memory Usage: {{ curCase.memory !== -1 ? (Math.round(curCase.memory / 1.024) / 1000).toString() + 'KB' : 'negligible' }}
-                    <p v-if="curCase.exitInfo !== ''">{{ curCase.exitInfo }}</p>
-                </div>
+                <table>
+                    <tr><td class="header">Info</td></tr>
+                    <tr>
+                        <td>Time Elapsed:</td>
+                        <td><i>{{ curCase.time !== -1 ? curCase.time.toString() + 'ms' : 'negligible' }}</i></td>
+                    </tr>
+                    <tr>
+                        <td>Memory Usage:</td>
+                        <td><i>{{ curCase.memory !== -1 ? (Math.round(curCase.memory / 1.024) / 1000).toString() + 'KB' : 'Negligible' }}</i></td>
+                    </tr>
+                    <tr v-if="curCase.exitInfo[0] !== ''">
+                        <td>{{ curCase.exitInfo[0] }}</td>
+                        <td>{{ curCase.exitInfo[1] }}</td>
+                    </tr>
+                </table>
             </div>
         </div>
 
         <div id="caseCountVar" style="visibility: hidden;">
             ${caseCount}
         </div>
-        
-        <!-- VUE.JS IMPORT - USE THE MINIFIED VERSION FOR PERFORMANCE IF POSSIBLE -->
-        <!-- <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script> -->
-        <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.min.js"></script>
 
         <script>
             const caseCount = parseInt(document.getElementById('caseCountVar').innerHTML);
 
+            // Will use if needed later
             function replaceNewlines(string) { 
                 return string;
                 // return string.replace(/\r?\n/g, '<br />');
@@ -100,21 +117,19 @@
             for (var i = 0; i < caseCount; i++) {
                 casesApp.cases.push({
                     id: i,
+                    visible: true,
                     stdin: '',
-                    stdinVisible: false,
                     stdout: '',
-                    stdoutVisible: true,
                     stderr: '',
-                    stderrVisible: false,
                     time: -1,
                     memory: -1,
-                    exitInfo: ''
+                    exitInfo: ['', '']
                 });
             }
             
             window.addEventListener('message', event_ => {
                 const event = event_.data, type = event.type, caseNo = event.caseNo, curCase = casesApp.cases[caseNo];
-                console.log(`Event: ${JSON.stringify(event)}`);
+                // console.log(`Event: ${JSON.stringify(event)}`);
                 
                 if (type == 'compilerError') {
                     compileErrorApp.data = replaceNewlines(event.data);
@@ -132,7 +147,7 @@
                     curCase.memory = event.newMemory;
                 }
                 else if (type == 'updateStdout') {
-                    console.log(event.data.toString());
+                    // console.log(event.data.toString());
                     curCase.stdout += replaceNewlines(event.data);
                 }
                 else if (type == 'updateStderr') {

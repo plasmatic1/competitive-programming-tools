@@ -53,7 +53,7 @@ export class UpdateStderrEvent implements Event {
 
 export class EndEvent implements Event {
     type: EventType = EventType.END;
-    constructor(public readonly endMsg: string, public readonly caseNo: number){}
+    constructor(public readonly endMsg: string[], public readonly caseNo: number){}
 }
 
 export interface Result {
