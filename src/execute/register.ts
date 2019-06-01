@@ -67,7 +67,8 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
             'Build and Run',
             vscode.ViewColumn.Active,
             {
-                'enableScripts': true
+                enableScripts: true,
+                retainContextWhenHidden: true
             }
         );
             

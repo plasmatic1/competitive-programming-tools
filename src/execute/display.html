@@ -33,10 +33,10 @@
             Vue.component('std-row', {
                 props: ['title', 'visible'],
                 template: `
-                <tr>
+                <tr id="std-row-{{ title }}">
                     <td>
                         <span class="header-small">{{ title }}</span><br>
-                        <a href='#' v-on:click="() => visible = !visible">{{ visible ? 'Visible' : 'Hidden' }}</a>
+                        <a href="#std-row-{{ title }}" v-on:click="() => visible = !visible">{{ visible ? 'Visible' : 'Hidden' }}</a>
                     </td>
                     <td v-if="visible"><code><slot></slot></code></td>
                     <td v-if="!visible"><code>Hidden.</code></td>
