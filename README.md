@@ -35,3 +35,19 @@ input 1
 ```
 
 There would be three separate cases with these respective inputs: `input 1`, `input 2`, and `input 3`.
+
+## Installation
+
+1. Install `node.js`
+2. Install the `vsce` package (`npm install -g vsce`)
+3. Clone this repository and open a command promopt in the home folder of the repository
+4. Run the command `vsce package` to pack the extension.  Note that the modules being depended on may need to be installed first.  If that is the case, simply run the command `npm install`
+5. Run the command `code --install-extension <path to .vsix file generated>`
+
+## Todo List
+
+* Some cool code template stuff (not sure how useful this would be)
+* Better UI
+* Interactive stuff
+* Performance
+* Become less awkward
