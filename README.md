@@ -54,6 +54,7 @@ There would be three separate cases with these respective inputs: `input 1`, `in
 
 ## Todo List
 
+* **Character Limit for output (so things dont get so laggy) IMPORTANT**
 * Some cool code template stuff (not sure how useful this would be)
     * Command: Load Templates: Select a template folder and imports all of the templates found in that folder by overwriting the `snippets.json` file in the `.vscode` directory
     * Command: Pack Templates: Select a template folder and packages it into a single file for transport
