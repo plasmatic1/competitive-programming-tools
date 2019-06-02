@@ -15,6 +15,8 @@ Easy build and run
 
 * **Build and Run (cp-tools.buildAndRun):** Compiles and runs the current open file on a set of predetermined test data.  See below in the configuration options for more information
 * **Open Input File (cp-tools.openInputFile):** Opens the input file used to supply input for the `cp-tools.buildAndRun` command
+* **Edit Option (cp-tools.editOption):** Edit a configuration option
+* **Reset Category (cp-tools.resetCategory):** Reset a configuration category
 * **Reset Options (cp-tools.resetOptions):** Resets all configuration options to their default values
 
 ## Configuration Options
@@ -58,5 +60,6 @@ There would be three separate cases with these respective inputs: `input 1`, `in
 * Better UI
 * Interactive stuff
 * Performance
+    * Cache the vue.js library to allow for offline use
 * Add more languages
 * Become less awkward
