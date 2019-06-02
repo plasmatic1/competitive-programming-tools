@@ -27,7 +27,6 @@ interface BuildRunVars {
 }
 
 let lastView: vscode.WebviewPanel | undefined = undefined;
-let currInput: string[] | undefined = undefined;
 
 export function registerViewsAndCommands(context: vscode.ExtensionContext): void {
     let buildRunCommand = vscode.commands.registerCommand('cp-tools.buildAndRun', async () => {
@@ -49,7 +48,7 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
         }        
         
         const inputs: string[] = fs.readFileSync(inputFilePath).toString().split(optionManager().get('buildAndRun', 'caseDelimeter'));
-        
+
         // ---------------------------------------------------------------------------
         // Validating and getting executor
         // ---------------------------------------------------------------------------
@@ -96,15 +95,13 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
             }, null, context.subscriptions);
 
             // Await for the webview to be ready
-            await (async () => {
-                return new Promise((resolve, _) => {
-                    display.webview.onDidReceiveMessage(msg => {
-                        if (msg === 'ready') {
-                            resolve();
-                        }
-                    });
+            await new Promise((resolve, _) => {
+                display.webview.onDidReceiveMessage(msg => {
+                    if (msg === 'ready') {
+                        resolve();
+                    }
                 });
-            })();
+            });
         }
 
         display.title = `Output of '${srcName}'`;
@@ -133,12 +130,18 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
                 }
             }
         });
+
+        display.webview.onDidReceiveMessage(msg => {
+            if (msg === 'unlink') {
+                lastView = undefined;
+            }
+        });
             
         // ---------------------------------------------------------------------------
         // Compiling and Running Program
         // ---------------------------------------------------------------------------
         const executor: Executor = new executorConstructor(srcFile), timeout: number = optionManager().get('buildAndRun', 'timeout'),
-        memSampleRate: number = optionManager().get('buildAndRun', 'memSample');
+            memSampleRate: number = optionManager().get('buildAndRun', 'memSample');
             
         executor.preExec();
             
@@ -167,13 +170,6 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
                 
             const beginTime: number = getTime();
             var done: boolean = false;
-                
-            // Check whether the program has terminated
-            async function checkDone() {
-                 return new Promise((resolve, _) => {
-                    proc.on('exit', resolve);
-                });
-            }
                 
             // Event handlers and timed processes
             proc.on('error', (error: Error) => {
@@ -247,8 +243,14 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
                 }
             });
                 
-            // Awaiting termination
-            await checkDone();
+            // Check whether the program has terminated
+            if (done) {
+                caseNo++;
+                continue;
+            }
+            await new Promise((resolve, _) => {
+                   proc.on('exit', resolve);
+            });
 
             // Increment Caseno
             caseNo++;

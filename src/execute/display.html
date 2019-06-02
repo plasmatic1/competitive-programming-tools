@@ -23,6 +23,13 @@
                 border: 1px solid #888;
             } */
 
+            #unlinkWebviewDiv {
+                font-size: 14pt;
+                padding: 5px;
+                margin: 15px;
+                border: 1px solid white;
+            }
+
             .hiddenItem {
                 color: #777;
             }
@@ -103,6 +110,11 @@
             </div>
         </div>
 
+        <div id="unlinkWebviewDiv">
+            <a href="#unlinkWebviewDiv" onclick="unlinkWebview()">Unlink Current Webview:</a>
+            <span> If the <code>Reuse Webviews</code> option is set to true, clicking the link will no longer cause vscode to reuse this Webview for future build and run sessions</span>
+        </div>
+
         <script>
             let caseCount = parseInt('${caseCount}'), srcName = '${srcName}';
             const vscode = acquireVsCodeApi();
@@ -128,13 +140,16 @@
                 }
             });
 
+            function unlinkWebview() {
+                vscode.postMessage('unlink');
+                document.getElementById('unlinkWebviewDiv').innerHTML += '<br><span style="font-size: 11pt; color: #777;"><i>Unlinked current webview!</i></span>';
+            }
+
             function reset() {
                 document.getElementsByName('title').forEach(ele => ele.innerHTML = `Output of "${srcName}"`);
                 compileErrorApp.data = '';
                 casesApp.visible = true;
                 casesApp.cases.length = 0;
-
-                console.log('resetting...', JSON.stringify(casesApp.cases));
 
                 for (var i = 0; i < caseCount; i++) {
                     casesApp.cases.push({
