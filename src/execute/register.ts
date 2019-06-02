@@ -8,22 +8,26 @@ import { isUndefined, isNull } from 'util';
 import { popUnsafe } from '../undefinedutils';
 import { optionManager } from '../extension';
 import { ChildProcess } from 'child_process';
-// -----------------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // Utility Functions
-// -----------------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 
 function getTime(): number {
     return new Date().getTime();
 }
 
-// -----------------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // Registering
-// -----------------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 
 interface BuildRunVars {
     srcFile: string;
+    srcName: string;
     caseCount: number;
 }
+
+let lastView: vscode.WebviewPanel | undefined = undefined;
+let currInput: string[] | undefined = undefined;
 
 export function registerViewsAndCommands(context: vscode.ExtensionContext): void {
     let buildRunCommand = vscode.commands.registerCommand('cp-tools.buildAndRun', async () => {
@@ -34,9 +38,9 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
             return;
         }
         
-        // -----------------------------------------------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------------
         // Validating and getting input
-        // -----------------------------------------------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------------
         const inputFilePath = optionManager().get('buildAndRun', 'inputFile');
         
         if (!fs.existsSync(inputFilePath)) {
@@ -46,12 +50,13 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
         
         const inputs: string[] = fs.readFileSync(inputFilePath).toString().split(optionManager().get('buildAndRun', 'caseDelimeter'));
         
-        // -----------------------------------------------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------------
         // Validating and getting executor
-        // -----------------------------------------------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------------
         const srcFile: string = currEditor.document.uri.fsPath, 
-        ext: string = popUnsafe(popUnsafe(srcFile.split('\\')).split('.')), 
-        executorConstructor: (new(srcFile: string) => Executor) | undefined = executors.get(ext);
+            srcName: string = popUnsafe(srcFile.split('\\')),
+            ext: string = popUnsafe(srcName.split('.')), 
+            executorConstructor: (new(srcFile: string) => Executor) | undefined = executors.get(ext);
         console.log(`Compiling ${srcFile}, extension ${ext}...`);
         
         if (isUndefined(executorConstructor)) {
@@ -59,48 +64,79 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
             return;
         }
         
-        // -----------------------------------------------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------------
         // Initializing Web Panel
-        // -----------------------------------------------------------------------------------------------------------------------------
-        const display = vscode.window.createWebviewPanel(
-            'buildAndRun',
-            'Build and Run',
-            vscode.ViewColumn.Active,
-            {
-                enableScripts: true,
-                retainContextWhenHidden: true
-            }
-        );
-            
-        display.webview.html = getBuildRunHTML({
-            srcFile,
-            caseCount: inputs.length
-        }, context);
-            
-        // -----------------------------------------------------------------------------------------------------------------------------
-        // Web Panel Utility Functions
-        // -----------------------------------------------------------------------------------------------------------------------------
-        function emitEvent(obj: any) {
-            // Has to be like this (likely because of some this shenanigans)
-            // This cannot simply be refractored to `const emitEvent = display.webview.postMessage;`
-            // console.log(JSON.stringify(obj));
-            display.webview.postMessage(obj);
+        // ---------------------------------------------------------------------------
+
+        if (optionManager().get('buildAndRun', 'reuseWebviews') && !isUndefined(lastView)) {
+            var display: vscode.WebviewPanel = lastView;
+            display.reveal(vscode.ViewColumn.Active);
+            display.webview.postMessage(new exe.ResetEvent(srcName, inputs.length));
+        }
+        else {
+// tslint:disable-next-line: no-duplicate-variable
+            var display: vscode.WebviewPanel = vscode.window.createWebviewPanel(
+                'buildAndRun',
+                'Build and Run',
+                vscode.ViewColumn.Active,
+                {
+                    enableScripts: true,
+                    retainContextWhenHidden: true
+                }
+            );
+
+            display.webview.html = getBuildRunHTML({
+                srcFile,
+                srcName,
+                caseCount: inputs.length
+            }, context);
+    
+            display.onDidDispose(() => {
+                lastView = undefined;
+            }, null, context.subscriptions);
+
+            // Await for the webview to be ready
+            await (async () => {
+                return new Promise((resolve, _) => {
+                    display.webview.onDidReceiveMessage(msg => {
+                        if (msg === 'ready') {
+                            resolve();
+                        }
+                    });
+                });
+            })();
         }
 
-        // Await for the webview to be ready
-        await (async () => {
-            return new Promise((resolve, _) => {
-                display.webview.onDidReceiveMessage(msg => {
-                    if (msg === 'ready') {
-                        resolve();
-                    }
-                });
-            });
-        })();
+        display.title = `Output of '${srcName}'`;
+        lastView = display;
             
-        // -----------------------------------------------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------------
+        // Web Panel Utility Functions
+        // ---------------------------------------------------------------------------
+
+        let eventQueue: exe.Event[] = [];
+        function emitEvent(obj: exe.Event) {
+            // Has to be like this (likely because of some this shenanigans)
+            // This cannot simply be refractored to `const emitEvent = display.webview.postMessage;`
+            if (display.visible) {
+                display.webview.postMessage(obj);
+            }
+            else {
+                eventQueue.push(obj);
+            }
+        }
+
+        display.onDidChangeViewState(evt => {
+            if (evt.webviewPanel.visible) {
+                while (eventQueue.length) {
+                    display.webview.postMessage(eventQueue.shift());
+                }
+            }
+        });
+            
+        // ---------------------------------------------------------------------------
         // Compiling and Running Program
-        // -----------------------------------------------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------------
         const executor: Executor = new executorConstructor(srcFile), timeout: number = optionManager().get('buildAndRun', 'timeout'),
         memSampleRate: number = optionManager().get('buildAndRun', 'memSample');
             
@@ -108,7 +144,7 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
             
         if (!isUndefined(executor.compileError)) {
             const fatal: boolean = isUndefined(executor.execFile);
-            emitEvent(new exe.CompileErrorEvent(executor.compileError, fatal, -1));
+            emitEvent(new exe.CompileErrorEvent(executor.compileError, fatal));
                 
             if (fatal) {
                 return;
@@ -142,7 +178,7 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
             // Event handlers and timed processes
             proc.on('error', (error: Error) => {
                 done = true;
-                emitEvent(new exe.CompileErrorEvent(`${error.name}: ${error.message}`, true, -1));
+                emitEvent(new exe.CompileErrorEvent(`${error.name}: ${error.message}`, true));
             });
                 
             proc.on('exit', (code: number, signal: string) => {
@@ -224,11 +260,9 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
     context.subscriptions.push(buildRunCommand);
 }
     
-function getBuildRunHTML(vars: BuildRunVars, context: vscode.ExtensionContext) {
-    let srcName = popUnsafe(vars.srcFile.split('\\'));
-        
+function getBuildRunHTML(vars: BuildRunVars, context: vscode.ExtensionContext) { 
     return fs.readFileSync(join(context.extensionPath, 'out', 'execute', 'display.html'))
         .toString()
-        .replace(/\$\{srcName\}/g, srcName)
+        .replace(/\$\{srcName\}/g, vars.srcName)
         .replace(/\$\{caseCount\}/g, vars.caseCount.toString());
 }

@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Output of "${srcName}"</title>
+        <title></title>
         <style>
             code {
                 white-space: pre-line;
@@ -29,7 +29,7 @@
 
             .streamItem {
                 /* border: 1px solid #888; */
-                padding: 7px;
+                padding: 9px;
                 border-bottom: 1px solid #999;
             }
 
@@ -77,7 +77,7 @@
                 <h2>Case #{{ curCase.id + 1 }}</h2>
 
                 <table id="streamTable">
-                    <std-row title="Input" v-bind:visible="false">{{ curCase.stdin }}</std-row>
+                    <std-row title="Input" v-bind:visible="curCase.stdin.length < 2000">{{ curCase.stdin }}</std-row>
                     <std-row title="Output" v-bind:visible="true">{{ curCase.stdout }}</std-row> 
                     <std-row title="Errors" v-bind:visible="true">{{ curCase.stderr }}</std-row> 
                 </table>
@@ -103,19 +103,9 @@
             </div>
         </div>
 
-        <div id="caseCountVar" style="visibility: hidden;">
-            ${caseCount}
-        </div>
-
         <script>
-            const caseCount = parseInt(document.getElementById('caseCountVar').innerHTML);
+            let caseCount = parseInt('${caseCount}'), srcName = '${srcName}';
             const vscode = acquireVsCodeApi();
-
-            // Will use if needed later
-            function replaceNewlines(string) { 
-                return string;
-                // return string.replace(/\r?\n/g, '<br />');
-            }
             
             const casesApp = new Vue({
                 el: '#cases',
@@ -138,32 +128,42 @@
                 }
             });
 
-            // Initializing cases
-            for (var i = 0; i < caseCount; i++) {
-                casesApp.cases.push({
-                    id: i,
-                    visible: true,
-                    stdin: '',
-                    stdout: '',
-                    stderr: '',
-                    time: -1,
-                    memory: -1,
-                    exitInfo: ['', '']
-                });
+            function reset() {
+                document.getElementsByName('title').forEach(ele => ele.innerHTML = `Output of "${srcName}"`);
+                compileErrorApp.data = '';
+                casesApp.visible = true;
+                casesApp.cases.length = 0;
+
+                console.log('resetting...', JSON.stringify(casesApp.cases));
+
+                for (var i = 0; i < caseCount; i++) {
+                    casesApp.cases.push({
+                        id: i,
+                        visible: true,
+                        stdin: '',
+                        stdout: '',
+                        stderr: '',
+                        time: -1,
+                        memory: -1,
+                        exitInfo: ['', '']
+                    });
+                }
             }
+
+            reset();
             
             window.addEventListener('message', event_ => {
                 const event = event_.data, type = event.type, caseNo = event.caseNo, curCase = casesApp.cases[caseNo];
                 // console.log(`Event: ${JSON.stringify(event)}`);
                 
                 if (type == 'compilerError') {
-                    compileErrorApp.data = replaceNewlines(event.data);
+                    compileErrorApp.data = event.data;
                     if (event.fatal) {
                         casesApp.visible = false;
                     }
                 }
                 else if (type == 'beginCase') {
-                    curCase.stdin = replaceNewlines(event.input);
+                    curCase.stdin = event.input;
                 }
                 else if (type == 'updateTime') {
                     curCase.time = Math.max(curCase.time, event.newElapsed);
@@ -173,13 +173,18 @@
                 }
                 else if (type == 'updateStdout') {
                     // console.log(event.data.toString());
-                    curCase.stdout += replaceNewlines(event.data);
+                    curCase.stdout += event.data;
                 }
                 else if (type == 'updateStderr') {
-                    curCase.stderr += replaceNewlines(event.data);
+                    curCase.stderr += event.data;
                 }
                 else if (type == 'end') {
                     curCase.exitInfo = event.endMsg;
+                }
+                else if (type == 'reset') {
+                    caseCount = event.caseCount;
+                    srcName = event.srcName;
+                    reset();
                 }
             });
 

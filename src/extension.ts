@@ -7,9 +7,9 @@ import * as executeRegister from './execute/register';
 import { OptionManager } from './options/options';
 import { errorIfUndefined } from './undefinedutils';
 
-// -----------------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // Globals to export
-// -----------------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 
 var _extensionContext: vscode.ExtensionContext | undefined = undefined;
 var _optionManager: OptionManager | undefined = undefined;
@@ -17,9 +17,9 @@ var _optionManager: OptionManager | undefined = undefined;
 export function extensionContext(): vscode.ExtensionContext { return errorIfUndefined(_extensionContext, 'Extension not activated!'); }
 export function optionManager(): OptionManager { return errorIfUndefined(_optionManager, 'Extension not activated!'); }
 
-// -----------------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // Activation Registration n stuff
-// -----------------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 
 export function activate(context: vscode.ExtensionContext) {
 	console.log('Congratulations, your extension "cp-tools" is now active!');

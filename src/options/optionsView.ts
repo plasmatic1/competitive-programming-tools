@@ -25,7 +25,7 @@ export class OptionsNodeProvider implements vscode.TreeDataProvider<OptionNode |
             }
             return [];
         } else {
-            return optionManager().categories.map(category => new OptionNodeCategory(category, optionManager().propertiesFor(category)));
+            return optionManager().categories.map(category => new OptionNodeCategory(category, optionManager().categoryProperties(category)));
         }
     }
 }

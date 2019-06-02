@@ -13,7 +13,8 @@ export enum EventType {
     UPDATE_MEMORY = 'updateMemory',
     UPDATE_STDOUT = 'updateStdout',
     UPDATE_STDERR = 'updateStderr',
-    END = 'end'
+    END = 'end',
+    RESET = 'reset'
 }
 
 export interface Event {
@@ -23,7 +24,8 @@ export interface Event {
 
 export class CompileErrorEvent implements Event {
     type: EventType = EventType.COMPILER_ERROR;
-    constructor(public readonly data: string, public readonly fatal: boolean, public readonly caseNo: number) {}
+    caseNo: number = -1;
+    constructor(public readonly data: string, public readonly fatal: boolean) {}
 }
 
 export class BeginCaseEvent implements Event {
@@ -53,7 +55,13 @@ export class UpdateStderrEvent implements Event {
 
 export class EndEvent implements Event {
     type: EventType = EventType.END;
-    constructor(public readonly endMsg: string[], public readonly caseNo: number){}
+    constructor(public readonly endMsg: string[], public readonly caseNo: number) {}
+}
+
+export class ResetEvent implements Event {
+    type: EventType = EventType.RESET;
+    caseNo: number = -1;
+    constructor(public readonly srcNamer: string, public readonly caseCount: number) {}
 }
 
 export interface Result {
