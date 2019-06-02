@@ -72,8 +72,20 @@ const OPTIONS: Map<string, Map<string, OptionProperties>> = new Map([
             setFunction: async () => 
                 tryParseInt(await vscode.window.showInputBox({
                     prompt: 'New Timeout',
-                    placeHolder: 'sampleInterval (ms)',
+                    placeHolder: 'Sample Interval (ms)',
                     value: ext.optionManager().get('buildAndRun', 'memSample')
+                }))
+        }],
+        ['charLimit', {
+            defaultValue: 1000,
+            label: 'Character Limit',
+            description: 'The displays for stdout and stderr will be truncated to the given limit to prevent lag',
+            type: 'number',
+            setFunction: async () => 
+                tryParseInt(await vscode.window.showInputBox({
+                    prompt: 'New Character limit',
+                    placeHolder: 'Character Limit',
+                    value: ext.optionManager().get('buildAndRun', 'charLimit')
                 }))
         }],
         ['reuseWebviews', {

@@ -24,6 +24,7 @@ interface BuildRunVars {
     srcFile: string;
     srcName: string;
     caseCount: number;
+    charLimit: number;
 }
 
 let lastView: vscode.WebviewPanel | undefined = undefined;
@@ -70,7 +71,7 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
         if (optionManager().get('buildAndRun', 'reuseWebviews') && !isUndefined(lastView)) {
             var display: vscode.WebviewPanel = lastView;
             display.reveal(vscode.ViewColumn.Active);
-            display.webview.postMessage(new exe.ResetEvent(srcName, inputs.length));
+            // display.webview.postMessage(new exe.ResetEvent(srcName, inputs.length));
         }
         else {
 // tslint:disable-next-line: no-duplicate-variable
@@ -83,26 +84,27 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
                     retainContextWhenHidden: true
                 }
             );
-
-            display.webview.html = getBuildRunHTML({
-                srcFile,
-                srcName,
-                caseCount: inputs.length
-            }, context);
     
             display.onDidDispose(() => {
                 lastView = undefined;
             }, null, context.subscriptions);
-
-            // Await for the webview to be ready
-            await new Promise((resolve, _) => {
-                display.webview.onDidReceiveMessage(msg => {
-                    if (msg === 'ready') {
-                        resolve();
-                    }
-                });
-            });
         }
+
+        display.webview.html = getBuildRunHTML({
+            srcFile,
+            srcName,
+            caseCount: inputs.length,
+            charLimit: optionManager().get('buildAndRun', 'charLimit')
+        }, context);
+
+        // Await for the webview to be ready
+        await new Promise((resolve, _) => {
+            display.webview.onDidReceiveMessage(msg => {
+                if (msg === 'ready') {
+                    resolve();
+                }
+            });
+        });
 
         display.title = `Output of '${srcName}'`;
         lastView = display;
@@ -266,5 +268,6 @@ function getBuildRunHTML(vars: BuildRunVars, context: vscode.ExtensionContext) {
     return fs.readFileSync(join(context.extensionPath, 'out', 'execute', 'display.html'))
         .toString()
         .replace(/\$\{srcName\}/g, vars.srcName)
-        .replace(/\$\{caseCount\}/g, vars.caseCount.toString());
+        .replace(/\$\{caseCount\}/g, vars.caseCount.toString())
+        .replace(/\$\{charLimit\}/g, vars.charLimit.toString());
 }

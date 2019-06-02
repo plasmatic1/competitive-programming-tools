@@ -116,7 +116,7 @@
         </div>
 
         <script>
-            let caseCount = parseInt('${caseCount}'), srcName = '${srcName}';
+            let caseCount = parseInt('${caseCount}'), srcName = '${srcName}', charLimit = parseInt('${charLimit}');
             const vscode = acquireVsCodeApi();
             
             const casesApp = new Vue({
@@ -188,18 +188,21 @@
                 }
                 else if (type == 'updateStdout') {
                     // console.log(event.data.toString());
-                    curCase.stdout += event.data;
+                    if (curCase.stdout.length < charLimit) {
+                        curCase.stdout += event.data;
+                        if (curCase.stdout.length > charLimit)
+                            curCase.stdout = curCase.stdout.substr(0, charLimit) + '\n[Truncated]';
+                    }
                 }
                 else if (type == 'updateStderr') {
-                    curCase.stderr += event.data;
+                    if (curCase.stderr.length < charLimit) {
+                        curCase.stderr += event.data;
+                        if (curCase.stderr.length > charLimit)
+                            curCase.stderr = curCase.stderr.substr(0, charLimit) + '\n[Truncated]';
+                    }
                 }
                 else if (type == 'end') {
                     curCase.exitInfo = event.endMsg;
-                }
-                else if (type == 'reset') {
-                    caseCount = event.caseCount;
-                    srcName = event.srcName;
-                    reset();
                 }
             });
 
