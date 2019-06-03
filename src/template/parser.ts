@@ -2,8 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { Options, parseConfig } from './options';
 import { join } from 'path';
-import { isUndefined } from 'util';
-import { errorIfUndefined } from '../undefinedutils';
+import { Logger } from './logger';
 
 
 const CONFIG_PATH = 'config.json';
@@ -17,38 +16,29 @@ interface Template {
 
 export class TemplateParser {
     public templates: [string, Template][] = [];
-    public logger: vscode.Terminal | undefined = undefined;
-    public options: Options | undefined = undefined;
+    public logger: Logger;
+    public options: Options;
+    public beginPath: string;
 
-    constructor(context: vscode.ExtensionContext) {
-        this.logger = vscode.window.createTerminal('Load Template Logger', join(context.extensionPath, 'out', 'template', 'shell.exe'));
-        this.logger.sendText('@echo off');
-        this.logger.show();
+    constructor(context: vscode.ExtensionContext, beginPath: string) {
+        this.logger = new Logger(context);
+        this.beginPath = beginPath;
+        this.options = parseConfig(join(this.beginPath, CONFIG_PATH), this);
     }
 
-    log(message: string, type: string) {
-        if (isUndefined(this.logger)) {
-            throw new Error('Logger undefined!');
-        }
-        this.logger.sendText(`${type} "${message.replace(/'/g, '\\\'')}"`);
-    }
+    info(text: string) { this.logger.log('info', text); }
+    success(text: string) { this.logger.log('success', text); }
+    warning(text: string) { this.logger.log('warning', text); }
+    error(text: string) { this.logger.log('error', text); }
 
-    info(message: string) { this.log(message, 'info'); }
-    success(message: string) { this.log(message, 'succ'); }
-    warning(message: string) { this.log(message, 'warn'); }
-    error(message: string) { this.log(message, 'err'); }
-
-    parseConfig(curPath: string) {
-        this.options = parseConfig(join(curPath, CONFIG_PATH), this);
+    async waitForInit() {
+        return this.logger.waitForInit();
     }
 
     // Traverses a template folder for template files
-    traverseFolder(curPath: string, templatePath: string = ''): void {
-        if (isUndefined(this.options)) {
-            throw new Error('Configuration not initialized!');
-        }
-        else if (this.options.ignorePaths.has(templatePath)) {
-            this.warning(`Skipping folder '${templatePath}' as defined in the configuration!`);
+    traverseFolder(curPath: string = this.beginPath, templatePath: string = ''): void {
+        if (this.options.ignorePaths.has(templatePath)) {
+            this.warning(`Skipping folder '${templatePath}' as defined in the configuration! (ignorePaths = ${this.options.ignorePaths})`);
         }
 
         for (const sub of fs.readdirSync(curPath)) {
@@ -70,8 +60,8 @@ export class TemplateParser {
 
     // Parses a template file
     private parseFile(path: string, templatePath: string): void {
-        if (errorIfUndefined(this.options, 'options became undefined again?').ignorePaths.has(templatePath)) {
-            this.warning(`Skipping file '${templatePath}' as defined in the configuration!`);
+        if (this.options.ignorePaths.has(templatePath)) {
+            this.warning(`Skipping file '${templatePath}' as defined in the configuration! (ignorePaths = ${this.options.ignorePaths})`);
         }
 
         let curTemplate: string[] = [], curName: string = '', curDescription: string = '';
@@ -120,7 +110,7 @@ export class TemplateParser {
                     logError('as this is not within a template!');
                 }
                 else if (curDescription !== '') {
-                    logError('as a description has already been given')
+                    logError('as a description has already been given');
                 }
                 else {
                     curDescription = spls.slice(1).join(' ');
@@ -133,8 +123,6 @@ export class TemplateParser {
     }
 
     closeLogger(): void {
-        if (!isUndefined(this.logger)) {
-            this.logger.dispose();
-        }
+        this.logger.dispose();
     }
 }

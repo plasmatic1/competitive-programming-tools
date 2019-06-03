@@ -122,7 +122,6 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
                 display.webview.postMessage(obj);
             }
             else {
-                // console.log('event queue ', JSON.stringify(obj));
                 eventQueue.push(obj);
             }
         }

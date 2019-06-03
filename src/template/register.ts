@@ -15,6 +15,7 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
             return;
         }
 
+        // Getting path
         const pathRes: vscode.Uri[] | undefined = await vscode.window.showOpenDialog({
             canSelectFolders: true,
             canSelectMany: false
@@ -25,15 +26,16 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
             return;
         }
 
-        let templateParser = new parser.TemplateParser(context);
-        templateParser.parseConfig(pathRes[0].fsPath);
-        templateParser.traverseFolder(pathRes[0].fsPath);
+        // Parsing templates
+        let templateParser = new parser.TemplateParser(context, pathRes[0].fsPath);
+        await templateParser.waitForInit();
+        templateParser.traverseFolder();
         
         const snippets: any = {};
         for (let [name, template] of templateParser.templates) {
             // console.log(`name: ${name}, body: ${body}`);
             if (errorIfUndefined(templateParser.options).replaceBackslashes) {
-                templateParser.info(`Replacing backslashes of name '${name}' with slashes!`);
+                templateParser.info(`Replacing backslashes in template '${name}' with slashes!`);
                 name = name.replace(/\\/g, '/');
             }
 
@@ -49,15 +51,5 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
         // templateParser.closeLogger();
     });
     
-    let packTemplatesCommand = vscode.commands.registerCommand('cp-tools.packTemplates', async () => {
-        
-    });
-
-    let unpackTemplatesCommand = vscode.commands.registerCommand('cp-tools.unpackTemplates', async () => {
-        
-    });
-    
     context.subscriptions.push(loadTemplatesCommand);
-    context.subscriptions.push(packTemplatesCommand);
-    context.subscriptions.push(unpackTemplatesCommand);
 }

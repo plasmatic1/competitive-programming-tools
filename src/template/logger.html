@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title></title>
+        <style>
+            p {
+                font-family: 'Consolas';
+                font-size: 12pt;
+                line-height: 13pt;
+            }
+        </style>
+    </head>
+    <body>
+        <!-- VUE.JS IMPORT - USE THE MINIFIED VERSION FOR PERFORMANCE IF POSSIBLE -->
+        <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+        <!-- <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.min.js"></script> -->
+
+        <h1>Template Loading Log</h1>
+        
+        <div id="log">
+            <div v-for="line in lines">
+                <p v-bind:style="{ color: line.color }">{{ line.text }}</p>
+            </div>
+        </div>
+
+        <script>
+            const vscode = acquireVsCodeApi();
+            
+            const logApp = new Vue({
+                el: '#log',
+                data: {
+                    lines: []
+                }
+            });
+
+            window.addEventListener('message', event_ => {
+                const event = event_.data;
+
+                console.log('event data ' + JSON.stringify(event));
+
+                if (event.type === 'info') {
+                    logApp.lines.push({ color: '#bcbcbc', text: '[INFO]: ' + event.text });
+                }
+                else if (event.type === 'success') {
+                    logApp.lines.push({ color: '#30990a', text: '[SUCCESS]: ' + event.text });
+                }
+                else if (event.type === 'error') {
+                    logApp.lines.push({ color: '#f44d33', text: '[ERROR]: ' + event.text });
+                }
+                else if (event.type === 'warning') {
+                    logApp.lines.push({ color: '#9b8e00', text: '[WARNING]: ' + event.text });
+                }
+            });
+
+            // when ready
+            vscode.postMessage('ready');
+        </script>
+    </body>
+</html>
