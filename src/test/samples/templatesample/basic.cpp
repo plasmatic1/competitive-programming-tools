@@ -3,6 +3,7 @@
 using namespace std;
 
 //begintemplate for
+//description basic for loop
 for (int i = 0; i < n; i++) {
     cout << "test" << "\n";
 }

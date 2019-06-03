@@ -28,29 +28,29 @@
 			{
 				"command": "cp-tools.buildAndRun",
 				"title": "Build and Run",
-				"category": "CP Tools"
+				"category": "CP Tools Build and Run"
 			},
 			{
 				"command": "cp-tools.openInputFile",
 				"title": "Open Input File",
-				"category": "CP Tools"
+				"category": "CP Tools Build and Run"
 			},
 			{
 				"command": "cp-tools.editOption",
 				"title": "Edit Option",
-				"category": "CP Tools",
+				"category": "CP Tools Config",
 				"icon": "icons/edit-light.svg"
 			},
 			{
 				"command": "cp-tools.resetCategory",
 				"title": "Reset Category",
-				"category": "CP Tools",
+				"category": "CP Tools Config",
 				"icon": "icons/refresh.svg"
 			},
 			{
 				"command": "cp-tools.resetOptions",
 				"title": "Reset Options",
-				"category": "CP Tools",
+				"category": "CP Tools Config",
 				"icon": "icons/refresh.svg"
 			},
 			{
@@ -66,12 +66,12 @@
 			{
 				"command": "cp-tools.packTemplates",
 				"title": "Pack Templates",
-				"category": "CP Tools Templates (WIP)"
+				"category": "CP Tools Templates (CANCELLED)"
 			},
 			{
 				"command": "cp-tools.unpackTemplates",
 				"title": "Unpack Templates",
-				"category": "CP Tools Templates (WIP)"
+				"category": "CP Tools Templates (CANCELLED)"
 			}
 		],
 		"viewsContainers": {
@@ -114,7 +114,7 @@
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
-		"copyFiles": "copy src\\execute\\display.html out\\execute\\display.html",
+		"copyFiles": "copy src\\execute\\display.html out\\execute\\display.html && copy src\\template\\shell.exe out\\template\\shell.exe",
 		"compile": "tsc -p ./ && npm run copyFiles",
 		"watch": "tsc -watch -p ./",
 		"postinstall": "node ./node_modules/vscode/bin/install",
