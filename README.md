@@ -2,15 +2,17 @@
 
 A set of tools to assist with Competitive Programming
 
-## Features
+## Main Features
 
 ### Build and Run
 
-The build and run command allows you to quickly run a single file on a set of predefined inputs that are specified though the configuration options.  Furthermore, it will also display basic stats such as the exit code or termination signal, elapsed time, memory, and the `stdout` and `stderr` streams.
+The build and run command allows you to quickly run a single file on a set of predefined inputs that are specified though the configuration options.  Furthermore, it will also display basic stats such as the exit code, termination signal, elapsed time, memory usage, and the `stdout` and `stderr` streams.
+
+The set of inputs is defined by a user made input file.  Additional information about this is available in the `Commands` and `Configuration Options` sections.
 
 ### Templates
 
-Easily convert a folder of code templates (for algorithms and data structures) into vscode `snippets` using the `Load Templates` command.  Here are some basics on how they work:
+You can easily convert a folder of code templates (of algorithms and data structures) into vscode `snippets` using the `Load Templates` command.  Here are some basics on how they work:
 
 Take a look at an example template file:
 
@@ -36,9 +38,9 @@ for (int i = 2; i < 46; i -= 5) {
 //endtemplate for2
 ```
 
-This creates two templates named `for and `for2` (assuming that this file is directly inside the template directory).  Also note that only the template `for` has a description ("for loop template") and that template names cannot have spaces.
+This creates two templates named `for` and `for2` (assuming that this file is directly inside the template directory).  Also note that only the template `for` has a description (`for loop template`) and that template names cannot have spaces.
 
-There is also an optional `config.json` file in your template directory which contains a few options:
+You can also create a `config.json` file in your template directory which contains a few options:
 
 * **Ignore Paths (ignorePaths):** A list of paths (relative to the template directory) that should be ignored.  This defaults to `['.git', '.vscode']`.
 * **Replace Backslashes (replaceBackslashes):** Controls whether backslashes will be replaced with slashes in template names.  This defaults to `true`.
@@ -52,15 +54,17 @@ Here is what a `config.json` file using the default configuration options would 
 }
 ```
 
+If at any point a config option is invalid, missing, or the config file is not present altogether, the program will instead use the default configuration settings.
+
 #### Additional Notes
 
-Here is the exact format of the directives included:
+For a more exact format of how templates are specified:
 
 * `//begintemplate <name>`: Signifies the start of a template with the name `<name>`.  Note that `<name>` cannot have any spaces.  Adding multiple `//begintemplate` directives without ending previous ones causes errors.
 * `//endtemplate <name>`: Ends a template with the name `<name>`.  Note that `<name>` must be the name of the last `//begintemplate` directive executed, otherwise it will throw an error.
 * `//description <description...>`: Unlike the `<name>` parameter, the `<description...>` parameter can have spaces.  This simply specifies the description for the current template.  Furthermore, multiple `//description` directives cannot be in the same template, and a `//description` directive must be inside of a template.
 
-Feel free to check the `src/test/templatesample` for some sample template usage (note that it also includes invalid directive usage for testing purposes).
+Feel free to check the `src/test/templatesample` directory for some sample template usage (note that it also includes invalid directive usage for testing purposes).
 
 ### Supported Languages
 
@@ -78,8 +82,6 @@ Feel free to check the `src/test/templatesample` for some sample template usage 
 * **WORK IN PROGRESS:**
     * **Cache Vue.js (cp-tools.cacheVue):** Caches Vue.js for offline use
     * **Load Templates (cp-tools.loadTemplates):** Load template folder to `snippets.json`
-    * CANCELLED **Pack Templates (cp-tools.packTemplates):** Pack template folder into a single file
-    * CANCELLED **Unpack Templates (cp-tools.unpackTemplates):** Unpack template file back into a folder
 
 ## Configuration Options
 
@@ -117,13 +119,11 @@ There would be three separate cases with these respective inputs: `input 1`, `in
 
 ## Todo List
 
-* Some cool code template stuff (not sure how useful this would be)
-    * Command: Load Templates: Select a template folder and imports all of the templates found in that folder by overwriting the `snippets.json` file in the `.vscode` directory
-        * Add description field
+* Allow templates to "include" other templates via a `//include` comment
 * Better UI
 * Interactive stuff
 * Performance
     * Cache the vue.js library to allow for offline use
     * Somehow make g++ somehow run in the background so that loading becomes like instant
-* Add more languages
+* Add more language support (shrug)
 * Become less awkward

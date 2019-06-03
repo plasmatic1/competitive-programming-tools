@@ -38,7 +38,7 @@ export class TemplateParser {
     // Traverses a template folder for template files
     traverseFolder(curPath: string = this.beginPath, templatePath: string = ''): void {
         if (this.options.ignorePaths.has(templatePath)) {
-            this.warning(`Skipping folder '${templatePath}' as defined in the configuration! (ignorePaths = ${this.options.ignorePaths})`);
+            this.warning(`Skipping folder '${templatePath}' as defined in the configuration! (ignorePaths = ${this.setToString(this.options.ignorePaths)})`);
         }
 
         for (const sub of fs.readdirSync(curPath)) {
@@ -58,10 +58,14 @@ export class TemplateParser {
         }
     }
 
+    private setToString<T>(set: Set<T>, delim: string = ', '): string {
+        return '[' + Array.from(set.entries()).map(el => el[0]).join(delim) + ']';
+    }
+
     // Parses a template file
     private parseFile(path: string, templatePath: string): void {
         if (this.options.ignorePaths.has(templatePath)) {
-            this.warning(`Skipping file '${templatePath}' as defined in the configuration! (ignorePaths = ${this.options.ignorePaths})`);
+            this.warning(`Skipping file '${templatePath}' as defined in the configuration! (ignorePaths = ${this.setToString(this.options.ignorePaths)})`);
         }
 
         let curTemplate: string[] = [], curName: string = '', curDescription: string = '';

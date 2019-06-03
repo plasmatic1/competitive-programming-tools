@@ -33,7 +33,6 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
         
         const snippets: any = {};
         for (let [name, template] of templateParser.templates) {
-            // console.log(`name: ${name}, body: ${body}`);
             if (errorIfUndefined(templateParser.options).replaceBackslashes) {
                 templateParser.info(`Replacing backslashes in template '${name}' with slashes!`);
                 name = name.replace(/\\/g, '/');

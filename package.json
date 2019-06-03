@@ -62,16 +62,6 @@
 				"command": "cp-tools.loadTemplates",
 				"title": "Load Templates",
 				"category": "CP Tools Templates (WIP)"
-			},
-			{
-				"command": "cp-tools.packTemplates",
-				"title": "Pack Templates",
-				"category": "CP Tools Templates (CANCELLED)"
-			},
-			{
-				"command": "cp-tools.unpackTemplates",
-				"title": "Unpack Templates",
-				"category": "CP Tools Templates (CANCELLED)"
 			}
 		],
 		"viewsContainers": {
