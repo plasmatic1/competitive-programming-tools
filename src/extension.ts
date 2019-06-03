@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as optionsRegister from './options/register';
 import * as executeRegister from './execute/register';
+import * as templatesRegister from './template/register';
 import { OptionManager } from './options/options';
 import { errorIfUndefined } from './undefinedutils';
 
@@ -45,6 +46,7 @@ export function activate(context: vscode.ExtensionContext) {
 	// Registering Other Commands
 	optionsRegister.registerViewsAndCommands(context);
 	executeRegister.registerViewsAndCommands(context);
+	templatesRegister.registerViewsAndCommands(context);
 }
 
 // this method is called when your extension is deactivated

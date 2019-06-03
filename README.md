@@ -19,6 +19,12 @@ Easy build and run
 * **Reset Category (cp-tools.resetCategory):** Reset a configuration category
 * **Reset Options (cp-tools.resetOptions):** Resets all configuration options to their default values
 
+* **WORK IN PROGRESS:**
+    * **Cache Vue.js (cp-tools.cacheVue):** Caches Vue.js for offline use
+    * **Load Templates (cp-tools.loadTemplates):** Load template folder to `snippets.json`
+    * **Pack Templates (cp-tools.packTemplates):** Pack template folder into a single file
+    * **Unpack Templates (cp-tools.unpackTemplates):** Unpack template file back into a folder
+
 ## Configuration Options
 
 * **Build and Run (buildAndRun):** Configuration Options used by the `cp-tools.buildAndRun` command
@@ -55,9 +61,10 @@ There would be three separate cases with these respective inputs: `input 1`, `in
 
 ## Todo List
 
-* **Character Limit for output (so things dont get so laggy) IMPORTANT**
 * Some cool code template stuff (not sure how useful this would be)
     * Command: Load Templates: Select a template folder and imports all of the templates found in that folder by overwriting the `snippets.json` file in the `.vscode` directory
+        * Add description field
+        * Option to convert backslashes in names to forward slashes
     * Command: Pack Templates: Select a template folder and packages it into a single file for transport
     * Command: Unpack Templates: Unpacks a template file back into a folder
 * Better UI
