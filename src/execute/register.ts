@@ -90,6 +90,7 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
             }, null, context.subscriptions);
         }
 
+        display.webview.html = '';
         display.webview.html = getBuildRunHTML({
             srcFile,
             srcName,
@@ -121,6 +122,7 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
                 display.webview.postMessage(obj);
             }
             else {
+                // console.log('event queue ', JSON.stringify(obj));
                 eventQueue.push(obj);
             }
         }
@@ -144,7 +146,7 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
         // ---------------------------------------------------------------------------
         const executor: Executor = new executorConstructor(srcFile), timeout: number = optionManager().get('buildAndRun', 'timeout'),
             memSampleRate: number = optionManager().get('buildAndRun', 'memSample');
-            
+        
         executor.preExec();
             
         if (!isUndefined(executor.compileError)) {
@@ -180,7 +182,7 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
             });
                 
             proc.on('exit', (code: number, signal: string) => {
-                done = true;
+                clearTimeout(tleTimeout);
                 emitEvent(new exe.UpdateTimeEvent(getTime() - beginTime, caseNo));
                     
                 var exitMsg = [];
@@ -232,12 +234,7 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
                 
             updateMemAndTime();
             const memCheckInterval = setInterval(updateMemAndTime, memSampleRate);
-                
-            setTimeout(() => {
-                if (!done) {
-                    proc.kill();
-                }
-            }, timeout);
+            const tleTimeout = setTimeout(() => proc.kill(), timeout);
 
             display.webview.onDidReceiveMessage(msg => {
                 if (msg === 'kill') {
@@ -246,15 +243,13 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
             });
                 
             // Check whether the program has terminated
-            if (done) {
-                caseNo++;
-                continue;
+            if (!done) {
+                await new Promise((resolve, _) => {
+                    proc.on('exit', resolve);
+                });
             }
-            await new Promise((resolve, _) => {
-                   proc.on('exit', resolve);
-            });
 
-            // Increment Caseno
+            // Increment Caseno and other cleanup
             caseNo++;
         }
             

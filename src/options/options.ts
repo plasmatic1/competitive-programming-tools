@@ -71,7 +71,7 @@ const OPTIONS: Map<string, Map<string, OptionProperties>> = new Map([
             type: 'number',
             setFunction: async () => 
                 tryParseInt(await vscode.window.showInputBox({
-                    prompt: 'New Timeout',
+                    prompt: 'New Sample Interval',
                     placeHolder: 'Sample Interval (ms)',
                     value: ext.optionManager().get('buildAndRun', 'memSample')
                 }))
