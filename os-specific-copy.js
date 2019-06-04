@@ -1,16 +1,31 @@
-var sys = require('util')
-var exec = require('child_process').exec;
-function puts(error, stdout, stderr) { console.log(stdout) }
+const sys = require('util');
+const os = require('os');
+const exec = require('child_process').exec;
 
-var os = require('os');
-//control OS
-//then run command depengin on the OS
+const PATHS = [
+    ['src\\execute\\display.html', 'out\\execute\\display.html'],
+    ['src\\template\\logger.html', 'out\\template\\logger.html']
+]
 
-if (os.type() === 'Linux') 
-   exec("cp src/execute/display.html out/execute/display.html && cp src/template/logger.html out/template/logger.html", puts); 
-else if (os.type() === 'Darwin') 
-   exec("cp src/execute/display.html out/execute/display.html && cp src/template/logger.html out/template/logger.html", puts); 
+function constructCommand(cmd, transform) {
+    return PATHS.map(arr => arr.map(transform))
+                .map(([src, dest]) => `${cmd} ${src} ${dest}`)
+                .join(' && ');
+}
+
+function puts(error, stdout, stderr) {
+    console.log(stdout);
+}
+
+let command = '';
+
+if (os.type() === 'Linux' || os.type() === 'Darwin')
+    command = constructCommand('cp', x => x.replace(/\\/g, '/'));
 else if (os.type() === 'Windows_NT') 
-   exec("copy src\\execute\\display.html out\\execute\\display.html && copy src\\template\\logger.html out\\template\\logger.html", puts);
+    command = constructCommand('copy', x => x);
 else
-   throw new Error("Unsupported OS found: " + os.type());
+    throw new Error("Unsupported OS found: " + os.type());
+
+
+console.log(`Running command ${command}...`);
+exec(command, puts);
