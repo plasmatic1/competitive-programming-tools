@@ -86,6 +86,8 @@ export class TemplateParser {
                 else {
                     this.info(`Began new template '${join(templatePath, spls[1])}'`);
                     curName = spls[1];
+                    curTemplate = [];
+                    curDescription = '';
                 }
             }
             else if (line.startsWith('//endtemplate')) {
