@@ -44,7 +44,9 @@ class CPPExecutor implements Executor {
             compileProcStderr = compileProc.stderr.toString();
         
         if (compileProcStderr !== '') {
-            this.execFile = undefined;
+            if (!fs.existsSync(this.execFile)) {
+                this.execFile = undefined;
+            }
             this.compileError = compileProcStderr;
         }
     }

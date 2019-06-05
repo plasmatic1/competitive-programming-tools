@@ -119,6 +119,7 @@ There would be three separate cases with these respective inputs: `input 1`, `in
 
 ## Todo List
 
+* Judge output also to compare
 * Allow templates to "include" other templates via a `//include` comment
 * Better UI
 * Interactive stuff

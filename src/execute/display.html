@@ -30,8 +30,14 @@
                 border: 1px solid white;
             }
 
-            .hiddenItem {
-                color: #777;
+            .hiddenItem code {
+                color: #888;
+                font-style: italic;
+            }
+
+            .emptyItem code {
+                color: rgb(167, 127, 67);
+                font-style: italic;
             }
 
             .streamItem {
@@ -58,24 +64,38 @@
 
         <script>
             Vue.component('std-row', {
-                props: ['title', 'visible'],
+                props: ['title', 'ifempty', 'data', 'visible'],
+                data: () => { 
+                    return { 
+                        data: '', 
+                        visible: true 
+                    }; 
+                },
+                computed: {
+                    getText: function() {
+                        if (!this.visible) 
+                            return 'Hidden.';
+                        else if (this.data === '')
+                            return this.ifempty;
+                        return this.data;
+                    }
+                },
                 template: `
-                <tr id="std-row-{{ title }}">
+                <tr>
                     <td class="streamItem">
                         <span class="header-small">{{ title }}</span><br>
-                        <a href="#std-row-{{ title }}" v-on:click="() => visible = !visible">{{ visible ? 'Visible' : 'Hidden' }}</a>
+                        <a href="#invalid" v-on:click="() => visible = !visible">{{ visible ? 'Hide' : 'Show' }}</a>
                     </td>
-                    <td v-if="visible" class="streamItem"><code><slot></slot></code></td>
-                    <td v-if="!visible" class="streamItem hiddenItem"><i>Hidden.</i></td>
+                    <td class="streamItem" :class="{ hiddenItem: !visible, emptyItem: visible && data === '' }"><code>{{ getText }}</code></td>
                 </tr>`
             });
         </script>
 
         <h1>Output of "${srcName}"</h1>
         
-        <div id="compileError" v-if="data !== ''">
-            <h2>Compile Errors</h2>
-            <code>{{ data }}</code>
+        <div id="compileError" v-if="data !== []">
+            <h2>Compile Errors/Warnings</h2>
+            <code v-for="error in data"><p>{{ error }}</p></code>
         </div>
         
         <div id="cases" v-if="visible">
@@ -84,9 +104,9 @@
                 <h2>Case #{{ curCase.id + 1 }}</h2>
 
                 <table id="streamTable">
-                    <std-row title="Input" v-bind:visible="curCase.stdin.length < 2000">{{ curCase.stdin }}</std-row>
-                    <std-row title="Output" v-bind:visible="true">{{ curCase.stdout }}</std-row> 
-                    <std-row title="Errors" v-bind:visible="true">{{ curCase.stderr }}</std-row> 
+                    <std-row title="Input" ifempty="No Input." :data="curCase.stdin" :visible.once="curCase.stdin.length < 2000"></std-row>
+                    <std-row title="Output" ifempty="No Output." :data="curCase.stdout" :visible.once="true"></std-row>
+                    <std-row title="Errors" ifempty="No Errors." :data="curCase.stderr" :visible.once="true"></std-row>
                 </table>
         
                 <table id="processInfo">
@@ -104,7 +124,7 @@
                         <td><i>{{ curCase.exitInfo[1] }}</i></td>
                     </tr>
                     <tr><td>
-                        <a id="row-{{ curCase.id }}" href="#row-{{ curCase.id }}" v-on:click="killProcess">Kill</a>
+                        <a href="#invalid" v-on:click="killProcess">Kill</a>
                     </tr></td>
                 </table>
             </div>
@@ -136,7 +156,7 @@
             const compileErrorApp = new Vue({
                 el: '#compileError',
                 data: {
-                    data: ''
+                    data: []
                 }
             });
 
@@ -147,7 +167,7 @@
 
             function reset() {
                 document.getElementsByName('title').forEach(ele => ele.innerHTML = `Output of "${srcName}"`);
-                compileErrorApp.data = '';
+                compileErrorApp.data = [];
                 casesApp.visible = true;
                 casesApp.cases.length = 0;
 
@@ -172,7 +192,7 @@
                 // console.log(`Event: ${JSON.stringify(event)}`);
                 
                 if (type == 'compilerError') {
-                    compileErrorApp.data = event.data;
+                    compileErrorApp.data.push(event.data);
                     if (event.fatal) {
                         casesApp.visible = false;
                     }

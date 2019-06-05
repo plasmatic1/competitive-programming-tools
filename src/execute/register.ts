@@ -163,12 +163,13 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
             try {
                 proc.stdin.write(input);
                 emitEvent(new exe.BeginCaseEvent(input, caseNo));
+
+                if (!/\s$/.test(input)) {
+                    emitEvent(new exe.CompileErrorEvent(`Input for Case #${caseNo + 1} does not end in whitespace, this may cause issues (such as cin waiting forever for a delimiter)`, false));
+                }
             }
             catch (e) {
-                // console.log(JSON.stringify(e));
-                // if (e.message === 'write EPIPE') {
-                    emitEvent(new exe.BeginCaseEvent('Stdin of program closed prematurely.', caseNo));
-                // }
+                emitEvent(new exe.BeginCaseEvent('STDIN of program closed prematurely.', caseNo));
             }
                 
             const beginTime: number = getTime();
