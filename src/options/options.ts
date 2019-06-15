@@ -102,7 +102,7 @@ const OPTIONS: Map<string, Map<string, OptionProperties>> = new Map([
     ])],
     ['compilerArgs', new Map([
         ['cpp', {
-            defaultValue: '-Wall -static -DLOCAL',
+            defaultValue: '-Wall -O0 -DLOCAL',
             label: 'C++',
             description: 'Compiler: g++ -o <executable> <source file> <args>',
             type: 'string',

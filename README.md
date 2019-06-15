@@ -10,6 +10,8 @@ The build and run command allows you to quickly run a single file on a set of pr
 
 The set of inputs is defined by a user made input file.  Additional information about this is available in the `Commands` and `Configuration Options` sections.
 
+*Note: The working directory of the executable will be the folder that it is located in (i.e. if the path of the executable is C:\\stuff\\program.exe the working directory will be C\\stuff\\)*
+
 ### Templates
 
 You can easily convert a folder of code templates (of algorithms and data structures) into vscode `snippets` using the `Load Templates` command.  Here are some basics on how they work:
@@ -78,9 +80,10 @@ Feel free to check the `src/test/templatesample` directory for some sample templ
 * **Edit Option (cp-tools.editOption):** Edit a configuration option
 * **Reset Category (cp-tools.resetCategory):** Reset a configuration category
 * **Reset Options (cp-tools.resetOptions):** Resets all configuration options to their default values
+* **Cache Vue.js (cp-tools.cacheVue):** Saves vue.js locally in the .vscode folder.  Vue.js is used for the various interfaces this extension provides
+* **Uncache Vue.js (cp-tools.uncacheVue):** Deletes the local copy of vue.js.
 
 * **WORK IN PROGRESS:**
-    * **Cache Vue.js (cp-tools.cacheVue):** Caches Vue.js for offline use
     * **Load Templates (cp-tools.loadTemplates):** Load template folder to `snippets.json`
 
 ## Configuration Options
@@ -113,18 +116,21 @@ There would be three separate cases with these respective inputs: `input 1`, `in
 
 1. Install `node.js`
 2. Install the `vsce` package (`npm install -g vsce`)
-3. Clone this repository and open a command promopt in the home folder of the repository
+3. Clone this repository and open a command prompt in the home folder of the repository
 4. Run the command `vsce package` to pack the extension.  Note that the modules being depended on may need to be installed first.  If that is the case, simply run the command `npm install`
 5. Run the command `code --install-extension <path to .vsix file generated>`
+
+Alternatively you can just run the provided install script after following the first three steps.
 
 ## Todo List
 
 * Judge output also to compare
 * Allow templates to "include" other templates via a `//include` comment
-* Better UI
-* Interactive stuff
-* Performance
-    * Cache the vue.js library to allow for offline use
-    * Somehow make g++ somehow run in the background so that loading becomes like instant
+* Interactive stuff - gcj :)
 * Add more language support (shrug)
-* Become less awkward
+    * Extra executor for plain C (but I don't think it's necessary)
+    * Java executor (:notlikeblob:)
+    * Nodejs related thing
+* Possibly better debugging tools
+    * Stuff related to gdb maybe
+* Become less awkward - workin on it

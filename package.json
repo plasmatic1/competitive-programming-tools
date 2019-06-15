@@ -17,9 +17,8 @@
 		"onCommand:cp-tools.resetCategory",
 		"onCommand:cp-tools.resetOptions",
 		"onCommand:cp-tools.cacheVue",
+		"onCommand:cp-tools.uncacheVue",
 		"onCommand:cp-tools.loadTemplates",
-		"onCommand:cp-tools.packTemplates",
-		"onCommand:cp-tools.unpackTemplates",
 		"onView:options"
 	],
 	"main": "./out/extension.js",
@@ -56,7 +55,12 @@
 			{
 				"command": "cp-tools.cacheVue",
 				"title": "Cache Vue.js",
-				"category": "CP Tools Optimization (WIP)"
+				"category": "CP Tools Optimization"
+			},
+			{
+				"command": "cp-tools.uncacheVue",
+				"title": "Uncache Vue.js",
+				"category": "CP Tools Optimization"
 			},
 			{
 				"command": "cp-tools.loadTemplates",

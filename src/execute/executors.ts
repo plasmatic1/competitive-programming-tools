@@ -1,5 +1,6 @@
 import * as sub from 'child_process';
 import * as fs from 'fs';
+import { dirname } from 'path';
 import { optionManager } from '../extension';
 import { isUndefined } from 'util';
 
@@ -27,6 +28,13 @@ function splitArgs(args: string): string[] {
 // ---------------------------------------------------------------------------
 // Executors
 // ---------------------------------------------------------------------------
+
+function getSpawnOptions(execFile: string): sub.SpawnOptions {
+    return {
+        cwd: dirname(execFile)
+    };
+}
+
 class CPPExecutor implements Executor {
     srcFile: string;
     execFile: string | undefined;
@@ -55,7 +63,7 @@ class CPPExecutor implements Executor {
         if (isUndefined(this.execFile)) {
             throw new Error('File not compiled yet! (Or compile failed and you still tried to execute this)');
         }
-        return sub.spawn(this.execFile);
+        return sub.spawn(this.execFile, [], getSpawnOptions(this.execFile));
     }
 
     postExec(): void {
@@ -76,7 +84,7 @@ class PYExecutor implements Executor {
     preExec(): void {}
 
     exec(): sub.ChildProcess {
-        return sub.spawn('py', [this.srcFile], {});
+        return sub.spawn('py', [this.srcFile], getSpawnOptions(this.srcFile));
     }
 
     postExec(): void {}

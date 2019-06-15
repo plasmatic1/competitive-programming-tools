@@ -6,7 +6,7 @@ import { join } from 'path';
 import { Executor, executors } from './executors';
 import { isUndefined, isNull } from 'util';
 import { popUnsafe } from '../undefinedutils';
-import { optionManager } from '../extension';
+import { optionManager, VUE_PATH } from '../extension';
 import { ChildProcess } from 'child_process';
 // ---------------------------------------------------------------------------
 // Utility Functions
@@ -25,6 +25,7 @@ interface BuildRunVars {
     srcName: string;
     caseCount: number;
     charLimit: number;
+    vuePath: string;
 }
 
 let lastView: vscode.WebviewPanel | undefined = undefined;
@@ -90,12 +91,24 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
             }, null, context.subscriptions);
         }
 
+        let vuePath = '';
+
+        if (fs.existsSync(VUE_PATH)) {
+            vscode.window.showInformationMessage('Using cached vue.min.js!');
+            vuePath = VUE_PATH;
+        }
+        else {
+            vuePath = 'https://cdn.jsdelivr.net/npm/vue/dist/vue.min.js';
+            // vuePath = 'https://cdn.jsdelivr.net/npm/vue/dist/vue.js'; NON MINIFIED VERSION, USE WITH CAUTION
+        }
+
         display.webview.html = '';
         display.webview.html = getBuildRunHTML({
             srcFile,
             srcName,
             caseCount: inputs.length,
-            charLimit: optionManager().get('buildAndRun', 'charLimit')
+            charLimit: optionManager().get('buildAndRun', 'charLimit'),
+            vuePath
         }, context);
 
         // Await for the webview to be ready
@@ -264,5 +277,6 @@ function getBuildRunHTML(vars: BuildRunVars, context: vscode.ExtensionContext) {
         .toString()
         .replace(/\$\{srcName\}/g, vars.srcName)
         .replace(/\$\{caseCount\}/g, vars.caseCount.toString())
-        .replace(/\$\{charLimit\}/g, vars.charLimit.toString());
+        .replace(/\$\{charLimit\}/g, vars.charLimit.toString())
+        .replace(/\$\{vuePath\}/g, vars.vuePath.toString());
 }
