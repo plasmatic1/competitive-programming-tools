@@ -1,0 +1,7 @@
+print('  3')
+print('5   6')
+print()
+print(7)
+print()
+print()
+print()

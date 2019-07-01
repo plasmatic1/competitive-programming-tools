@@ -221,6 +221,7 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
             proc.stdout.on('readable', () => {
                 const data = proc.stdout.read();
                 if (data) {
+                    // console.log(data.toString());
                     emitEvent(new exe.UpdateStdoutEvent(data.toString(), caseNo));
                 }
             });

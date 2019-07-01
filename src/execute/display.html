@@ -6,7 +6,7 @@
         <title></title>
         <style>
             code {
-                white-space: pre-line;
+                white-space: pre;
             }
 
             hr {
@@ -91,7 +91,7 @@
 
         <h1>Output of "${srcName}"</h1>
         
-        <div id="compileError" v-if="data !== []">
+        <div id="compileError" v-if="data.length > 0">
             <h2>Compile Errors/Warnings</h2>
             <code v-for="error in data"><p>{{ error }}</p></code>
         </div>
