@@ -131,6 +131,11 @@ Alternatively you can just run the provided install script after following the f
     * Extra executor for plain C (but I don't think it's necessary)
     * Java executor (:notlikeblob:)
     * Nodejs related thing
+    * Haskell
 * Possibly better debugging tools
     * Stuff related to gdb maybe
 * Become less awkward - workin on it
+
+### Bugs
+
+* If a program was kept running and the webview was closed, it would keep running.  So if a new instance was ran the output and whatnot from the old would show up in the new

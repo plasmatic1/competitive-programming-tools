@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as exe from './events';
 import * as pidusage from 'pidusage';
+import { getWebview, unlinkWebview } from '../webviewManager';
 import { join } from 'path';
 import { Executor, executors } from './executors';
 import { isUndefined, isNull } from 'util';
@@ -27,8 +28,6 @@ interface BuildRunVars {
     charLimit: number;
     vuePath: string;
 }
-
-let lastView: vscode.WebviewPanel | undefined = undefined;
 
 export function registerViewsAndCommands(context: vscode.ExtensionContext): void {
     let buildRunCommand = vscode.commands.registerCommand('cp-tools.buildAndRun', async () => {
@@ -69,28 +68,7 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
         // Initializing Web Panel
         // ---------------------------------------------------------------------------
 
-        if (optionManager().get('buildAndRun', 'reuseWebviews') && !isUndefined(lastView)) {
-            var display: vscode.WebviewPanel = lastView;
-            display.reveal(vscode.ViewColumn.Active);
-            // display.webview.postMessage(new exe.ResetEvent(srcName, inputs.length));
-        }
-        else {
-// tslint:disable-next-line: no-duplicate-variable
-            var display: vscode.WebviewPanel = vscode.window.createWebviewPanel(
-                'buildAndRun',
-                'Build and Run',
-                vscode.ViewColumn.Active,
-                {
-                    enableScripts: true,
-                    retainContextWhenHidden: true
-                }
-            );
-    
-            display.onDidDispose(() => {
-                lastView = undefined;
-            }, null, context.subscriptions);
-        }
-
+        let display = getWebview(context);
         let vuePath = '';
 
         if (fs.existsSync(VUE_PATH)) {
@@ -121,7 +99,6 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
         });
 
         display.title = `Output of '${srcName}'`;
-        lastView = display;
             
         // ---------------------------------------------------------------------------
         // Web Panel Utility Functions
@@ -149,7 +126,7 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
 
         display.webview.onDidReceiveMessage(msg => {
             if (msg === 'unlink') {
-                lastView = undefined;
+                unlinkWebview();
             }
         });
             
