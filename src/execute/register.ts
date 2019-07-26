@@ -149,17 +149,18 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
             
         var caseNo = 0;
         for (const input of inputs) {
+            let curCaseNo = caseNo; // Prevent Concurrency Issues
             var proc: ChildProcess = executor.exec();
             try {
                 proc.stdin.write(input);
-                emitEvent(new exe.BeginCaseEvent(input, caseNo));
+                emitEvent(new exe.BeginCaseEvent(input, curCaseNo));
 
                 if (!/\s$/.test(input)) {
-                    emitEvent(new exe.CompileErrorEvent(`Input for Case #${caseNo + 1} does not end in whitespace, this may cause issues (such as cin waiting forever for a delimiter)`, false));
+                    emitEvent(new exe.CompileErrorEvent(`Input for Case #${curCaseNo + 1} does not end in whitespace, this may cause issues (such as cin waiting forever for a delimiter)`, false));
                 }
             }
             catch (e) {
-                emitEvent(new exe.BeginCaseEvent('STDIN of program closed prematurely.', caseNo));
+                emitEvent(new exe.BeginCaseEvent('STDIN of program closed prematurely.', curCaseNo));
             }
                 
             const beginTime: number = getTime();
@@ -173,7 +174,7 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
                 
             proc.on('exit', (code: number, signal: string) => {
                 clearTimeout(tleTimeout);
-                emitEvent(new exe.UpdateTimeEvent(getTime() - beginTime, caseNo));
+                emitEvent(new exe.UpdateTimeEvent(getTime() - beginTime, curCaseNo));
                     
                 var exitMsg = [];
                     
@@ -192,21 +193,21 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
                     exitMsg = ['Exit code:', code + extra];
                 }
                     
-                emitEvent(new exe.EndEvent(exitMsg, caseNo));
+                emitEvent(new exe.EndEvent(exitMsg, curCaseNo));
             });
                 
             proc.stdout.on('readable', () => {
                 const data = proc.stdout.read();
                 if (data) {
                     // console.log(data.toString());
-                    emitEvent(new exe.UpdateStdoutEvent(data.toString(), caseNo));
+                    emitEvent(new exe.UpdateStdoutEvent(data.toString(), curCaseNo));
                 }
             });
                 
             proc.stderr.on('readable', () => {
                 const data = proc.stderr.read();
                 if (data) {
-                    emitEvent(new exe.UpdateStderrEvent(data.toString(), caseNo));
+                    emitEvent(new exe.UpdateStderrEvent(data.toString(), curCaseNo));
                 }
             });
                 
@@ -214,9 +215,9 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
                 pidusage(proc.pid)
                 .then(stat => {
                     if (!done) {
-                        emitEvent(new exe.UpdateTimeEvent(stat.elapsed, caseNo));
+                        emitEvent(new exe.UpdateTimeEvent(stat.elapsed, curCaseNo));
                     }
-                    emitEvent(new exe.UpdateMemoryEvent(stat.memory, caseNo));
+                    emitEvent(new exe.UpdateMemoryEvent(stat.memory, curCaseNo));
                 })
                 .catch(_ => {
                     clearInterval(memCheckInterval);

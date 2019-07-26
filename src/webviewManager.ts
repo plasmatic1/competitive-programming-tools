@@ -26,6 +26,7 @@ export function getWebview(context: vscode.ExtensionContext): vscode.WebviewPane
         }, null, context.subscriptions);
     }
 
+    lastView = display;
     return display;
 }
 

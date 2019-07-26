@@ -84,7 +84,7 @@ class PYExecutor implements Executor {
     preExec(): void {}
 
     exec(): sub.ChildProcess {
-        return sub.spawn('py', [this.srcFile], getSpawnOptions(this.srcFile));
+        return sub.spawn('python', [this.srcFile], getSpawnOptions(this.srcFile));
     }
 
     postExec(): void {}
