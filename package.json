@@ -108,9 +108,10 @@
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
-		"copyFiles": "node os-specific-copy.js",
-		"compile": "tsc -p ./ && npm run copyFiles",
-		"watch": "tsc -watch -p ./",
+		"parcel:build": "parcel build -d out/assets src/assets/display.html --public-url \"vscodeRoot\"",
+		"parcel:watch": "parcel watch -d out/assets src/assets/display.html --public-url \"vscodeRoot\"",
+		"compile": "tsc -p ./ && npm run parcel:build",
+		"watch": "tsc -watch -p ./ && npm run parcel:watch",
 		"postinstall": "node ./node_modules/vscode/bin/install",
 		"test": "npm run compile && node ./node_modules/vscode/bin/test"
 	},
@@ -118,11 +119,17 @@
 		"@types/mocha": "^2.2.42",
 		"@types/node": "^10.14.7",
 		"@types/pidusage": "^2.0.1",
+		"parcel-bundler": "^1.12.3",
+		"sass": "^1.23.0-module.beta.1",
 		"tslint": "^5.12.1",
 		"typescript": "^3.3.1",
-		"vscode": "^1.1.28"
+		"vscode": "^1.1.28",
+		"vue-template-compiler": "^2.6.10"
 	},
 	"dependencies": {
-		"pidusage": "^2.0.17"
+		"@vue/component-compiler-utils": "^3.0.0",
+		"pidusage": "^2.0.17",
+		"vue": "^2.6.10",
+		"vue-hot-reload-api": "^2.3.3"
 	}
 }

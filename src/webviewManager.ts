@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { optionManager } from './extension';
 import { isUndefined } from 'util';
 

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title></title>
+    </head>
+    <body>
+        <div id="app">
+            If you see this message, the Vue app did not load correctly.  It should only be run as a VSCode webview (due to how the URLs are resolved).<br>
+            However, if you still want to run this properly, just modify the <code>package.json</code> so that the <code>--public-url</code> option is set to <code>./</code>
+        </div>
+
+        <!-- <h1>Output of "${srcName}"</h1>
+        
+        <div id="compileError" v-if="data.length > 0">
+            <h2>Compile Errors/Warnings</h2>
+            <code v-for="error in data"><p>{{ error }}</p></code>
+        </div>
+        
+        <div id="cases" v-if="visible">
+            <div v-for="curCase in cases">
+                <hr>
+                <h2>Case #{{ curCase.id + 1 }}</h2>
+
+                <table id="streamTable">
+                    <std-row title="Input" ifempty="No Input." :data="curCase.stdin" :visible.once="curCase.stdin.length < 2000"></std-row>
+                    <std-row title="Output" ifempty="No Output." :data="curCase.stdout" :visible.once="true"></std-row>
+                    <std-row title="Errors" ifempty="No Errors." :data="curCase.stderr" :visible.once="true"></std-row>
+                </table>
+        
+                <table id="processInfo">
+                    <tr>
+                        <td>Time Elapsed:</td>
+                        <td><i>{{ curCase.time !== -1 ? curCase.time.toString() + 'ms' : 'Unknown' }}</i></td>
+                    </tr>
+                    <tr>
+                        <td>Memory Usage:</td>
+                        <td><i>{{ curCase.memory !== -1 ? (Math.round(curCase.memory / 1.024) / 1000).toString() + 'KB' : 'Negligible' }}</i></td>
+                    </tr>
+                    <tr v-if="curCase.exitInfo[0] !== ''">
+                        <td>{{ curCase.exitInfo[0] }}</td>
+                        <td><i>{{ curCase.exitInfo[1] }}</i></td>
+                    </tr>
+                    <tr><td>
+                        <a href="#invalid" v-on:click="killProcess">Kill</a>
+                    </tr></td>
+                </table>
+            </div>
+        </div>
+
+        <div id="unlinkWebviewDiv">
+            <a href="#unlinkWebviewDiv" onclick="unlinkWebview()">Unlink Current Webview:</a>
+            <span> If the <code>Reuse Webviews</code> option is set to true, clicking the link will no longer cause vscode to reuse this Webview for future build and run sessions</span>
+        </div> -->
+
+        <script src="index.js"></script>
+    </body>
+</html>

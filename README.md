@@ -139,3 +139,16 @@ Alternatively you can just run the provided install script after following the f
 ### Bugs
 
 * If a program was kept running and the webview was closed, it would keep running.  So if a new instance was ran the output and whatnot from the old would show up in the new
+
+## DEV NOTES
+
+- In the `src/assets/main.scss` file, there is the following code:
+```
+*:focus {
+    outline: 0 !important;
+}
+```
+This was added so that the orange box doesn't show when things are selected.  Keep in mind for when the `:focus` option needs to be used for something.
+- `global.scss` vs `main.scss`
+    - `global.scss`: Should contain all "global" variables that are used by the various Vue components (i.e. Color theme)
+    - `main.scss`: Should contain all style modifications done to the main page

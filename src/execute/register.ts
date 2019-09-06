@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 import * as fs from 'fs';
 import * as exe from './events';
 import * as pidusage from 'pidusage';
@@ -252,10 +253,13 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
 }
     
 function getBuildRunHTML(vars: BuildRunVars, context: vscode.ExtensionContext) { 
-    return fs.readFileSync(join(context.extensionPath, 'out', 'execute', 'display.html'))
+    let resourceDir = vscode.Uri.file(path.join(context.extensionPath, 'out', 'assets')).with({ scheme: 'vscode-resource' });
+    // console.log(resourceDir);
+    return fs.readFileSync(join(context.extensionPath, 'out', 'assets', 'display.html'))
         .toString()
         .replace(/\$\{srcName\}/g, vars.srcName)
         .replace(/\$\{caseCount\}/g, vars.caseCount.toString())
         .replace(/\$\{charLimit\}/g, vars.charLimit.toString())
-        .replace(/\$\{vuePath\}/g, vars.vuePath.toString());
+        .replace(/\$\{vuePath\}/g, vars.vuePath.toString())
+        .replace(/vscodeRoot/g, resourceDir.toString());
 }
