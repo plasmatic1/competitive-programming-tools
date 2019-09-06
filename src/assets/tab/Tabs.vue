@@ -39,61 +39,85 @@ export default {
 
 @import '../global.scss';
 
+// Margin Stuff
 $tab-v-padding: 10px;
-$main-border-width: 2px;
-$main-border: $main-border-width solid transparent;
+$tab-h-padding: 7px;
+
+// Color stuff
 $selected-bg-color: map-get($theme, 2);
+
+// Effect stuff
+$transition-duration: 0.6s;
 
 .container {
     margin-top: 15px;
 }
 
+// Join the background when a tab is selected
 .tab-selected {
     background: $selected-bg-color;
     border-bottom: none !important;
-    padding-bottom: ($tab-v-padding + $main-border-width) !important;
 }
 
+// --------------
+// Navigation bar
+// --------------
 .tab-nav {
     ul {
+        // Styles for each tab in the navigation
         li {
+            // Hover color
+            &:hover {
+                transition: $transition-duration;
+                background: map-get($theme, 3);
+            }
+            transition: $transition-duration;
+
+            // -------------
+            // Button itself
+            // -------------
             button {
-                font: 15pt 'Ubuntu';
+                // Hover color
+                &:hover {
+                    transition: $transition-duration;
+                    color: map-get($theme, 5);
+                }
+                transition: $transition-duration;
+
+                // Text based-stuff
+                font: 15pt $font-family;
                 color: map-get($theme, 4);
                 text-decoration: none;
                 list-style: none;
 
+                // Modify height
                 padding: $tab-v-padding 0 0 0;  
 
+                // Get rid of ugly default stuff
                 background: transparent;
                 border: none;
             }
 
             display: inline;
             margin: 0 10px;
-            padding: $tab-v-padding 5px 0 5px;
-            border: $main-border;
+            padding: $tab-v-padding $tab-h-padding ($tab-v-padding - 1) $tab-h-padding;
             border-top-left-radius: 5px;
             border-top-right-radius: 5px;
         }
 
+        // Styles for the navbar itself
         margin-bottom: ($tab-v-padding - 3);
     }
 
     margin-bottom: 0;
 }
 
+// Display for all the actual text
 .tab-disp {
     margin: 0 10px 10px 10px;
     padding: 10px;
     background: $selected-bg-color;
-    border: $main-border;
     border-radius: 10px;
 }
-
-// GET RID OF THAT GODDAMN ORANGE SELECTION BOX
-// button:focus {
-//     outline: 1px solid red !important;
-// }
 
 </style>

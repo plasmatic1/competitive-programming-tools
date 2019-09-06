@@ -25,10 +25,6 @@ export function optionManager(): OptionManager { return errorIfUndefined(_option
 // Activation Registration n stuff
 // ---------------------------------------------------------------------------
 
-const VUE_URL: string = 'https://cdn.jsdelivr.net/npm/vue@2.6.10/dist/vue.min.js';
-const VUE_NAME: string = 'vue.min.js';
-export let VUE_PATH: string = 'path not set yet';
-
 export function activate(context: vscode.ExtensionContext) {
 	console.log('Congratulations, your extension "cp-tools" is now active!');
 

@@ -3,12 +3,12 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as exe from './events';
 import * as pidusage from 'pidusage';
-import { getWebview, unlinkWebview } from '../webviewManager';
+import { getWebview, unlinkWebview } from '../display/displayManager';
 import { join } from 'path';
 import { Executor, executors } from './executors';
 import { isUndefined, isNull } from 'util';
 import { popUnsafe } from '../undefinedutils';
-import { optionManager, VUE_PATH } from '../extension';
+import { optionManager } from '../extension';
 import { ChildProcess } from 'child_process';
 // ---------------------------------------------------------------------------
 // Utility Functions
@@ -16,18 +16,6 @@ import { ChildProcess } from 'child_process';
 
 function getTime(): number {
     return new Date().getTime();
-}
-
-// ---------------------------------------------------------------------------
-// Registering
-// ---------------------------------------------------------------------------
-
-interface BuildRunVars {
-    srcFile: string;
-    srcName: string;
-    caseCount: number;
-    charLimit: number;
-    vuePath: string;
 }
 
 export function registerViewsAndCommands(context: vscode.ExtensionContext): void {
@@ -38,18 +26,6 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
             vscode.window.showErrorMessage('No open file!');
             return;
         }
-        
-        // ---------------------------------------------------------------------------
-        // Validating and getting input
-        // ---------------------------------------------------------------------------
-        const inputFilePath = optionManager().get('buildAndRun', 'inputFile');
-        
-        if (!fs.existsSync(inputFilePath)) {
-            vscode.window.showErrorMessage(`Could not find input file ${inputFilePath}`);
-            return;
-        }        
-        
-        const inputs: string[] = fs.readFileSync(inputFilePath).toString().split(optionManager().get('buildAndRun', 'caseDelimeter'));
 
         // ---------------------------------------------------------------------------
         // Validating and getting executor
@@ -64,72 +40,6 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
             vscode.window.showErrorMessage('File extension not supported yet!');
             return;
         }
-        
-        // ---------------------------------------------------------------------------
-        // Initializing Web Panel
-        // ---------------------------------------------------------------------------
-
-        let display = getWebview(context);
-        let vuePath = '';
-
-        if (fs.existsSync(VUE_PATH)) {
-            vscode.window.showInformationMessage('Using cached vue.min.js!');
-            vuePath = VUE_PATH;
-        }
-        else {
-            vuePath = 'https://cdn.jsdelivr.net/npm/vue/dist/vue.min.js';
-            // vuePath = 'https://cdn.jsdelivr.net/npm/vue/dist/vue.js'; NON MINIFIED VERSION, USE WITH CAUTION
-        }
-
-        display.webview.html = '';
-        display.webview.html = getBuildRunHTML({
-            srcFile,
-            srcName,
-            caseCount: inputs.length,
-            charLimit: optionManager().get('buildAndRun', 'charLimit'),
-            vuePath
-        }, context);
-
-        // Await for the webview to be ready
-        await new Promise((resolve, _) => {
-            display.webview.onDidReceiveMessage(msg => {
-                if (msg === 'ready') {
-                    resolve();
-                }
-            });
-        });
-
-        display.title = `Output of '${srcName}'`;
-            
-        // ---------------------------------------------------------------------------
-        // Web Panel Utility Functions
-        // ---------------------------------------------------------------------------
-
-        let eventQueue: exe.Event[] = [];
-        function emitEvent(obj: exe.Event) {
-            // Has to be like this (likely because of some this shenanigans)
-            // This cannot simply be refractored to `const emitEvent = display.webview.postMessage;`
-            if (display.visible) {
-                display.webview.postMessage(obj);
-            }
-            else {
-                eventQueue.push(obj);
-            }
-        }
-
-        display.onDidChangeViewState(evt => {
-            if (evt.webviewPanel.visible) {
-                while (eventQueue.length) {
-                    display.webview.postMessage(eventQueue.shift());
-                }
-            }
-        });
-
-        display.webview.onDidReceiveMessage(msg => {
-            if (msg === 'unlink') {
-                unlinkWebview();
-            }
-        });
             
         // ---------------------------------------------------------------------------
         // Compiling and Running Program
@@ -250,16 +160,4 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
     });
         
     context.subscriptions.push(buildRunCommand);
-}
-    
-function getBuildRunHTML(vars: BuildRunVars, context: vscode.ExtensionContext) { 
-    let resourceDir = vscode.Uri.file(path.join(context.extensionPath, 'out', 'assets')).with({ scheme: 'vscode-resource' });
-    // console.log(resourceDir);
-    return fs.readFileSync(join(context.extensionPath, 'out', 'assets', 'display.html'))
-        .toString()
-        .replace(/\$\{srcName\}/g, vars.srcName)
-        .replace(/\$\{caseCount\}/g, vars.caseCount.toString())
-        .replace(/\$\{charLimit\}/g, vars.charLimit.toString())
-        .replace(/\$\{vuePath\}/g, vars.vuePath.toString())
-        .replace(/vscodeRoot/g, resourceDir.toString());
 }

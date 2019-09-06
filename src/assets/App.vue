@@ -20,12 +20,20 @@
 <script>
     import Tabs from './tab/Tabs';
     import Tab from './tab/Tab';
+    
+    // Parts of the app
+    // import RunProgram from './RunProgram';
+    import CaseData from './CaseData';
+    // import Tools from './Tools';
+    // import Settings from './Settings';
 
     export default {
         name: 'App',
         components: {
             Tabs,
-            Tab
+            Tab,
+            // Parts
+            CaseData
         }
     };
 </script>
