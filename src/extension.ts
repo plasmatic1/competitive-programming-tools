@@ -8,7 +8,7 @@ import * as executeRegister from './execute/register';
 import * as templatesRegister from './template/register';
 import { join } from 'path';
 import { OptionManager } from './options/options';
-import { errorIfUndefined } from './undefinedutils';
+import { errorIfUndefined } from './extUtils';
 import { isUndefined } from 'util';
 
 // ---------------------------------------------------------------------------
@@ -20,6 +20,8 @@ var _optionManager: OptionManager | undefined = undefined;
 
 export function extensionContext(): vscode.ExtensionContext { return errorIfUndefined(_extensionContext, 'Extension not activated!'); }
 export function optionManager(): OptionManager { return errorIfUndefined(_optionManager, 'Extension not activated!'); }
+
+export const CASES_PATH = 'cases.json';
 
 // ---------------------------------------------------------------------------
 // Activation Registration n stuff

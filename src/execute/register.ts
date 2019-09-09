@@ -7,7 +7,7 @@ import { getWebview, unlinkWebview } from '../display/displayManager';
 import { join } from 'path';
 import { Executor, executors } from './executors';
 import { isUndefined, isNull } from 'util';
-import { popUnsafe } from '../undefinedutils';
+import { popUnsafe } from '../extUtils';
 import { optionManager } from '../extension';
 import { ChildProcess } from 'child_process';
 // ---------------------------------------------------------------------------
@@ -20,43 +20,11 @@ function getTime(): number {
 
 export function registerViewsAndCommands(context: vscode.ExtensionContext): void {
     let buildRunCommand = vscode.commands.registerCommand('cp-tools.buildAndRun', async () => {
-        let currEditor = vscode.window.activeTextEditor;
-        
-        if (isUndefined(currEditor)) {
-            vscode.window.showErrorMessage('No open file!');
-            return;
-        }
-
-        // ---------------------------------------------------------------------------
-        // Validating and getting executor
-        // ---------------------------------------------------------------------------
-        const srcFile: string = currEditor.document.uri.fsPath, 
-            srcName: string = popUnsafe(srcFile.split('\\')),
-            ext: string = popUnsafe(srcName.split('.')), 
-            executorConstructor: (new(srcFile: string) => Executor) | undefined = executors.get(ext);
-        console.log(`Compiling ${srcFile}, extension ${ext}...`);
-        
-        if (isUndefined(executorConstructor)) {
-            vscode.window.showErrorMessage('File extension not supported yet!');
-            return;
-        }
-            
         // ---------------------------------------------------------------------------
         // Compiling and Running Program
         // ---------------------------------------------------------------------------
         const executor: Executor = new executorConstructor(srcFile), timeout: number = optionManager().get('buildAndRun', 'timeout'),
             memSampleRate: number = optionManager().get('buildAndRun', 'memSample');
-        
-        executor.preExec();
-            
-        if (!isUndefined(executor.compileError)) {
-            const fatal: boolean = isUndefined(executor.execFile);
-            emitEvent(new exe.CompileErrorEvent(executor.compileError, fatal));
-                
-            if (fatal) {
-                return;
-            }
-        }
             
         var caseNo = 0;
         for (const input of inputs) {

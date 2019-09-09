@@ -3,7 +3,7 @@ import { join } from 'path';
 import { isUndefined } from 'util';
 import * as vscode from 'vscode';
 import * as parser from './parser';
-import { errorIfUndefined } from '../undefinedutils';
+import { errorIfUndefined } from '../extUtils';
 
 const SNIPPETS_FILE = 'snippets.code-snippets';
 

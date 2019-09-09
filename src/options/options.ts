@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as ext from './../extension';
 import { isUndefined } from 'util';
-import { errorIfUndefined } from '../undefinedutils';
+import { errorIfUndefined } from '../extUtils';
 
 export interface OptionProperties {
     defaultValue: string | number | boolean | undefined; // Default value for this option
