@@ -13,6 +13,7 @@ export enum EventType {
     UPDATE_MEMORY = 'updateMemory',
     UPDATE_STDOUT = 'updateStdout',
     UPDATE_STDERR = 'updateStderr',
+    COMPARE_STDOUT = 'compareStdout',
     END = 'end',
     RESET = 'reset'
 }
@@ -30,7 +31,7 @@ export class CompileErrorEvent implements Event {
 
 export class BeginCaseEvent implements Event {
     type: EventType = EventType.BEGIN_CASE;
-    constructor(public readonly input: string, public readonly caseNo: number) {}
+    constructor(public readonly input: string, public readonly output: string | undefined, public readonly caseNo: number) {}
 }
 
 export class UpdateTimeEvent implements Event {
@@ -51,6 +52,11 @@ export class UpdateStdoutEvent implements Event {
 export class UpdateStderrEvent implements Event {
     type: EventType = EventType.UPDATE_STDERR;
     constructor(public readonly data: string, public readonly caseNo: number) {}
+}
+
+export class CompareOutputEvent implements Event {
+    type: EventType = EventType.COMPARE_STDOUT;
+    constructor(public readonly isCorrect: boolean, public readonly caseNo: number) {}
 }
 
 export class EndEvent implements Event {
