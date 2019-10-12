@@ -1,15 +1,15 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { CompileErrorEvent, BeginCaseEvent, UpdateTimeEvent, EndEvent, UpdateStdoutEvent, UpdateStderrEvent, UpdateMemoryEvent, CompareOutputEvent } from './events';
+import { CompileErrorEvent, BeginCaseEvent, UpdateTimeEvent, EndEvent, UpdateStdoutEvent, UpdateStderrEvent, UpdateMemoryEvent, CompareOutputEvent, ResetEvent } from './events';
 import * as pidusage from 'pidusage';
-import * as display from '../display/displayManager';
 import { join } from 'path';
 import { Executor, executors } from './executors';
 import { isUndefined, isNull } from 'util';
 import { popUnsafe, readWorkspaceFile, errorIfUndefined } from '../extUtils';
-import { optionManager, CASES_PATH } from '../extension';
+import { optionManager, buildRunDI, CASES_PATH } from '../extension';
 import { ChildProcess } from 'child_process';
+import { DisplayInterface, EventType } from '../display/displayInterface';
 
 interface Case {
     input: string;
@@ -70,16 +70,6 @@ function getSourceFile(): string {
 }
 
 /**
- * @param event Emits an event of the BuildAndRun type
- */
-function emitEvent(event: any) {
-    display.emit({
-        type: display.EventType.BuildAndRun,
-        event
-    });
-}
-
-/**
  * Resolves the executor for that source file.  Throws an error if the executor was not found
  * @param src The source file path
  */
@@ -94,27 +84,44 @@ function getExecutor(src: string): Executor {
     return new executorConstructor(src);
 }
 
-/**
- * Compiles the program and throws an error if the compile failed
- * @param src The source file path
- */
-function compile(executor: Executor): void {
-    executor.preExec();
-            
-    if (!isUndefined(executor.compileError)) {
-        const fatal: boolean = isUndefined(executor.execFile);
-        emitEvent(new CompileErrorEvent(executor.compileError, fatal));
-            
-        if (fatal) {
-            return;
-        }
-    }
-}
-
-export class ProgramExecution {
+export class ProgramExecutionManager {
     private curProcs: ChildProcess[] = [];
     private halted: boolean = false;
     private curExecutor: Executor | undefined;
+
+    // Singletons
+    constructor (
+        private readonly displayInterface: DisplayInterface
+    ) {
+
+    }
+
+    /**
+     * @param event Emits an event of the BuildAndRun type
+     */
+    emitEvent(event: any) {
+        this.displayInterface.emit({
+            type: EventType.BuildAndRun,
+            event
+        });
+    }
+
+    /**
+     * Compiles the program and throws an error if the compile failed
+     * @param src The source file path
+     */
+    compile(executor: Executor): void {
+        executor.preExec();
+                
+        if (!isUndefined(executor.compileError)) {
+            const fatal: boolean = isUndefined(executor.execFile);
+            this.emitEvent(new CompileErrorEvent(executor.compileError, fatal));
+                
+            if (fatal) {
+                return;
+            }
+        }
+    }
 
     /**
      * Errors if the execution has been halted
@@ -142,30 +149,30 @@ export class ProgramExecution {
 
             try {
                 proc.stdin.write(input);
-                emitEvent(new BeginCaseEvent(input, output, caseno));
+                this.emitEvent(new BeginCaseEvent(input, output, caseno));
 
                 if (!/\s$/.test(input)) {
-                    emitEvent(new CompileErrorEvent(`Input for Case #${caseno + 1} does not end in whitespace, this may cause issues (such as cin waiting forever for a delimiter)`, false));
+                    this.emitEvent(new CompileErrorEvent(`Input for Case #${caseno + 1} does not end in whitespace, this may cause issues (such as cin waiting forever for a delimiter)`, false));
                 }
             }
             catch (e) {
-                emitEvent(new BeginCaseEvent('STDIN of program closed prematurely.', output, caseno));
+                this.emitEvent(new BeginCaseEvent('STDIN of program closed prematurely.', output, caseno));
             }
 
             const beginTime: number = getTime();
                 
             // Event handlers and timed processes
             proc.on('error', (error: Error) => {
-                emitEvent(new CompileErrorEvent(`${error.name}: ${error.message}`, true));
+                this.emitEvent(new CompileErrorEvent(`${error.name}: ${error.message}`, true));
                 res();
             });
                 
             proc.on('exit', (code: number, signal: string) => {
                 clearTimeout(tleTimeout);
-                emitEvent(new UpdateTimeEvent(getTime() - beginTime, caseno));
-                if (!isUndefined(output)) { emitEvent(new CompareOutputEvent(output.trim() === procOutput.trim(), caseno)); }
-                else { emitEvent(new CompareOutputEvent(true, caseno)); }
-                emitEvent(new EndEvent(createExitMessage(code, signal), caseno));
+                this.emitEvent(new UpdateTimeEvent(getTime() - beginTime, caseno));
+                if (!isUndefined(output)) { this.emitEvent(new CompareOutputEvent(output.trim() === procOutput.trim(), caseno)); }
+                else { this.emitEvent(new CompareOutputEvent(true, caseno)); }
+                this.emitEvent(new EndEvent(createExitMessage(code, signal), caseno));
                 res();
             });
             
@@ -173,21 +180,21 @@ export class ProgramExecution {
                 const data = proc.stdout.read();
                 if (data) {
                     procOutput += data.toString();
-                    emitEvent(new UpdateStdoutEvent(data.toString(), caseno));
+                    this.emitEvent(new UpdateStdoutEvent(data.toString(), caseno));
                 }
             });
                 
             proc.stderr.on('readable', () => {
                 const data = proc.stderr.read();
-                if (data) { emitEvent(new UpdateStderrEvent(data.toString(), caseno)); }
+                if (data) { this.emitEvent(new UpdateStderrEvent(data.toString(), caseno)); }
             });
             
             // Memory and time live update
             const memCheckInterval = setInterval(function updateMemAndTime() {
                 pidusage(proc.pid)
                 .then(stat => {
-                    emitEvent(new UpdateTimeEvent(stat.elapsed, caseno));
-                    emitEvent(new UpdateMemoryEvent(stat.memory, caseno));
+                    this.emitEvent(new UpdateTimeEvent(stat.elapsed, caseno));
+                    this.emitEvent(new UpdateMemoryEvent(stat.memory, caseno));
                 })
                 .catch(_ => {
                     clearInterval(memCheckInterval);
@@ -199,11 +206,14 @@ export class ProgramExecution {
     }
 
     /**
-     * Resets ths display for a new execution of a program.  This sends an event to the webview then waits for a response
+     * Resets ths display for a new execution of a program; # of cases should be specified.  This function returns a promise that resolves when the response
+     * to the reset event is received from the webview
+     * @param caseCnt Number of cases
      */
-    async resetDisplay(): Promise<void> {
-        return new Promise(function(res, _) {
-            // TODO: implement
+    async resetDisplay(caseCnt: number): Promise<void> {
+        return new Promise((res, _) => {
+            this.emitEvent(new ResetEvent(caseCnt));
+            buildRunDI().waitForResetResponse().then(res);
         });
     }
 
@@ -216,7 +226,8 @@ export class ProgramExecution {
         const cases = getTestCases();
 
         this.checkForHalted();
-        compile(executor);
+        this.compile(executor);
+        this.resetDisplay(cases.length);
         let counter = 1;
         for (const acase of cases) {
             this.checkForHalted();
@@ -237,14 +248,14 @@ export class ProgramExecution {
     }
 }
 
-let curExecution: ProgramExecution | undefined;
+let curExecution: ProgramExecutionManager | undefined;
 
 /**
  * Attempts to compile and run whatever open program the use has
  */
 export async function run(): Promise<void> {
     try {
-        curExecution = new ProgramExecution();
+        curExecution = new ProgramExecutionManager();
         await curExecution.run();
         curExecution = undefined;
     }

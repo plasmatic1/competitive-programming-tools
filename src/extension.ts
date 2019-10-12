@@ -8,6 +8,8 @@ import * as executeRegister from './execute/register';
 import * as templatesRegister from './template/register';
 import { join } from 'path';
 import { OptionManager } from './options/options';
+import { DisplayInterface } from './display/displayInterface';
+import { BuildRunDI } from './display/buildRunDisplayInterface';
 import { errorIfUndefined } from './extUtils';
 import { isUndefined } from 'util';
 
@@ -15,11 +17,15 @@ import { isUndefined } from 'util';
 // Globals to export
 // ---------------------------------------------------------------------------
 
-var _extensionContext: vscode.ExtensionContext | undefined = undefined;
-var _optionManager: OptionManager | undefined = undefined;
+let _extensionContext: vscode.ExtensionContext | undefined = undefined;
+let _optionManager: OptionManager | undefined = undefined;
+let _displayInterface: DisplayInterface | undefined = undefined;
+let _buildRunDI: BuildRunDI | undefined = undefined;
 
 export function extensionContext(): vscode.ExtensionContext { return errorIfUndefined(_extensionContext, 'Extension not activated!'); }
 export function optionManager(): OptionManager { return errorIfUndefined(_optionManager, 'Extension not activated!'); }
+export function displayInterface(): DisplayInterface { return errorIfUndefined(_displayInterface, 'Extension not activated!'); }
+export function buildRunDI(): BuildRunDI { return errorIfUndefined(_buildRunDI, 'Extension not activated!'); }
 
 export const CASES_PATH = 'cases.json';
 
@@ -30,9 +36,11 @@ export const CASES_PATH = 'cases.json';
 export function activate(context: vscode.ExtensionContext) {
 	console.log('Congratulations, your extension "cp-tools" is now active!');
 
-	// Setting context
+	// Setting and Initializing Singletons
 	_extensionContext = context;
 	_optionManager = new OptionManager(_extensionContext);
+	_displayInterface = new DisplayInterface();
+	_buildRunDI = new BuildRunDI(_displayInterface);
 
 	// Misc. Commands
 	let openInputFileCommand = vscode.commands.registerCommand('cp-tools.openInputFile', () => {

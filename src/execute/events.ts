@@ -64,6 +64,12 @@ export class EndEvent implements Event {
     constructor(public readonly endMsg: string[], public readonly caseNo: number) {}
 }
 
+export class ResetEvent implements Event {
+    type: EventType = EventType.RESET;
+    caseNo: number = -1;
+    constructor(public readonly caseCnt: number) {}
+}
+
 export interface Result {
     exitType: ResultType; // Type of result
     exitDetail: string; // Any other details associated with the result type.  Ommitted for Success

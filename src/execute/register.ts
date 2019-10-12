@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as exe from './events';
 import * as pidusage from 'pidusage';
-import { getWebview, unlinkWebview } from '../display/displayManager';
+import { getWebview, unlinkWebview } from '../display/displayInterface';
 import { join } from 'path';
 import { Executor, executors } from './executors';
 import { isUndefined, isNull } from 'util';
