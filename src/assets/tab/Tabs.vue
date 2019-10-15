@@ -37,7 +37,7 @@ export default {
 
 <style lang="scss" scoped>
 
-@import '../global.scss';
+@import '../scss/global.scss';
 
 // Margin Stuff
 $tab-v-padding: 10px;

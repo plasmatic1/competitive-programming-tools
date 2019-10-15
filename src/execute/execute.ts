@@ -1,15 +1,12 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
-import * as fs from 'fs';
 import { CompileErrorEvent, BeginCaseEvent, UpdateTimeEvent, EndEvent, UpdateStdoutEvent, UpdateStderrEvent, UpdateMemoryEvent, CompareOutputEvent, ResetEvent } from './events';
 import * as pidusage from 'pidusage';
-import { join } from 'path';
 import { Executor, executors } from './executors';
 import { isUndefined, isNull } from 'util';
 import { popUnsafe, readWorkspaceFile, errorIfUndefined } from '../extUtils';
 import { optionManager, buildRunDI, CASES_PATH } from '../extension';
 import { ChildProcess } from 'child_process';
-import { DisplayInterface, EventType } from '../display/displayInterface';
+import { BuildRunDI } from '../display/buildRunDisplayInterface';
 
 interface Case {
     input: string;
@@ -84,26 +81,16 @@ function getExecutor(src: string): Executor {
     return new executorConstructor(src);
 }
 
-export class ProgramExecutionManager {
+class ProgramExecutionManager {
     private curProcs: ChildProcess[] = [];
     private halted: boolean = false;
     private curExecutor: Executor | undefined;
 
     // Singletons
     constructor (
-        private readonly displayInterface: DisplayInterface
+        private readonly displayInterface: BuildRunDI
     ) {
 
-    }
-
-    /**
-     * @param event Emits an event of the BuildAndRun type
-     */
-    emitEvent(event: any) {
-        this.displayInterface.emit({
-            type: EventType.BuildAndRun,
-            event
-        });
     }
 
     /**
@@ -115,7 +102,7 @@ export class ProgramExecutionManager {
                 
         if (!isUndefined(executor.compileError)) {
             const fatal: boolean = isUndefined(executor.execFile);
-            this.emitEvent(new CompileErrorEvent(executor.compileError, fatal));
+            this.displayInterface.emit(new CompileErrorEvent(executor.compileError, fatal));
                 
             if (fatal) {
                 return;
@@ -140,7 +127,7 @@ export class ProgramExecutionManager {
      * @param output The output data
      */
     async executeCase(executor: Executor, caseno: number, input: string, output: string | undefined): Promise<void> {
-        return new Promise(function(res, _) {
+        return new Promise((res, _) => {
             const timeout = optionManager().get('buildAndRun', 'timeout'),
                 memSampleRate = optionManager().get('buildAndRun', 'memSample');
 
@@ -149,30 +136,36 @@ export class ProgramExecutionManager {
 
             try {
                 proc.stdin.write(input);
-                this.emitEvent(new BeginCaseEvent(input, output, caseno));
+                this.displayInterface.emit(new BeginCaseEvent(input, output, caseno));
 
                 if (!/\s$/.test(input)) {
-                    this.emitEvent(new CompileErrorEvent(`Input for Case #${caseno + 1} does not end in whitespace, this may cause issues (such as cin waiting forever for a delimiter)`, false));
+                    this.displayInterface.emit(new CompileErrorEvent(`Input for Case #${caseno + 1} does not end in whitespace, this may cause issues (such as cin waiting forever for a delimiter)`, false));
                 }
             }
             catch (e) {
-                this.emitEvent(new BeginCaseEvent('STDIN of program closed prematurely.', output, caseno));
+                this.displayInterface.emit(new BeginCaseEvent('STDIN of program closed prematurely.', output, caseno));
             }
 
             const beginTime: number = getTime();
                 
             // Event handlers and timed processes
             proc.on('error', (error: Error) => {
-                this.emitEvent(new CompileErrorEvent(`${error.name}: ${error.message}`, true));
+                this.displayInterface.emit(new CompileErrorEvent(`${error.name}: ${error.message}`, true));
                 res();
             });
                 
             proc.on('exit', (code: number, signal: string) => {
                 clearTimeout(tleTimeout);
-                this.emitEvent(new UpdateTimeEvent(getTime() - beginTime, caseno));
-                if (!isUndefined(output)) { this.emitEvent(new CompareOutputEvent(output.trim() === procOutput.trim(), caseno)); }
-                else { this.emitEvent(new CompareOutputEvent(true, caseno)); }
-                this.emitEvent(new EndEvent(createExitMessage(code, signal), caseno));
+                this.displayInterface.emit(new UpdateTimeEvent(getTime() - beginTime, caseno));
+
+                // tslint:disable-next-line: curly
+                if (!isUndefined(output)) 
+                    this.displayInterface.emit(new CompareOutputEvent(output.trim() === procOutput.trim(), caseno));
+                // tslint:disable-next-line: curly
+                else
+                    this.displayInterface.emit(new CompareOutputEvent(true, caseno));
+
+                this.displayInterface.emit(new EndEvent(createExitMessage(code, signal), caseno));
                 res();
             });
             
@@ -180,21 +173,21 @@ export class ProgramExecutionManager {
                 const data = proc.stdout.read();
                 if (data) {
                     procOutput += data.toString();
-                    this.emitEvent(new UpdateStdoutEvent(data.toString(), caseno));
+                    this.displayInterface.emit(new UpdateStdoutEvent(data.toString(), caseno));
                 }
             });
                 
             proc.stderr.on('readable', () => {
                 const data = proc.stderr.read();
-                if (data) { this.emitEvent(new UpdateStderrEvent(data.toString(), caseno)); }
+                if (data) { this.displayInterface.emit(new UpdateStderrEvent(data.toString(), caseno)); }
             });
             
             // Memory and time live update
-            const memCheckInterval = setInterval(function updateMemAndTime() {
+            const memCheckInterval = setInterval(() => {
                 pidusage(proc.pid)
                 .then(stat => {
-                    this.emitEvent(new UpdateTimeEvent(stat.elapsed, caseno));
-                    this.emitEvent(new UpdateMemoryEvent(stat.memory, caseno));
+                    this.displayInterface.emit(new UpdateTimeEvent(stat.elapsed, caseno));
+                    this.displayInterface.emit(new UpdateMemoryEvent(stat.memory, caseno));
                 })
                 .catch(_ => {
                     clearInterval(memCheckInterval);
@@ -212,7 +205,7 @@ export class ProgramExecutionManager {
      */
     async resetDisplay(caseCnt: number): Promise<void> {
         return new Promise((res, _) => {
-            this.emitEvent(new ResetEvent(caseCnt));
+            this.displayInterface.emit(new ResetEvent(caseCnt));
             buildRunDI().waitForResetResponse().then(res);
         });
     }
@@ -248,27 +241,40 @@ export class ProgramExecutionManager {
     }
 }
 
-let curExecution: ProgramExecutionManager | undefined;
+export class ProgramExecutionManagerDriver {
+    curExecution: ProgramExecutionManager | undefined = undefined;
 
-/**
- * Attempts to compile and run whatever open program the use has
- */
-export async function run(): Promise<void> {
-    try {
-        curExecution = new ProgramExecutionManager();
-        await curExecution.run();
-        curExecution = undefined;
+    constructor (
+        private readonly displayInterface: BuildRunDI
+    ) {
+        // Fill in if needed
     }
-    catch (e) {
-        vscode.window.showErrorMessage(e);
-        console.log(e);
-    }
-}
 
-/**
- * Halts a currently running process (if one exists)
- */
-export function halt(): void {
-    errorIfUndefined(curExecution, 'Program is not running!').halt();
-    curExecution = undefined;
+    /**
+     * Attempts to compile and run whatever open program the use has
+     */
+    async run(): Promise<void> {
+        try {
+            this.curExecution = new ProgramExecutionManager(this.displayInterface);
+            await this.curExecution.run();
+            this.curExecution = undefined;
+        }
+        catch (e) {
+            vscode.window.showErrorMessage(e.toString());
+            console.log(e);
+        }
+    }
+
+    /**
+     * Halts a currently running process (if one exists)
+     */
+    halt(): void {
+        if (!isUndefined(this.curExecution)) {
+            this.curExecution.halt();
+            this.curExecution = undefined;
+        }
+        // tslint:disable-next-line: curly
+        else
+            vscode.window.showErrorMessage('Attempted halt while no program was running!');
+    }
 }

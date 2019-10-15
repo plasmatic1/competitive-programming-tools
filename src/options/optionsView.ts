@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { optionManager } from '../extension';
 import { OptionProperties, CategoryProperties } from './options';
-import { errorIfUndefined } from '../undefinedutils';
+import { errorIfUndefined } from '../extUtils';
 
 export class OptionsNodeProvider implements vscode.TreeDataProvider<OptionNode | OptionNodeCategory> {
     private changeEmitter: vscode.EventEmitter<OptionNode | OptionNodeCategory | undefined> = new vscode.EventEmitter<OptionNode | OptionNodeCategory | undefined>();

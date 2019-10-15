@@ -12,12 +12,10 @@
 	],
 	"activationEvents": [
 		"onCommand:cp-tools.buildAndRun",
-		"onCommand:cp-tools.openInputFile",
+		"onCommand:cp-tools.resetDisplayHTML",
 		"onCommand:cp-tools.editOption",
 		"onCommand:cp-tools.resetCategory",
 		"onCommand:cp-tools.resetOptions",
-		"onCommand:cp-tools.cacheVue",
-		"onCommand:cp-tools.uncacheVue",
 		"onCommand:cp-tools.loadTemplates",
 		"onView:options"
 	],
@@ -30,9 +28,9 @@
 				"category": "CP Tools Build and Run"
 			},
 			{
-				"command": "cp-tools.openInputFile",
-				"title": "Open Input File",
-				"category": "CP Tools Build and Run"
+				"command": "cp-tools.resetDisplayHTML",
+				"title": "Reset/Reload Display HTML",
+				"category": "CP Tools"
 			},
 			{
 				"command": "cp-tools.editOption",
@@ -53,19 +51,9 @@
 				"icon": "icons/refresh.svg"
 			},
 			{
-				"command": "cp-tools.cacheVue",
-				"title": "Cache Vue.js",
-				"category": "CP Tools Optimization"
-			},
-			{
-				"command": "cp-tools.uncacheVue",
-				"title": "Uncache Vue.js",
-				"category": "CP Tools Optimization"
-			},
-			{
 				"command": "cp-tools.loadTemplates",
 				"title": "Load Templates",
-				"category": "CP Tools Templates (WIP)"
+				"category": "CP Tools Templates"
 			}
 		],
 		"viewsContainers": {

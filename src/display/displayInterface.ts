@@ -2,10 +2,11 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import { isUndefined } from 'util';
+import { errorIfUndefined } from '../extUtils';
 
 export enum EventType {
     BuildAndRun = 'buildAndRun',
-    InputOutput = 'inputOutput',
+    InputOutput = 'inputOutput', // Not really used because the module is output only
     Tools = 'tools',
     Settings = 'settings'
 }
@@ -96,6 +97,15 @@ export class DisplayInterface {
      */
     unlinkDisplay(): void {
         this.curView = undefined;
+    }
+
+    /**
+     * Resets the display HTML of the CP-Tools webview.  Mainly for debugging purposes or if something has gone wrong.
+     * If curView is undefined, an error will be thrown
+     * @param context The extension context
+     */
+    resetDisplayHTML(context: vscode.ExtensionContext): void {
+        errorIfUndefined(this.curView, 'No display is loaded!').webview.html = this.getDisplayHTML(context);
     }
 
     /**

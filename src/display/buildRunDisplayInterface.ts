@@ -2,14 +2,13 @@ import { DisplayInterface, EventType } from './displayInterface';
 
 export enum BuildRunEventTypes {
     Reset = 'reset',
-    Packet = 'packet'
 }
 
 export class BuildRunDI {
     resetResponseQueue: (() => void)[] = [];
 
     constructor(
-        public readonly displayInterface: DisplayInterface
+        private readonly displayInterface: DisplayInterface
     ) {
         this.displayInterface.on(EventType.BuildAndRun, (evt) => {
             if (evt.type === BuildRunEventTypes.Reset) {
@@ -28,5 +27,18 @@ export class BuildRunDI {
         return new Promise((res, _) => { // Lambda so `this` is not overridden
             this.resetResponseQueue.push(res);
         });
+    }
+
+    /**
+     * Emits a buildAndRun event
+     * @param event The event to emit
+     */
+    emit(event: any): void {
+        this.displayInterface.emit(
+            {
+                type: EventType.BuildAndRun,
+                event
+            }
+        );
     }
 }
