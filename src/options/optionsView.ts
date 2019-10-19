@@ -21,7 +21,7 @@ export class OptionsNodeProvider implements vscode.TreeDataProvider<OptionNode |
     getChildren(element?: OptionNode | undefined): vscode.ProviderResult<OptionNode[] | OptionNodeCategory[]> {
         if (element) {
             if (element instanceof OptionNodeCategory) {
-                return optionManager().entriesFor(element.category).map(([key, properties]) => new OptionNode(element.category, key, properties));
+                return optionManager().optionsFor(element.category).map(([key, properties]) => new OptionNode(element.category, key, properties));
             }
             return [];
         } else {

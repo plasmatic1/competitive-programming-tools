@@ -12,8 +12,8 @@ export enum EventType {
 }
 
 interface Event {
-    type: string;
-    event: any;
+    type: EventType;
+    event: { type: string, event: any };
 }
 
 export class DisplayInterface {

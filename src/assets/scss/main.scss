@@ -1,6 +1,30 @@
+@import './global.scss';
+
 // MAKES SURE THE GODDAMN ORANGE BOX DOESN'T APPEAR
 *:focus {
     outline: 0 !important;
+}
+
+// Buttons and Text Areas
+$border-color: map-get($theme, 3);
+$text-color: map-get($theme, 4);
+
+textarea, button {
+    background: transparent;
+    border-color: $border-color;
+    color: $text-color;
+}
+
+button {
+    border: 1px solid $border-color;
+    border-radius: 3px;
+    font: 14pt $font-family;
+    transition: 0.5s;
+
+    &:hover {
+        transition: 0.5s;
+        background: $text-color;
+    }
 }
 
 // code {

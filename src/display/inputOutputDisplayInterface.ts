@@ -1,6 +1,7 @@
 import { DisplayInterface, EventType } from './displayInterface';
 import { writeWorkspaceFile, readWorkspaceFile } from '../extUtils';
 import { CASES_PATH } from '../extension';
+import * as vscode from 'vscode';
 
 export enum InputOutputEventTypes {
     ResetCases = 'resetCases', // Removes all cases completely
@@ -37,6 +38,7 @@ export class InputOutputDI {
             else if (event.type === InputOutputEventTypes.SetCases) {
                 this.curCases = event.event;
                 this.saveCases();
+                vscode.window.showInformationMessage('Saved test cases!');
             }
             // When a ready event (from the webview) is received, retrieve the cases and send it to the webview
             else if (event.type === InputOutputEventTypes.Ready) {

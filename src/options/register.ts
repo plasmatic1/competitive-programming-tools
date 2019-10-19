@@ -14,7 +14,7 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
         if (isUndefined(option)) {
             const selected = await vscode.window.showQuickPick(
                 optionManager().categories
-                    .map(category => optionManager().entriesFor(category)
+                    .map(category => optionManager().optionsFor(category)
                         .map(([key, _]) => `${category}.${key}: ${optionManager().get(category, key)}`))
                     .reduce((last, cur) => last.concat(cur), []),
                 { canPickMany: false }
@@ -42,7 +42,7 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
     
     let resetOptionsCommand = vscode.commands.registerCommand('cp-tools.resetOptions', () => {
         for (const category of optionManager().categories) {
-            for (const [key, properties] of optionManager().entriesFor(category)) {
+            for (const [key, properties] of optionManager().optionsFor(category)) {
                 optionManager().set(category, key, properties.defaultValue);
             }
         }
@@ -64,7 +64,7 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
             var category = option.category;
         }
 
-        for (const [key, properties] of optionManager().entriesFor(category)) {
+        for (const [key, properties] of optionManager().optionsFor(category)) {
             optionManager().set(category, key, properties.defaultValue);
         }
         

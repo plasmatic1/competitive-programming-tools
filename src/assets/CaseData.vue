@@ -7,7 +7,11 @@
         </div>
         <div>
             <div v-for="(testCase, index) in cases" :key="index">
-                <h3>Case #{{ index + 1 }}</h3>
+                <h3>
+                    Case #{{ index + 1 }}
+                    <button @click="removeCase(index)" class="btn-sm">X</button>
+                    <button @click="insertCaseAbove(index)" class="btn-sm">^</button>
+                </h3>
 
                 <table>
                     <col width="10em">
@@ -57,6 +61,7 @@ export default {
                 output: ''
             });
         },
+
         /**
          * Sends the cases back to main (the extension)
          */
@@ -66,6 +71,7 @@ export default {
                 event: this.cases
             });
         },
+
         /**
          * Resets (deletes) all cases
          */
@@ -74,6 +80,25 @@ export default {
             EventBus.$emit(EventType.PostEventToMain, 'inputOutput', {
                 type: 'resetCases',
                 event: undefined
+            });
+        },
+
+        /**
+         * Removes the case with the specified index
+         * @param index Index to remove
+         */
+        removeCase(index) {
+            this.cases.splice(index, 1);
+        },
+
+        /**
+         * Inserts an empty case above the specified index
+         * @param index Index to insert at
+         */
+        insertCaseAbove(index) {
+            this.cases.splice(index, 0, {
+                input: '',
+                output: ''
             });
         },
 
@@ -131,27 +156,7 @@ export default {
 <style lang="scss" scoped>
 
 @import 'scss/global.scss';
-
-$text-color: map-get($theme, 4);
-$border-color: map-get($theme, 3);
-
-textarea, button {
-    background: transparent;
-    border-color: $border-color;
-    color: $text-color;
-}
-
-button {
-    border: 1px solid $border-color;
-    border-radius: 3px;
-    font: 15px $font-family;
-    transition: 0.5s;
-
-    &:hover {
-        transition: 0.5s;
-        background: $text-color;
-    }
-}
+@import 'scss/main.scss';
 
 textarea {
     box-sizing: border-box;
@@ -163,18 +168,22 @@ table {
 }
 
 #buttons {
-    margin-bottom: 7px;
+    margin-bottom: 20px;
 }
 
 h3 {
     color: map-get($theme, 5);
-    margin-top: 8px;
+    margin-top: 10px;
     margin-bottom: 2px;
 }
 
-span {
+td {
     color: $text-color;
-    
+}
+
+.btn-sm {
+    font: 11pt $font-family !important;
+
 }
 
 </style>

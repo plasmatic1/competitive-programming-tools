@@ -21,16 +21,20 @@ import { InputOutputEventTypes, InputOutputDI } from './display/inputOutputDispl
 
 let _extensionContext: vscode.ExtensionContext | undefined = undefined;
 let _optionManager: OptionManager | undefined = undefined;
+
 let _displayInterface: DisplayInterface | undefined = undefined;
 let _buildRunDI: BuildRunDI | undefined = undefined;
 let _inputOutputDI: InputOutputDI | undefined = undefined;
+
 let _programExecutionManager: ProgramExecutionManagerDriver | undefined = undefined;
 
 export function extensionContext(): vscode.ExtensionContext { return errorIfUndefined(_extensionContext, 'Extension not activated!'); }
 export function optionManager(): OptionManager { return errorIfUndefined(_optionManager, 'Extension not activated!'); }
+
 export function displayInterface(): DisplayInterface { return errorIfUndefined(_displayInterface, 'Extension not activated!'); }
 export function buildRunDI(): BuildRunDI { return errorIfUndefined(_buildRunDI, 'Extension not activated!'); }
 export function inputOutputDI(): InputOutputDI { return errorIfUndefined(_inputOutputDI, 'Extension not activated!'); }
+
 export function programExecutionManager(): ProgramExecutionManagerDriver { return errorIfUndefined(_programExecutionManager, 'Extension not activated!'); }
 
 export const CASES_PATH = 'cases.json';
@@ -45,9 +49,11 @@ export function activate(context: vscode.ExtensionContext) {
 	// Setting and Initializing Singletons
 	_extensionContext = context;
 	_optionManager = new OptionManager(_extensionContext);
+
 	_displayInterface = new DisplayInterface();
 	_buildRunDI = new BuildRunDI(_displayInterface);
 	_inputOutputDI = new InputOutputDI(_displayInterface);
+	
 	_programExecutionManager = new ProgramExecutionManagerDriver(_buildRunDI);
 
 	// Misc. Commands
