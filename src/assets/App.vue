@@ -2,10 +2,10 @@
 <div>
     <Tabs>
         <Tab name="Build and Run">
-            <RunProgram :curEvent="curBuildRunEvent" />
+            <RunProgram />
         </Tab>
         <Tab name="Input/Output" selected="true">
-            <CaseData />
+            <CaseData ref="inputOutputEl" />
         </Tab>
         <Tab name="Extra Tools">
             Extra Tools
@@ -42,33 +42,27 @@
         },
         data() {
             return {
-                curBuildRunEvent: {}
+                
             }
         },
         mounted() {
-            window.addEventListener('message', event_ => {
-                const event = event_.event, type = event_.type;
-
-                if (type === 'buildAndRun') {
-                    curBuildRunEvent = event;
-                }
-                else if (type === 'tools') {
-
-                }
-                else if (type === 'settings') {
-
-                }
-                // else if (type === 'inputOutput') {
-
-                // }
+            // Listen for messages
+            window.addEventListener('message', (event_) => {
+                const event = event_.data.event, type = event_.data.type;
+                // console.log(`Got event ${JSON.stringify(event_.data)}`);
+                EventBus.$emit(type, event);
             });
 
             const vscode = acquireVsCodeApi();
 
-            console.log(JSON.stringify(EventType));
+            // Posting events to main
             EventBus.$on(EventType.PostEventToMain, (type, event) => {
+                // console.log(`Sending event | Type: ${type}, Evt: ${event}`);
                 vscode.postMessage({ type, event });
             });
+
+            // Ready signals
+            this.$refs.inputOutputEl.sendReadySignal();
         }
     };
 </script>

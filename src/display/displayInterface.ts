@@ -27,7 +27,7 @@ export class DisplayInterface {
     }
 
     /**
-     * Opens a new CP Tools webview, or selects it if it's already open.
+     * Opens a new CP Tools webview, or selects (focuses) it if it's already open.
      * @param context The extension context object
      */
     openDisplay(context: vscode.ExtensionContext): void {
@@ -57,9 +57,10 @@ export class DisplayInterface {
             // Making sure to empty the event queue when the frame is shown
             display.onDidChangeViewState(evt => {
                 if (evt.webviewPanel.visible) {
-                    while (this.eventQueue.length) {
-                        display.webview.postMessage(this.eventQueue.shift());
-                    }
+                    // tslint:disable-next-line: curly
+                    for (const event of this.eventQueue)
+                        display.webview.postMessage(event);
+                    this.eventQueue.length = 0;
                 }
             });
 
@@ -105,7 +106,9 @@ export class DisplayInterface {
      * @param context The extension context
      */
     resetDisplayHTML(context: vscode.ExtensionContext): void {
-        errorIfUndefined(this.curView, 'No display is loaded!').webview.html = this.getDisplayHTML(context);
+        const curView = errorIfUndefined(this.curView, 'No display is loaded!');
+        curView.webview.html = this.getDisplayHTML(context);
+        vscode.window.showInformationMessage('Reloaded WebView HTML!');
     }
 
     /**

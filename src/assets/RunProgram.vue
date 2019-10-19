@@ -7,21 +7,24 @@
 </template>
 
 <script>
+import EventBus from './eventTypes';
+
 export default {
     name: 'RunProgram',
     props: {
-        curEvent: Object
     },
     data() {
         return {
             events: []
         }
     },
+    mount() {
+        EventBus.$on('buildAndRun', (event) => {
+            console.log('buildAndRun : ', JSON.stringify(event));
+        });
+    },
     watch: {
-        'curEvent': function() {
-            const event = this.curEvent;
-            events.push(JSON.stringify(event));
-        }
+
     }
 }
 </script>

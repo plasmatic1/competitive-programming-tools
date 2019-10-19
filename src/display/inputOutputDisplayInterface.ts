@@ -1,10 +1,11 @@
 import { DisplayInterface, EventType } from './displayInterface';
-import { writeWorkspaceFile } from '../extUtils';
+import { writeWorkspaceFile, readWorkspaceFile } from '../extUtils';
 import { CASES_PATH } from '../extension';
 
 export enum InputOutputEventTypes {
     ResetCases = 'resetCases', // Removes all cases completely
-    SetCases = 'setCases' // Sets the cases
+    SetCases = 'setCases', // Sets the cases
+    Ready = 'ready' // The program is ready
 }
 
 class Case {
@@ -27,7 +28,6 @@ export class InputOutputDI {
     constructor(
         private readonly displayInterface: DisplayInterface
     ) {
-        
         // Handle all case events
         this.displayInterface.on(EventType.InputOutput, (event) => {
             if (event.type === InputOutputEventTypes.ResetCases) {
@@ -38,6 +38,18 @@ export class InputOutputDI {
                 this.curCases = event.event;
                 this.saveCases();
             }
+            // When a ready event (from the webview) is received, retrieve the cases and send it to the webview
+            else if (event.type === InputOutputEventTypes.Ready) {
+                this.loadCases();
+                // console.log(`CurCases: ${JSON.stringify(this.curCases)}`);
+                this.displayInterface.emit({
+                    type: EventType.InputOutput,
+                    event: {
+                        type: InputOutputEventTypes.SetCases,
+                        event: this.curCases
+                    }
+                });
+            }
         });
     }
 
@@ -46,6 +58,13 @@ export class InputOutputDI {
      */
     saveCases() {
         writeWorkspaceFile(CASES_PATH, JSON.stringify(this.curCases));
+    }
+
+    /**
+     * Loads current case object from file in .vscode directory
+     */
+    loadCases() {
+        this.curCases = JSON.parse(readWorkspaceFile(CASES_PATH, '[]'));
     }
 
     // Not really needed for anything at the moment

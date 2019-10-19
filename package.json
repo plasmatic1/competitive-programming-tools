@@ -97,7 +97,7 @@
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
 		"parcel:build": "parcel build -d out/assets src/assets/display.html --public-url \"vscodeRoot\"",
-		"parcel:watch": "parcel watch -d out/assets src/assets/display.html --public-url \"vscodeRoot\"",
+		"parcel:watch": "parcel watch -d out/assets src/assets/display.html --public-url \"vscodeRoot\" --no-hmr",
 		"compile": "tsc -p ./ && npm run parcel:build",
 		"watch": "tsc -watch -p ./ && npm run parcel:watch",
 		"postinstall": "node ./node_modules/vscode/bin/install",

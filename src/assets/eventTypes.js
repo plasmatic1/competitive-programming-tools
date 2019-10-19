@@ -1,4 +1,4 @@
-export default EventType = {
+export default {
     PostEventToMain: 'postEvent',
     BuildAndRunEvent: 'buildAndRunEvent'
 };

@@ -159,7 +159,7 @@ class ProgramExecutionManager {
                 this.displayInterface.emit(new UpdateTimeEvent(getTime() - beginTime, caseno));
 
                 // tslint:disable-next-line: curly
-                if (!isUndefined(output)) 
+                if (!isUndefined(output) && output.length > 0) 
                     this.displayInterface.emit(new CompareOutputEvent(output.trim() === procOutput.trim(), caseno));
                 // tslint:disable-next-line: curly
                 else
