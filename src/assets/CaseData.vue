@@ -42,7 +42,7 @@
 <script>
 // Event stuff
 import EventBus from './eventBus';
-import EventType from './eventTypes';
+import EventTypes from './eventTypes';
 
 export default {
     name: 'CaseData',
@@ -66,7 +66,7 @@ export default {
          * Sends the cases back to main (the extension)
          */
         saveCases() {
-            EventBus.$emit(EventType.PostEventToMain, 'inputOutput', {
+            EventBus.$emit(EventTypes.PostEventToMain, 'inputOutput', {
                 type: 'setCases',
                 event: this.cases
             });
@@ -77,7 +77,7 @@ export default {
          */
         resetCases() {
             this.cases = [];
-            EventBus.$emit(EventType.PostEventToMain, 'inputOutput', {
+            EventBus.$emit(EventTypes.PostEventToMain, 'inputOutput', {
                 type: 'resetCases',
                 event: undefined
             });
@@ -106,7 +106,7 @@ export default {
          * Sends a "ready" signal to the extension
          */
         sendReadySignal() {
-            EventBus.$emit(EventType.PostEventToMain, 'inputOutput', {
+            EventBus.$emit(EventTypes.PostEventToMain, 'inputOutput', {
                 type: 'ready',
                 event: undefined
             });
@@ -140,7 +140,7 @@ export default {
         document.addEventListener('keydown', this._keyListener.bind(this));
 
         // Listen for events
-        EventBus.$on('inputOutput', (event) => {
+        EventBus.$on('inputOutput', event => {
             // console.log('IOE: ' + JSON.stringify(event));
             if (event.type === 'setCases') { // setCases from extension
                 this.cases = event.event;
@@ -179,11 +179,6 @@ h3 {
 
 td {
     color: $text-color;
-}
-
-.btn-sm {
-    font: 11pt $font-family !important;
-
 }
 
 </style>

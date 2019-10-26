@@ -11,21 +11,23 @@
 		"Other"
 	],
 	"activationEvents": [
+		"onCommand:cp-tools.open",
 		"onCommand:cp-tools.buildAndRun",
 		"onCommand:cp-tools.resetDisplayHTML",
-		"onCommand:cp-tools.editOption",
-		"onCommand:cp-tools.resetCategory",
-		"onCommand:cp-tools.resetOptions",
-		"onCommand:cp-tools.loadTemplates",
-		"onView:options"
+		"onCommand:cp-tools.loadTemplates"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
+				"command": "cp-tools.open",
+				"title": "Open CP Tools Menu",
+				"category": "CP Tools"
+			},
+			{
 				"command": "cp-tools.buildAndRun",
 				"title": "Build and Run",
-				"category": "CP Tools Build and Run"
+				"category": "CP Tools"
 			},
 			{
 				"command": "cp-tools.resetDisplayHTML",
@@ -33,66 +35,14 @@
 				"category": "CP Tools"
 			},
 			{
-				"command": "cp-tools.editOption",
-				"title": "Edit Option",
-				"category": "CP Tools Config",
-				"icon": "icons/edit-light.svg"
-			},
-			{
-				"command": "cp-tools.resetCategory",
-				"title": "Reset Category",
-				"category": "CP Tools Config",
-				"icon": "icons/refresh.svg"
-			},
-			{
-				"command": "cp-tools.resetOptions",
-				"title": "Reset Options",
-				"category": "CP Tools Config",
-				"icon": "icons/refresh.svg"
-			},
-			{
 				"command": "cp-tools.loadTemplates",
 				"title": "Load Templates",
-				"category": "CP Tools Templates"
+				"category": "CP Tools"
 			}
 		],
-		"viewsContainers": {
-			"activitybar": [
-				{
-					"id": "options",
-					"title": "Options",
-					"icon": "icons/settings.svg"
-				}
-			]
-		},
-		"views": {
-			"options": [
-				{
-					"id": "options",
-					"name": "All"
-				}
-			]
-		},
-		"menus": {
-			"view/item/context": [
-				{
-					"command": "cp-tools.editOption",
-					"group": "inline",
-					"when": "viewItem == key"
-				},
-				{
-					"command": "cp-tools.resetCategory",
-					"group": "inline",
-					"when": "viewItem == category"
-				}
-			],
-			"view/title": [
-				{
-					"command": "cp-tools.resetOptions",
-					"group": "navigation"
-				}
-			]
-		}
+		"viewsContainers": {},
+		"views": {},
+		"menus": {}
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",

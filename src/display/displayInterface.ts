@@ -8,7 +8,7 @@ export enum EventType {
     BuildAndRun = 'buildAndRun',
     InputOutput = 'inputOutput', // Not really used because the module is output only
     Tools = 'tools',
-    Settings = 'settings'
+    Options = 'options'
 }
 
 interface Event {

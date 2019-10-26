@@ -1,19 +1,16 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
-import * as https from 'https';
 import * as vscode from 'vscode';
-import * as fs from 'fs';
-import * as optionsRegister from './options/register';
 import * as executeRegister from './execute/register';
 import * as templatesRegister from './template/register';
-import { join } from 'path';
+import * as optionsRegister from './options/register';
 import { OptionManager } from './options/options';
 import { DisplayInterface } from './display/displayInterface';
 import { BuildRunDI } from './display/buildRunDisplayInterface';
 import { errorIfUndefined } from './extUtils';
-import { isUndefined } from 'util';
 import { ProgramExecutionManagerDriver } from './execute/execute';
-import { InputOutputEventTypes, InputOutputDI } from './display/inputOutputDisplayInterface';
+import { InputOutputDI } from './display/inputOutputDisplayInterface';
+import { OptionsDI } from './display/optionsDisplayInterface';
 
 // ---------------------------------------------------------------------------
 // Globals to export
@@ -25,6 +22,7 @@ let _optionManager: OptionManager | undefined = undefined;
 let _displayInterface: DisplayInterface | undefined = undefined;
 let _buildRunDI: BuildRunDI | undefined = undefined;
 let _inputOutputDI: InputOutputDI | undefined = undefined;
+let _optionsDI: OptionsDI | undefined = undefined;
 
 let _programExecutionManager: ProgramExecutionManagerDriver | undefined = undefined;
 
@@ -34,6 +32,7 @@ export function optionManager(): OptionManager { return errorIfUndefined(_option
 export function displayInterface(): DisplayInterface { return errorIfUndefined(_displayInterface, 'Extension not activated!'); }
 export function buildRunDI(): BuildRunDI { return errorIfUndefined(_buildRunDI, 'Extension not activated!'); }
 export function inputOutputDI(): InputOutputDI { return errorIfUndefined(_inputOutputDI, 'Extension not activated!'); }
+export function optionsDI(): OptionsDI { return errorIfUndefined(_optionsDI, 'Extension not activated!'); }
 
 export function programExecutionManager(): ProgramExecutionManagerDriver { return errorIfUndefined(_programExecutionManager, 'Extension not activated!'); }
 
@@ -53,6 +52,7 @@ export function activate(context: vscode.ExtensionContext) {
 	_displayInterface = new DisplayInterface();
 	_buildRunDI = new BuildRunDI(_displayInterface);
 	_inputOutputDI = new InputOutputDI(_displayInterface);
+	_optionsDI = new OptionsDI(_displayInterface, _optionManager);
 	
 	_programExecutionManager = new ProgramExecutionManagerDriver(_buildRunDI);
 
@@ -61,9 +61,12 @@ export function activate(context: vscode.ExtensionContext) {
 		displayInterface().resetDisplayHTML(context);
 	});
 
+	let open = vscode.commands.registerCommand('cp-tools.open', () => {
+		displayInterface().openDisplay(context);
+	});
+
 	context.subscriptions.push(resetDisplayHTML);
-	// context.subscriptions.push(cacheVueCommand);
-	// context.subscriptions.push(uncacheVueCommand);
+	context.subscriptions.push(open);
 
 	// Registering Other Commands
 	optionsRegister.registerViewsAndCommands(context);

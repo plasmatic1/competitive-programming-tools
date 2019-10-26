@@ -110,10 +110,10 @@ export const OPTIONS: Map<string, Map<string, OptionProperties>> = new Map([
 export const CATEGORY_PROPERTIES: Map<string, CategoryProperties> = new Map([
     ['buildAndRun', {
         label: 'Build and Run',
-        description: 'Build and Run Options'
+        description: 'General options for Build and Run'
     }],
     ['compilerArgs', {
         label: 'Compiler/Interpreter Arguments',
-        description: 'Arguments for compilers/interpreters.  Hover over them to see how they are used'
+        description: 'Arguments for compilers/interpreters when building and running'
     }]
 ]);

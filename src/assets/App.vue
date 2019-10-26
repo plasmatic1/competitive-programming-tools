@@ -10,8 +10,8 @@
         <Tab name="Extra Tools">
             Extra Tools
         </Tab>
-        <Tab name="Settings">
-            Settings
+        <Tab name="Options">
+            <Options ref="optionsEl" />
         </Tab>
     </Tabs>
 </div>
@@ -25,11 +25,11 @@
     import RunProgram from './RunProgram';
     import CaseData from './CaseData';
     // import Tools from './Tools';
-    // import Settings from './Settings';
+    import Options from './Options';
 
     // Event stuff
     import EventBus from './eventBus';
-    import EventType from './eventTypes';
+    import EventTypes from './eventTypes';
 
     export default {
         name: 'App',
@@ -37,8 +37,10 @@
             Tabs,
             Tab,
             // Parts
+            RunProgram,
             CaseData,
-            RunProgram
+            // Tools,
+            Options
         },
         data() {
             return {
@@ -56,13 +58,14 @@
             const vscode = acquireVsCodeApi();
 
             // Posting events to main
-            EventBus.$on(EventType.PostEventToMain, (type, event) => {
+            EventBus.$on(EventTypes.PostEventToMain, (type, event) => {
                 // console.log(`Sending event | Type: ${type}, Evt: ${event}`);
                 vscode.postMessage({ type, event });
             });
 
             // Ready signals
             this.$refs.inputOutputEl.sendReadySignal();
+            this.$refs.optionsEl.sendReadySignal();
         }
     };
 </script>
