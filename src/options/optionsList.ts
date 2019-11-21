@@ -85,10 +85,10 @@ export const OPTIONS: Map<string, Map<string, OptionProperties>> = new Map([
             description: 'Controls whether webviews are reused for buildAndRun, speeding up load times',
             type: 'boolean',
             setFunction: async () =>
-                (await vscode.window.showQuickPick(['Yes', 'No'], { 
+                (await vscode.window.showQuickPick(['Yes (true)', 'No (false)'], { 
                     canPickMany: false,
-                    placeHolder: optionManager().get('buildAndRun', 'reuseWebviews') ? 'Yes' : 'No'
-                })) === 'Yes' 
+                    placeHolder: optionManager().get('buildAndRun', 'reuseWebviews') ? 'Yes (true)' : 'No (false)'
+                })) === 'Yes (true)' 
         }]
     ])],
     ['compilerArgs', new Map([

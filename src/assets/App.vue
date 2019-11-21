@@ -4,6 +4,9 @@
         <Tab name="Build and Run">
             <RunProgram />
         </Tab>
+        <Tab name="Debug">
+            <Debug />
+        </Tab>
         <Tab name="Input/Output" selected="true">
             <CaseData ref="inputOutputEl" />
         </Tab>
@@ -23,6 +26,7 @@
     
     // Parts of the app
     import RunProgram from './RunProgram';
+    import Debug from './Debug';
     import CaseData from './CaseData';
     // import Tools from './Tools';
     import Options from './Options';
@@ -38,6 +42,7 @@
             Tab,
             // Parts
             RunProgram,
+            Debug,
             CaseData,
             // Tools,
             Options
