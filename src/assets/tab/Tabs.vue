@@ -84,6 +84,9 @@ $transition-duration: 0.6s;
                 }
                 transition: $transition-duration;
 
+                // Set cursor
+                cursor: pointer;
+
                 // Text based-stuff
                 font: 15pt $font-family;
                 color: map-get($theme, 4);
@@ -98,6 +101,7 @@ $transition-duration: 0.6s;
                 border: none;
             }
 
+            cursor: pointer;
             display: inline;
             margin: 0 10px;
             padding: $tab-v-padding $tab-h-padding ($tab-v-padding - 1) $tab-h-padding;

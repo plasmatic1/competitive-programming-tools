@@ -85,12 +85,12 @@ export default {
 
 h1 {
     color: map-get($theme, 5);
-    margin-top: 15px;
+    margin-top: 0px;
     margin-bottom: 0;
 }
 
 .category-div {
-    margin-bottom: 39px;
+    margin-bottom: 49px;
 }
 
 .category-description {
@@ -107,6 +107,7 @@ h1 {
     margin: 3px 0;
     
     a {
+        cursor: pointer;
         font-family: $font-family;
         font-size: 10pt;
         margin-right: 0.5em;

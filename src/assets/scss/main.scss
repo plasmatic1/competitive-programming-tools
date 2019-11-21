@@ -16,11 +16,16 @@ textarea, button {
 }
 
 button {
+    // Fix cursor
+    cursor: pointer;
+
+    // General Stuff
     border: 1px solid $border-color;
     border-radius: 3px;
     font: 14pt $font-family;
+    
+    // Hover Effect
     transition: 0.5s;
-
     &:hover {
         transition: 0.5s;
         background: $text-color;
