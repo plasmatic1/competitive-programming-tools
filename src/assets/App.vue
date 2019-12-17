@@ -31,6 +31,9 @@
     // import Tools from './Tools';
     import Options from './Options';
 
+    // Auxillary Stuffs for child components
+    import StreamText from './StreamText';
+
     // Event stuff
     import EventBus from './eventBus';
     import EventTypes from './eventTypes';
@@ -38,14 +41,19 @@
     export default {
         name: 'App',
         components: {
+            // Tab stuff
             Tabs,
             Tab,
+            
             // Parts
             RunProgram,
             Debug,
             CaseData,
             // Tools,
-            Options
+            Options,
+
+            // Auxillary Stuff
+            StreamText
         },
         data() {
             return {

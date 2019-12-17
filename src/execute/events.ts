@@ -58,8 +58,8 @@ export class UpdateStderrEvent extends Event {
 }
 
 export class EndEvent extends Event {
-    constructor(endMsg: string[], isCorrect: boolean, isInvalidReturn: boolean, caseNo: number) {
-        super(EventType.END, { caseNo, isCorrect, isInvalidReturn, endMsg });
+    constructor(endMsg: string[], isCorrect: boolean, isRuntimeError: boolean, caseNo: number) {
+        super(EventType.END, { caseNo, isCorrect, isRuntimeError, endMsg });
     }   
 }
 

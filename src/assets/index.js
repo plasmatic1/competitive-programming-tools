@@ -7,8 +7,6 @@ new Vue({
     render: h => h(App)
 });
 
-console.log('Working...');
-
 // Vue.component('std-row', {
 //     props: ['title', 'ifempty', 'data', 'visible'],
 //     data: () => { 

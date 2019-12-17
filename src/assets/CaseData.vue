@@ -160,6 +160,7 @@ export default {
 
 textarea {
     box-sizing: border-box;
+    resize: none;
     width: 100%;
 }
 

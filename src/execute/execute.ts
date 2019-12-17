@@ -132,11 +132,11 @@ class ProgramExecutionManager {
     /**
      * Executes the program for a sepcific case and throws any errors if they are encountered.  It's returned as a promise
      * @param executor The executor
-     * @param caseno The case number
+     * @param caseNo The case number
      * @param input The input data
      * @param output The output data
      */
-    executeCase(executor: Executor, caseno: number, input: string, output: string | undefined): Promise<void> {
+    executeCase(executor: Executor, caseNo: number, input: string, output: string | undefined): Promise<void> {
         return new Promise((res, _) => {
             const timeout = optionManager().get('buildAndRun', 'timeout'),
                 memSampleRate = optionManager().get('buildAndRun', 'memSample');
@@ -147,14 +147,14 @@ class ProgramExecutionManager {
 
             try {
                 proc.stdin.write(input);
-                this.displayInterface.emit(new BeginCaseEvent(input, output, caseno));
+                this.displayInterface.emit(new BeginCaseEvent(input, output, caseNo));
 
                 if (!/\s$/.test(input)) {
-                    this.displayInterface.emit(new CompileErrorEvent(`Input for Case #${caseno + 1} does not end in whitespace, this may cause issues (such as cin waiting forever for a delimiter)`, false));
+                    this.displayInterface.emit(new CompileErrorEvent(`Input for Case #${caseNo + 1} does not end in whitespace, this may cause issues (such as cin waiting forever for a delimiter)`, false));
                 }
             }
             catch (e) {
-                this.displayInterface.emit(new BeginCaseEvent('STDIN of program closed prematurely.', output, caseno));
+                this.displayInterface.emit(new BeginCaseEvent('STDIN of program closed prematurely.', output, caseNo));
             }
 
             const beginTime: number = getTime();
@@ -168,7 +168,7 @@ class ProgramExecutionManager {
             // tslint:disable: curly
             proc.on('exit', (code: number, signal: string) => {
                 clearTimeout(tleTimeout);
-                this.displayInterface.emit(new UpdateTimeEvent(getTime() - beginTime, caseno));
+                this.displayInterface.emit(new UpdateTimeEvent(getTime() - beginTime, caseNo));
 
                 let isCorrect;
                 if (!isUndefined(output) && output.length > 0) 
@@ -176,7 +176,7 @@ class ProgramExecutionManager {
                 else
                     isCorrect = true;
                 
-                this.displayInterface.emit(new EndEvent(createExitMessage(code, signal), isCorrect, code !== 0, caseno));
+                this.displayInterface.emit(new EndEvent(createExitMessage(code, signal), isCorrect, code !== 0, caseNo));
                 res();
             });
             // tslint:enable: curly
@@ -185,21 +185,21 @@ class ProgramExecutionManager {
                 const data = proc.stdout.read();
                 if (data) {
                     procOutput += data.toString();
-                    this.displayInterface.emit(new UpdateStdoutEvent(data.toString(), caseno));
+                    this.displayInterface.emit(new UpdateStdoutEvent(data.toString(), caseNo));
                 }
             });
                 
             proc.stderr.on('readable', () => {
                 const data = proc.stderr.read();
-                if (data) { this.displayInterface.emit(new UpdateStderrEvent(data.toString(), caseno)); }
+                if (data) { this.displayInterface.emit(new UpdateStderrEvent(data.toString(), caseNo)); }
             });
             
             // Memory and time live update
             const memCheckInterval = setInterval(() => {
                 pidusage(proc.pid)
                 .then(stat => {
-                    this.displayInterface.emit(new UpdateTimeEvent(stat.elapsed, caseno));
-                    this.displayInterface.emit(new UpdateMemoryEvent(stat.memory, caseno));
+                    this.displayInterface.emit(new UpdateTimeEvent(stat.elapsed, caseNo));
+                    this.displayInterface.emit(new UpdateMemoryEvent(stat.memory, caseNo));
                 })
                 .catch(_ => {
                     clearInterval(memCheckInterval);
@@ -233,7 +233,7 @@ class ProgramExecutionManager {
         this.checkForHalted();
         this.compile(executor);
         this.resetDisplay(cases.length);
-        let counter = 1;
+        let counter = 0;
         for (const acase of cases) {
             this.checkForHalted();
             await this.executeCase(executor, counter++, acase.input, acase.output);
