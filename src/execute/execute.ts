@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { CompileErrorEvent, BeginCaseEvent, UpdateTimeEvent, EndEvent, UpdateStdoutEvent, UpdateStderrEvent, UpdateMemoryEvent, CompareOutputEvent, ResetEvent } from './events';
+import { CompileErrorEvent, BeginCaseEvent, UpdateTimeEvent, EndEvent, UpdateStdoutEvent, UpdateStderrEvent, UpdateMemoryEvent, ResetEvent } from './events';
 import * as pidusage from 'pidusage';
 import { Executor, executors } from './executors';
 import { isUndefined, isNull } from 'util';
@@ -25,20 +25,30 @@ function getTime(): number {
  * @param code Exit code of program
  * @param signal Signal that the program was killed by (or null if no signal was sent)
  */
+// tslint:disable: curly
 function createExitMessage(code: number, signal: string): string[] {
-    if (!isNull(signal)) {
+    if (!isNull(signal))
         return ['Killed by Signal:', signal + (signal === 'SIGTERM' ? ' (Possible timeout?)' : '')];
-    }
 
     var extra = '';
-    if (code > 255) {
+    if (code > 255)
         extra = ' (Possible Segmentation Fault?)';
-    }
-    else if (code === 3) {
+    else if (code === 3)
         extra = ' (Assertion failed!)';
-    }
 
     return ['Exit code:', code + extra];
+}
+// tslint:enable: curly
+
+/**
+ * Compares two output string, based on configuration settings.  For example, if the output comparison style is set to "token", it will compare individual tokens, and if 
+ * the output comparison style is set to "exact", it will compare exact values
+ * @param output1 The first output string
+ * @param output2 The second output string
+ */
+function compareOutput(output1: string, output2: string): boolean {
+    // TODO: implement different comparison styles
+    return output1 === output2;
 }
 
 /**
@@ -126,12 +136,13 @@ class ProgramExecutionManager {
      * @param input The input data
      * @param output The output data
      */
-    async executeCase(executor: Executor, caseno: number, input: string, output: string | undefined): Promise<void> {
+    executeCase(executor: Executor, caseno: number, input: string, output: string | undefined): Promise<void> {
         return new Promise((res, _) => {
             const timeout = optionManager().get('buildAndRun', 'timeout'),
                 memSampleRate = optionManager().get('buildAndRun', 'memSample');
 
             let proc = executor.exec();
+            this.curProcs.push(proc);
             let procOutput = "";
 
             try {
@@ -154,20 +165,21 @@ class ProgramExecutionManager {
                 res();
             });
                 
+            // tslint:disable: curly
             proc.on('exit', (code: number, signal: string) => {
                 clearTimeout(tleTimeout);
                 this.displayInterface.emit(new UpdateTimeEvent(getTime() - beginTime, caseno));
 
-                // tslint:disable-next-line: curly
+                let isCorrect;
                 if (!isUndefined(output) && output.length > 0) 
-                    this.displayInterface.emit(new CompareOutputEvent(output.trim() === procOutput.trim(), caseno));
-                // tslint:disable-next-line: curly
+                    isCorrect = compareOutput(output, procOutput);
                 else
-                    this.displayInterface.emit(new CompareOutputEvent(true, caseno));
-
-                this.displayInterface.emit(new EndEvent(createExitMessage(code, signal), caseno));
+                    isCorrect = true;
+                
+                this.displayInterface.emit(new EndEvent(createExitMessage(code, signal), isCorrect, code !== 0, caseno));
                 res();
             });
+            // tslint:enable: curly
             
             proc.stdout.on('readable', () => {
                 const data = proc.stdout.read();
@@ -239,6 +251,13 @@ class ProgramExecutionManager {
         this.halted = true;
         errorIfUndefined(this.curExecutor, 'Current executor is undefined??').postExec();
     }
+
+    /**
+     * Clears procs array (assuming execution finished)
+     */
+    clearProcs(): void {
+        this.curProcs.length = 0;
+    }
 }
 
 export class ProgramExecutionManagerDriver {
@@ -257,6 +276,7 @@ export class ProgramExecutionManagerDriver {
         try {
             this.curExecution = new ProgramExecutionManager(this.displayInterface);
             await this.curExecution.run();
+            this.curExecution.clearProcs();
             this.curExecution = undefined;
         }
         catch (e) {

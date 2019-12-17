@@ -44,7 +44,7 @@ export const OPTIONS: Map<string, Map<string, OptionProperties>> = new Map([
                 })
         }],
         ['timeout', {
-            defaultValue: 2000,
+            defaultValue: 10000,
             label: 'Timeout (ms)',
             description: 'Maximum program execution time.  The program will timeout if this threshold is reached',
             type: 'number',
@@ -56,7 +56,7 @@ export const OPTIONS: Map<string, Map<string, OptionProperties>> = new Map([
                 }))
         }],
         ['memSample', {
-            defaultValue: 100,
+            defaultValue: 500,
             label: 'Memory + Time Sample Interval',
             description: 'How quickly memory and time are sampled when a program is running',
             type: 'number',
@@ -68,7 +68,7 @@ export const OPTIONS: Map<string, Map<string, OptionProperties>> = new Map([
                 }))
         }],
         ['charLimit', {
-            defaultValue: 1000,
+            defaultValue: 1000000,
             label: 'Character Limit',
             description: 'The displays for stdout and stderr will be truncated to the given limit to prevent lag',
             type: 'number',

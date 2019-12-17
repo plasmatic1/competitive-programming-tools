@@ -1,14 +1,14 @@
 <template>
 <div>
-    <Tabs>
+    <Tabs ref="tabsEl">
+        <Tab name="Input/Output" selected="true">
+            <CaseData ref="inputOutputEl" />
+        </Tab>
         <Tab name="Build and Run">
             <RunProgram />
         </Tab>
         <Tab name="Debug">
             <Debug />
-        </Tab>
-        <Tab name="Input/Output" selected="true">
-            <CaseData ref="inputOutputEl" />
         </Tab>
         <Tab name="Extra Tools">
             Extra Tools
@@ -56,11 +56,20 @@
             // Listen for messages
             window.addEventListener('message', (event_) => {
                 const event = event_.data.event, type = event_.data.type;
-                // console.log(`Got event ${JSON.stringify(event_.data)}`);
+                // console.log(`Got event ${type}: ${JSON.stringify(event)}`);
                 EventBus.$emit(type, event);
             });
 
             const vscode = acquireVsCodeApi();
+
+            // Handing events that are for the app
+            EventBus.$on('main', event_ => {
+                const { event, type } = event_;
+                
+                if (type === 'focusTab') {
+                    this.$refs.tabsEl.selectByName(event);
+                }
+            });
 
             // Posting events to main
             EventBus.$on(EventTypes.PostEventToMain, (type, event) => {

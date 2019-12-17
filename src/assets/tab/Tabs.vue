@@ -27,8 +27,11 @@ export default {
         this.tabs = this.$children;
     },
     methods: {
+        selectByName(nameToSelect) {
+            this.tabs.forEach(tab => tab.selected = (nameToSelect === tab.name));
+        },
         select(toSelect) {
-            this.tabs.forEach(tab => tab.selected = (toSelect.name === tab.name));
+            this.selectByName(toSelect.name);
         }
     }
 }

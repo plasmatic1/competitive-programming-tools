@@ -7,67 +7,66 @@ export enum ResultType {
 }
 
 export enum EventType {
-    COMPILER_ERROR = 'compilerError',
+    COMPILE_ERROR = 'compileError',
     BEGIN_CASE = 'beginCase',
     UPDATE_TIME = 'updateTime',
     UPDATE_MEMORY = 'updateMemory',
     UPDATE_STDOUT = 'updateStdout',
     UPDATE_STDERR = 'updateStderr',
-    COMPARE_STDOUT = 'compareStdout',
     END = 'end',
     RESET = 'reset'
 }
 
-export interface Event {
-    readonly type: EventType;
-    readonly caseNo: number;
+export class Event {
+    constructor(public readonly type: EventType, public readonly event: { caseNo: number, [propName: string]: any }) {}
 }
 
-export class CompileErrorEvent implements Event {
-    type: EventType = EventType.COMPILER_ERROR;
-    caseNo: number = -1;
-    constructor(public readonly data: string, public readonly fatal: boolean) {}
+export class CompileErrorEvent extends Event {
+    constructor(data: string, fatal: boolean) {
+        super(EventType.COMPILE_ERROR, { caseNo: -1, data, fatal });
+    }
 }
 
-export class BeginCaseEvent implements Event {
-    type: EventType = EventType.BEGIN_CASE;
-    constructor(public readonly input: string, public readonly output: string | undefined, public readonly caseNo: number) {}
+export class BeginCaseEvent extends Event {
+    constructor(input: string, output: string | undefined, caseNo: number) {
+        super(EventType.BEGIN_CASE, { caseNo, input, output });
+    }
 }
 
-export class UpdateTimeEvent implements Event {
-    type: EventType = EventType.UPDATE_TIME;
-    constructor(public readonly newElapsed: number, public readonly caseNo: number) {}
+export class UpdateTimeEvent extends Event {
+    constructor(newElapsed: number, caseNo: number) {
+        super(EventType.UPDATE_TIME, { caseNo, newElapsed });
+    }
 }
 
-export class UpdateMemoryEvent implements Event {
-    type: EventType = EventType.UPDATE_MEMORY;
-    constructor(public readonly newMemory: number, public readonly caseNo: number) {}
+export class UpdateMemoryEvent extends Event {
+    constructor(newMemory: number, caseNo: number) {
+        super(EventType.UPDATE_MEMORY, { caseNo, newMemory });
+    }
 }
 
-export class UpdateStdoutEvent implements Event {
-    type: EventType = EventType.UPDATE_STDOUT;
-    constructor(public readonly data: string, public readonly caseNo: number) {}
+export class UpdateStdoutEvent extends Event {
+    constructor(data: string, caseNo: number) {
+        super(EventType.UPDATE_STDOUT, { caseNo, data });
+    }
 }
 
-export class UpdateStderrEvent implements Event {
-    type: EventType = EventType.UPDATE_STDERR;
-    constructor(public readonly data: string, public readonly caseNo: number) {}
+export class UpdateStderrEvent extends Event {
+    constructor(data: string, caseNo: number) {
+        super(EventType.UPDATE_STDERR, { caseNo, data });
+    }
 }
 
-export class CompareOutputEvent implements Event {
-    type: EventType = EventType.COMPARE_STDOUT;
-    constructor(public readonly isCorrect: boolean, public readonly caseNo: number) {}
+export class EndEvent extends Event {
+    constructor(endMsg: string[], isCorrect: boolean, isInvalidReturn: boolean, caseNo: number) {
+        super(EventType.END, { caseNo, isCorrect, isInvalidReturn, endMsg });
+    }   
 }
 
-export class EndEvent implements Event {
-    type: EventType = EventType.END;
-    constructor(public readonly endMsg: string[], public readonly caseNo: number) {}
-}
-
-export class ResetEvent implements Event {
-    type: EventType = EventType.RESET;
-    caseNo: number = -1;
-    constructor(public readonly caseCnt: number) {}
+export class ResetEvent extends Event {
+    constructor(caseCnt: number) {
+        super(EventType.RESET, { caseNo: -1, caseCnt, });
+    }
 }
 
 export interface Result {

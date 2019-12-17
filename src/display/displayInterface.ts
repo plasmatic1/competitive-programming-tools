@@ -8,7 +8,12 @@ export enum EventType {
     BuildAndRun = 'buildAndRun',
     InputOutput = 'inputOutput', // Not really used because the module is output only
     Tools = 'tools',
-    Options = 'options'
+    Options = 'options',
+    Main = 'main' // Intended for the main app interface
+}
+
+export enum MainEventTypes {
+    FocusTab = 'focusTab' // focuses... a tab.  Event object should contain a string, detailing the tab to focus to
 }
 
 interface Event {
@@ -108,7 +113,9 @@ export class DisplayInterface {
     resetDisplayHTML(context: vscode.ExtensionContext): void {
         const curView = errorIfUndefined(this.curView, 'No display is loaded!');
         curView.webview.html = this.getDisplayHTML(context);
-        vscode.window.showInformationMessage('Reloaded WebView HTML!');
+        vscode.commands.executeCommand('workbench.action.webview.reloadWebviewAction').then(() => {
+            vscode.window.showInformationMessage('Reloaded WebView HTML!');
+        });
     }
 
     /**
@@ -150,5 +157,21 @@ export class DisplayInterface {
         }
 
         res.push(handler);
+    }
+
+    // Some main app-specific event emitting
+
+    /**
+     * (Assuming that the CP Tools window is open), focibly selects the specified tab in the CP Tools Window
+     * @param tabName The name of the tab to focus.  Tab names are given in the App.vue file
+     */
+    focusTab(tabName: string) {
+        this.emit({
+            type: EventType.Main,
+            event: {
+                type: MainEventTypes.FocusTab,
+                event: tabName
+            }
+        });
     }
 }
