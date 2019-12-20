@@ -41,7 +41,7 @@
                             <StreamText :data="testCase.stderr" />
                         </td>
                         <td>
-                            <StreamText :data="testCase.judgeOut" />
+                            <StreamText v-if="caseHasJudgeOutput(index)" :data="testCase.judgeOut" />
                         </td>
                     </tr>
                 </table>

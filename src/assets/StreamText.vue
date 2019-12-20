@@ -1,9 +1,14 @@
 <template>
     <div>
-        <textarea v-show="this.visible" name="text" cols="60" rows="7" v-model="displayText" readonly />
-        <a :click="() => { this.visible = !this.visible; }">
-            {{ this.visible ? 'Hide' : 'Show' }}
-        </a>
+        <div v-show="!this.isEmpty">
+            <textarea v-show="this.visible" name="text" cols="60" rows="7" v-model="displayText" readonly />
+            <a href="#" :click="() => { this.visible = !this.visible; return false; }">
+                {{ this.visible ? 'Hide' : 'Show' }}
+            </a>
+        </div>
+        <!-- <div v-show="this.isEmpty">
+            <p id="if-empty">Empty</p>
+        </div> -->
     </div>
 </template>
 
@@ -26,6 +31,9 @@ export default {
                 return this.data;
             else
                 return 'Hidden.';
+        },
+        isEmpty() {
+            return this.data === undefined || this.data.length === 0;
         }
     }
 }
@@ -45,11 +53,13 @@ textarea {
     font-family: 'Courier';
     color: map-get($theme, 4);
 
-    scrollbar-face-color: map-get($theme, 4) !important;
+    &::-webkit-scrollbar-thumb {
+        background-color: map-get($theme, 4);
+    } 
 }
 
-::-webkit-scrollbar-thumb {
-    color: map-get($theme, 4);
+#if-empty {
+    font-style: italic;
 }
 
 </style>
