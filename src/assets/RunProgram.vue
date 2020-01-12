@@ -3,7 +3,7 @@
         <h1>Build and Run</h1>
 
         <div id="compileErrorDiv" v-if="this.compileErrors.length !== 0">
-            <h3>Compile/Data Errors</h3>
+            <h3>Compile/Data Info</h3>
             <p v-for="(error, index) in this.compileErrors" :key="index">
                 {{ error }}
             </p>
@@ -92,6 +92,9 @@ export default {
         }
     },
     methods: {
+        caseHasJudgeOutput(index) {
+            return !!this.cases[index].judgeOut;
+        }
     },
     mounted() {
         EventBus.$on('buildAndRun', event_ => {

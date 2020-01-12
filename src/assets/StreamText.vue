@@ -1,14 +1,12 @@
 <template>
     <div>
-        <div v-show="!this.isEmpty">
+        <!-- <div v-show="!this.isEmpty"> -->
+        <div>
             <textarea v-show="this.visible" name="text" cols="60" rows="7" v-model="displayText" readonly />
             <a href="#" :click="() => { this.visible = !this.visible; return false; }">
                 {{ this.visible ? 'Hide' : 'Show' }}
             </a>
         </div>
-        <!-- <div v-show="this.isEmpty">
-            <p id="if-empty">Empty</p>
-        </div> -->
     </div>
 </template>
 

@@ -12,6 +12,7 @@
 	],
 	"activationEvents": [
 		"onCommand:cp-tools.open",
+		"onCommand:cp-tools.openTerminal",
 		"onCommand:cp-tools.buildAndRun",
 		"onCommand:cp-tools.resetDisplayHTML",
 		"onCommand:cp-tools.loadTemplates"
@@ -22,6 +23,11 @@
 			{
 				"command": "cp-tools.open",
 				"title": "Open CP Tools Menu",
+				"category": "CP Tools"
+			},
+			{
+				"command": "cp-tools.openTerminal",
+				"title": "Open CP Tools Terminal",
 				"category": "CP Tools"
 			},
 			{
@@ -54,20 +60,21 @@
 		"test": "npm run compile && node ./node_modules/vscode/bin/test"
 	},
 	"devDependencies": {
-		"@types/mocha": "^2.2.42",
-		"@types/node": "^10.14.7",
+		"@types/mocha": "^5.2.7",
+		"@types/node": "^13.1.6",
 		"@types/pidusage": "^2.0.1",
-		"parcel-bundler": "^1.12.3",
-		"sass": "^1.23.0-module.beta.1",
-		"tslint": "^5.12.1",
-		"typescript": "^3.3.1",
-		"vscode": "^1.1.28",
-		"vue-template-compiler": "^2.6.10"
+		"parcel-bundler": "^1.12.4",
+		"sass": "^1.24.4",
+		"tslint": "^5.20.1",
+		"typescript": "^3.7.4",
+		"vue-template-compiler": "^2.6.11"
 	},
 	"dependencies": {
-		"@vue/component-compiler-utils": "^3.0.0",
+		"@types/vscode": "^1.41.0",
+		"@vue/component-compiler-utils": "^3.1.1",
 		"pidusage": "^2.0.17",
-		"vue": "^2.6.10",
-		"vue-hot-reload-api": "^2.3.3"
+		"vscode-test": "^1.3.0",
+		"vue": "^2.6.11",
+		"vue-hot-reload-api": "^2.3.4"
 	}
 }

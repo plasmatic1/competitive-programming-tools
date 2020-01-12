@@ -145,6 +145,11 @@ class ProgramExecutionManager {
             this.curProcs.push(proc);
             let procOutput = "";
 
+            if (proc === null) {
+                this.displayInterface.emit(new CompileErrorEvent(`Process for case ${caseNo} could not be initialized`, true));
+                res();
+            }
+
             try {
                 proc.stdin.write(input);
                 this.displayInterface.emit(new BeginCaseEvent(input, output, caseNo));

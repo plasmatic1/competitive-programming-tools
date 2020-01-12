@@ -125,6 +125,7 @@ export class DisplayInterface {
     getDisplayHTML(context: vscode.ExtensionContext) { 
         let resourceDir = vscode.Uri.file(path.join(context.extensionPath, 'out', 'assets')).with({ scheme: 'vscode-resource' });
         // console.log(resourceDir);
+        // console.log(fs.lstatSync(path.join(context.extensionPath, 'out', 'assets', 'display.html')).ctime);
         return fs.readFileSync(path.join(context.extensionPath, 'out', 'assets', 'display.html'))
             .toString()
             .replace(/vscodeRoot/g, resourceDir.toString());

@@ -18,7 +18,10 @@
                     <col width="100%">
 
                     <tr>
-                        <td>Input:</td>
+                        <td>
+                            Input:
+                            <div v-if="!testCase.input">(Empty)</div>
+                        </td>
                         <td>
                             <div>
                                 <textarea :name="`input${index}`" :id="`input${index}`" :rows="rowReq(testCase.input)" v-model="testCase.input"></textarea>
@@ -26,7 +29,10 @@
                         </td>
                     </tr>
                     <tr>
-                        <td>Output:</td>
+                        <td>
+                            Output:
+                            <div v-if="!testCase.output">(Empty)</div>
+                        </td>
                         <td>
                             <textarea :name="`output${index}`" :id="`output${index}`" :rows="rowReq(testCase.output)" v-model="testCase.output"></textarea>
                         </td>

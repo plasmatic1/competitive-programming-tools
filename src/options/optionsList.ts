@@ -44,7 +44,7 @@ export const OPTIONS: Map<string, Map<string, OptionProperties>> = new Map([
                 })
         }],
         ['timeout', {
-            defaultValue: 10000,
+            defaultValue: 5000,
             label: 'Timeout (ms)',
             description: 'Maximum program execution time.  The program will timeout if this threshold is reached',
             type: 'number',
@@ -68,7 +68,7 @@ export const OPTIONS: Map<string, Map<string, OptionProperties>> = new Map([
                 }))
         }],
         ['charLimit', {
-            defaultValue: 1000000,
+            defaultValue: 500000,
             label: 'Character Limit',
             description: 'The displays for stdout and stderr will be truncated to the given limit to prevent lag',
             type: 'number',
@@ -78,17 +78,6 @@ export const OPTIONS: Map<string, Map<string, OptionProperties>> = new Map([
                     placeHolder: 'Character Limit',
                     value: optionManager().get('buildAndRun', 'charLimit')
                 }))
-        }],
-        ['reuseWebviews', {
-            defaultValue: true,
-            label: 'Reuse Webviews',
-            description: 'Controls whether webviews are reused for buildAndRun, speeding up load times',
-            type: 'boolean',
-            setFunction: async () =>
-                (await vscode.window.showQuickPick(['Yes (true)', 'No (false)'], { 
-                    canPickMany: false,
-                    placeHolder: optionManager().get('buildAndRun', 'reuseWebviews') ? 'Yes (true)' : 'No (false)'
-                })) === 'Yes (true)' 
         }]
     ])],
     ['compilerArgs', new Map([

@@ -4,11 +4,13 @@ import * as vscode from 'vscode';
 import * as executeRegister from './execute/register';
 import * as templatesRegister from './template/register';
 import * as optionsRegister from './options/register';
+import * as extensionTerminalRegister from './terminal/register';
 import { OptionManager } from './options/options';
 import { DisplayInterface } from './display/displayInterface';
 import { BuildRunDI } from './display/buildRunDisplayInterface';
 import { errorIfUndefined } from './extUtils';
 import { ProgramExecutionManagerDriver } from './execute/execute';
+import { ExtensionTerminalManager } from './terminal/terminal';
 import { InputOutputDI } from './display/inputOutputDisplayInterface';
 import { OptionsDI } from './display/optionsDisplayInterface';
 
@@ -26,6 +28,8 @@ let _optionsDI: OptionsDI | undefined = undefined;
 
 let _programExecutionManager: ProgramExecutionManagerDriver | undefined = undefined;
 
+let _extensionTerminalManager: ExtensionTerminalManager | undefined = undefined;
+
 export function extensionContext(): vscode.ExtensionContext { return errorIfUndefined(_extensionContext, 'Extension not activated!'); }
 export function optionManager(): OptionManager { return errorIfUndefined(_optionManager, 'Extension not activated!'); }
 
@@ -35,6 +39,8 @@ export function inputOutputDI(): InputOutputDI { return errorIfUndefined(_inputO
 export function optionsDI(): OptionsDI { return errorIfUndefined(_optionsDI, 'Extension not activated!'); }
 
 export function programExecutionManager(): ProgramExecutionManagerDriver { return errorIfUndefined(_programExecutionManager, 'Extension not activated!'); }
+
+export function extensionTerminalManager(): ExtensionTerminalManager { return errorIfUndefined(_extensionTerminalManager, 'Extension not activated!'); }
 
 export const CASES_PATH = 'cases.json';
 
@@ -56,6 +62,8 @@ export function activate(context: vscode.ExtensionContext) {
 	
 	_programExecutionManager = new ProgramExecutionManagerDriver(_buildRunDI);
 
+	_extensionTerminalManager = new ExtensionTerminalManager();
+
 	// Misc. Commands
 	let resetDisplayHTML = vscode.commands.registerCommand('cp-tools.resetDisplayHTML', () => {
 		displayInterface().resetDisplayHTML(context);
@@ -72,6 +80,7 @@ export function activate(context: vscode.ExtensionContext) {
 	optionsRegister.registerViewsAndCommands(context);
 	executeRegister.registerViewsAndCommands(context);
 	templatesRegister.registerViewsAndCommands(context);
+	extensionTerminalRegister.registerViewsAndCommands(context);
 }
 
 // this method is called when your extension is deactivated
