@@ -1,14 +1,31 @@
 // tslint:disable-next-line: class-name
 class _Color {
-    constructor(public readonly ansiVal: number) {
-
+    private ansiVal: number;
+    private extra: string;
+    constructor(_ansiVal: number, _extra: string = '') {
+        this.ansiVal = _ansiVal;
+        this.extra = _extra;
     }
 
     /**
      * Converts the colour into a string that can be echoed to make coloured text
      */
     toString(): string {
-        return `\u011b[${this.ansiVal}m`;
+        return `\x1b[${this.ansiVal}${this.extra}m`;
+    }
+
+    /**
+     * Converts the colour into its bright version
+     */
+    bright(): _Color {
+        return new _Color(this.ansiVal, this.extra + ';1');
+    }
+
+    /**
+     * Converts the colour into its background version
+     */
+    bg(): _Color {
+        return new _Color(this.ansiVal + 10, this.extra);
     }
 }
 
