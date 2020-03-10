@@ -1,16 +1,12 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import * as executeRegister from './execute/register';
 import * as templatesRegister from './template/register';
 import * as optionsRegister from './options/register';
-import * as extensionTerminalRegister from './terminal/register';
 import { OptionManager } from './options/options';
+import { TestManager } from './execute/tests';
 import { DisplayInterface } from './display/displayInterface';
 import { BuildRunDI } from './display/buildRunDisplayInterface';
-import { errorIfUndefined } from './extUtils';
 import { ProgramExecutionManagerDriver } from './execute/execute';
-import { ExtensionTerminalManager } from './terminal/terminal';
 import { InputOutputDI } from './display/inputOutputDisplayInterface';
 import { OptionsDI } from './display/optionsDisplayInterface';
 
@@ -18,59 +14,42 @@ import { OptionsDI } from './display/optionsDisplayInterface';
 // Globals to export
 // ---------------------------------------------------------------------------
 
-let _extensionContext: vscode.ExtensionContext | undefined = undefined;
-let _optionManager: OptionManager | undefined = undefined;
+export let extensionContext: vscode.ExtensionContext | undefined = undefined;
+export let optionManager: OptionManager | undefined = undefined;
+export let testManager: TestManager | undefined = undefined;
 
-let _displayInterface: DisplayInterface | undefined = undefined;
-let _buildRunDI: BuildRunDI | undefined = undefined;
-let _inputOutputDI: InputOutputDI | undefined = undefined;
-let _optionsDI: OptionsDI | undefined = undefined;
+export let displayInterface: DisplayInterface | undefined = undefined;
+export let buildRunDI: BuildRunDI | undefined = undefined;
+export let inputOutputDI: InputOutputDI | undefined = undefined;
+export let optionsDI: OptionsDI | undefined = undefined;
 
-let _programExecutionManager: ProgramExecutionManagerDriver | undefined = undefined;
-
-let _extensionTerminalManager: ExtensionTerminalManager | undefined = undefined;
-
-export function extensionContext(): vscode.ExtensionContext { return errorIfUndefined(_extensionContext, 'Extension not activated!'); }
-export function optionManager(): OptionManager { return errorIfUndefined(_optionManager, 'Extension not activated!'); }
-
-export function displayInterface(): DisplayInterface { return errorIfUndefined(_displayInterface, 'Extension not activated!'); }
-export function buildRunDI(): BuildRunDI { return errorIfUndefined(_buildRunDI, 'Extension not activated!'); }
-export function inputOutputDI(): InputOutputDI { return errorIfUndefined(_inputOutputDI, 'Extension not activated!'); }
-export function optionsDI(): OptionsDI { return errorIfUndefined(_optionsDI, 'Extension not activated!'); }
-
-export function programExecutionManager(): ProgramExecutionManagerDriver { return errorIfUndefined(_programExecutionManager, 'Extension not activated!'); }
-
-export function extensionTerminalManager(): ExtensionTerminalManager { return errorIfUndefined(_extensionTerminalManager, 'Extension not activated!'); }
-
-export const CASES_PATH = 'cases.json';
+export let programExecutionManager: ProgramExecutionManagerDriver | undefined = undefined;
 
 // ---------------------------------------------------------------------------
 // Activation Registration n stuff
 // ---------------------------------------------------------------------------
 
 export function activate(context: vscode.ExtensionContext) {
-	console.log('Congratulations, your extension "cp-tools" is now active!');
+	console.log('Initialized extension "cp-tools"');
 
 	// Setting and Initializing Singletons
-	_extensionContext = context;
-	_optionManager = new OptionManager(_extensionContext);
+	extensionContext = context;
+	optionManager = new OptionManager(extensionContext);
+	testManager = new TestManager(); testManager.readFromConfig();
 
-	_displayInterface = new DisplayInterface();
-	_buildRunDI = new BuildRunDI(_displayInterface);
-	_inputOutputDI = new InputOutputDI(_displayInterface);
-	_optionsDI = new OptionsDI(_displayInterface, _optionManager);
-	
-	_programExecutionManager = new ProgramExecutionManagerDriver(_buildRunDI);
+	displayInterface = new DisplayInterface();
+	buildRunDI = new BuildRunDI(displayInterface);
+	inputOutputDI = new InputOutputDI(displayInterface);
+	optionsDI = new OptionsDI(displayInterface, optionManager);
 
-	_extensionTerminalManager = new ExtensionTerminalManager();
+	programExecutionManager = new ProgramExecutionManagerDriver(buildRunDI);
 
 	// Misc. Commands
 	let resetDisplayHTML = vscode.commands.registerCommand('cp-tools.resetDisplayHTML', () => {
-		displayInterface().resetDisplayHTML(context);
+		displayInterface?.resetDisplayHTML(context);
 	});
-
 	let open = vscode.commands.registerCommand('cp-tools.open', () => {
-		displayInterface().openDisplay(context);
+		displayInterface?.openDisplay(context);
 	});
 
 	context.subscriptions.push(resetDisplayHTML);
@@ -80,8 +59,9 @@ export function activate(context: vscode.ExtensionContext) {
 	optionsRegister.registerViewsAndCommands(context);
 	executeRegister.registerViewsAndCommands(context);
 	templatesRegister.registerViewsAndCommands(context);
-	extensionTerminalRegister.registerViewsAndCommands(context);
 }
 
-// this method is called when your extension is deactivated
-export function deactivate() {}
+// cleanup
+export function deactivate() {
+	testManager!.writeToConfig();
+}

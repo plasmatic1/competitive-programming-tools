@@ -1,31 +1,33 @@
 import { DisplayInterface, EventType } from './displayInterface';
 
 export enum BuildRunEventTypes {
-    Reset = 'reset',
+    Init = 'init', // Inbound: Initializes (or Re-initializes the webview).  The following happens: 
+    CompileError = 'compileError', // 
+    BeginCase = 'beginCase', // Signals 
+    EndCase = 'endCase', // Signals
 }
 
+// tslint:disable: curly
 export class BuildRunDI {
-    resetResponseQueue: (() => void)[] = [];
+    initResponseQueue: (() => void)[] = [];
 
     constructor(
         private readonly displayInterface: DisplayInterface
     ) {
         this.displayInterface.on(EventType.BuildAndRun, (evt) => {
-            if (evt.type === BuildRunEventTypes.Reset) {
-                // tslint:disable-next-line: curly
-                for (let resp of this.resetResponseQueue)
-                    resp();
-                this.resetResponseQueue.length = 0;
+            if (evt.type === BuildRunEventTypes.Init) {
+                for (let resp of this.initResponseQueue) resp();
+                this.initResponseQueue.length = 0;
             }
         });
     }
 
     /**
-     * When the reset event is sent to the webview, the webview should respond back with a reset event to confirm that the reset was complete.
+     * When the init event is sent to the webview, the webview should respond back with a init event to confirm that the init was complete.
      */
-    async waitForResetResponse(): Promise<void> {
+    async waitForInitResponse(): Promise<void> {
         return new Promise((res, _) => { // Lambda so `this` is not overridden
-            this.resetResponseQueue.push(res);
+            this.initResponseQueue.push(res);
         });
     }
 

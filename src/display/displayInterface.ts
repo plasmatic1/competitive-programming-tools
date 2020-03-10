@@ -21,15 +21,12 @@ interface Event {
     event: { type: string, event: any };
 }
 
+// tslint:disable: curly
 export class DisplayInterface {
     public curView: vscode.WebviewPanel | undefined = undefined;
     public eventQueue: Event[] = [];
     public eventHandlers: Map<EventType, ((arg0: any) => void)[]> = new Map();
     public temporaryEventHandlers: Map<EventType, ((arg0: any) => void)[]> = new Map();
-
-    constructor() {
-        // Empty for now...
-    }
 
     /**
      * Opens a new CP Tools webview, or selects (focuses) it if it's already open.
@@ -41,7 +38,7 @@ export class DisplayInterface {
             display.reveal(vscode.ViewColumn.Active);
         }
         else {
-    // tslint:disable-next-line: no-duplicate-variable
+            // tslint:disable-next-line: no-duplicate-variable
             var display: vscode.WebviewPanel = vscode.window.createWebviewPanel(
                 'cpToolsDisplay',
                 'CP Tools',
@@ -124,8 +121,6 @@ export class DisplayInterface {
      */
     getDisplayHTML(context: vscode.ExtensionContext) { 
         let resourceDir = vscode.Uri.file(path.join(context.extensionPath, 'out', 'assets')).with({ scheme: 'vscode-resource' });
-        // console.log(resourceDir);
-        // console.log(fs.lstatSync(path.join(context.extensionPath, 'out', 'assets', 'display.html')).ctime);
         return fs.readFileSync(path.join(context.extensionPath, 'out', 'assets', 'display.html'))
             .toString()
             .replace(/vscodeRoot/g, resourceDir.toString());
@@ -138,12 +133,8 @@ export class DisplayInterface {
     emit(obj: Event) {
         // Has to be like this (likely because of some this shenanigans)
         // This cannot simply be refractored to `const emitEvent = display.webview.postMessage;`
-        if (!isUndefined(this.curView) && this.curView.visible) {
-            this.curView.webview.postMessage(obj);
-        }
-        else {
-            this.eventQueue.push(obj);
-        }
+        if (!isUndefined(this.curView) && this.curView.visible) this.curView.webview.postMessage(obj);
+        else this.eventQueue.push(obj);
     }
 
     /**
@@ -153,26 +144,8 @@ export class DisplayInterface {
      */
     on(type: EventType, handler: (arg0: any) => void) {
         let res = this.eventHandlers.get(type);
-        if (isUndefined(res)) {
+        if (isUndefined(res))
             this.eventHandlers.set(type, res = []);
-        }
-
         res.push(handler);
-    }
-
-    // Some main app-specific event emitting
-
-    /**
-     * (Assuming that the CP Tools window is open), focibly selects the specified tab in the CP Tools Window
-     * @param tabName The name of the tab to focus.  Tab names are given in the App.vue file
-     */
-    focusTab(tabName: string) {
-        this.emit({
-            type: EventType.Main,
-            event: {
-                type: MainEventTypes.FocusTab,
-                event: tabName
-            }
-        });
     }
 }

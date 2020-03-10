@@ -35,6 +35,7 @@ function getSpawnOptions(execFile: string): sub.SpawnOptions {
     };
 }
 
+// tslint:disable: curly
 class CPPExecutor implements Executor {
     srcFile: string;
     execFile: string | undefined;
@@ -52,24 +53,18 @@ class CPPExecutor implements Executor {
             compileProcStderr = compileProc.stderr.toString();
         
         if (compileProcStderr !== '') {
-            if (!fs.existsSync(this.execFile)) {
-                this.execFile = undefined;
-            }
+            if (!fs.existsSync(this.execFile)) this.execFile = undefined;
             this.compileError = compileProcStderr;
         }
     }
 
     exec(): sub.ChildProcess {
-        if (isUndefined(this.execFile)) {
-            throw new Error('File not compiled yet! (Or compile failed and you still tried to execute this)');
-        }
+        if (isUndefined(this.execFile)) throw new Error('File not compiled yet! (Or compile failed and you still tried to execute this)');
         return sub.spawn(this.execFile, [], getSpawnOptions(this.execFile));
     }
 
     postExec(): void {
-        if (isUndefined(this.execFile)) {
-            throw new Error('File not compiled yet!');
-        }
+        if (isUndefined(this.execFile)) throw new Error('File not compiled yet!');
         fs.unlinkSync(this.execFile);
     }
 }
@@ -77,20 +72,17 @@ class CPPExecutor implements Executor {
 class PYExecutor implements Executor {
     srcFile: string;
 
-    constructor(srcFile: string) {
-        this.srcFile = srcFile;
-    }
-
+    constructor(srcFile: string) { this.srcFile = srcFile; }
     preExec(): void {}
+    postExec(): void {}
 
     exec(): sub.ChildProcess {
         return sub.spawn('python', [this.srcFile], getSpawnOptions(this.srcFile));
     }
-
-    postExec(): void {}
 }
 
 export const executors: Map<string, new (srcFile: string) => Executor> = new Map([
     ['cpp', CPPExecutor],
+    ['cc', CPPExecutor],
     ['py', PYExecutor]
 ]);

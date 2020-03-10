@@ -4,14 +4,11 @@ import * as pidusage from 'pidusage';
 import { Executor, executors } from './executors';
 import { isUndefined, isNull } from 'util';
 import { popUnsafe, readWorkspaceFile, errorIfUndefined } from '../extUtils';
-import { optionManager, buildRunDI, CASES_PATH } from '../extension';
+import { optionManager, buildRunDI, testManager } from '../extension';
 import { ChildProcess } from 'child_process';
-import { BuildRunDI } from '../display/buildRunDisplayInterface';
+import { BuildRunDI, BuildRunEventTypes } from '../display/buildRunDisplayInterface';
 
-interface Case {
-    input: string;
-    output: string;
-}
+// tslint:disable: curly
 
 /**
  * Gets current timestamp
@@ -25,20 +22,15 @@ function getTime(): number {
  * @param code Exit code of program
  * @param signal Signal that the program was killed by (or null if no signal was sent)
  */
-// tslint:disable: curly
-function createExitMessage(code: number, signal: string): string[] {
+function createExitStatus(code: number, signal: string): string {
     if (!isNull(signal))
-        return ['Killed by Signal:', signal + (signal === 'SIGTERM' ? ' (Possible timeout?)' : '')];
+        return 'Signal: ' + signal + (signal === 'SIGTERM' ? ' (timeout?)' : '');
 
-    var extra = '';
-    if (code > 255)
-        extra = ' (Possible Segmentation Fault?)';
-    else if (code === 3)
-        extra = ' (Assertion failed!)';
-
-    return ['Exit code:', code + extra];
+    let extra = '';
+    if (code > 255) extra = ' (segfault?)';
+    else if (code === 3) extra = ' (assertion failed)';
+    return 'Code:' + code.toString() + extra;
 }
-// tslint:enable: curly
 
 /**
  * Compares two output string, based on configuration settings.  For example, if the output comparison style is set to "token", it will compare individual tokens, and if 
@@ -52,28 +44,12 @@ function compareOutput(output1: string, output2: string): boolean {
 }
 
 /**
- * Resolves the test cases.  Throws an error if test cases could not be found
- */
-function getTestCases(): Case[] {
-    const cases = JSON.parse(readWorkspaceFile(CASES_PATH, '[]'));
-    if (cases.length === 0) {
-        throw new Error('No test cases!');
-    }
-    return cases;
-}
-
-/**
  * Returns the source file from the current file open.  If no file is open, an error is thrown
  * @returns The source file name
  */
 function getSourceFile(): string {
-    let currEditor = vscode.window.activeTextEditor;
-    if (isUndefined(currEditor)) {
-        throw new Error('No open file!');
-    }
-
-    const srcFile: string = currEditor.document.uri.fsPath;
-    return srcFile;
+    let currEditor = errorIfUndefined(vscode.window.activeTextEditor, 'No open file!');
+    return currEditor.document.uri.fsPath;
 }
 
 /**
@@ -83,25 +59,48 @@ function getSourceFile(): string {
 function getExecutor(src: string): Executor {
     const srcName = popUnsafe(src.split('\\')),
         ext = popUnsafe(srcName.split('.')), 
-        executorConstructor = executors.get(ext);
-    if (isUndefined(executorConstructor)) {
-        throw new Error(`Extension ${ext} not supported!`);
-    }
-
+        executorConstructor = errorIfUndefined(executors.get(ext), `Extension ${ext} not supported!`);
     return new executorConstructor(src);
 }
 
-class ProgramExecutionManager {
+// Result Classes
+// Note that executionId should always count up
+
+class SkippedResult {
+    executionId = -1; // The execution id of this result (this is an id assigned to it based on the execution).  This is to distinguish different test cases and prevent a certain race case.
+    caseno: number = -1;
+    verdict: string = 'Skipped'; // Verdict
+}
+
+class Result {
+    executionId = -1; // The execution id of this result (this is an id assigned to it based on the execution).  This is to distinguish different test cases and prevent a certain race case.
+    caseno: number = -1; // Test case number, 0-indexed
+    stdin: string = ''; // Stdin data
+    stdout: string = ''; // Stdout data
+    stderr: string = ''; // Stderr data
+    expectedStdout: string | undefined = undefined; // Expected stdout
+    verdict: string = 'Waiting'; // Verdict
+    time: number = 0; // Time
+    memory: number = 0;
+    exitStatus: string = 'Code: 0';
+}
+
+class CompileError {
+    executionId = -1; // The execution id of this result (this is an id assigned to it based on the execution).  This is to distinguish different test cases and prevent a certain race case.
+    verdict: string = 'Compile Error';
+    message: string | undefined = undefined;
+    fatal: boolean = false;
+}
+
+export class ProgramExecutionManager {
+    // state information
     private curProcs: ChildProcess[] = [];
+    private executionCounter = -1;
     private halted: boolean = false;
-    private curExecutor: Executor | undefined;
+    private curExecutor: Executor | undefined = undefined;
 
-    // Singletons
-    constructor (
-        private readonly displayInterface: BuildRunDI
-    ) {
-
-    }
+    // Result information
+    private onCompleteCase: vscode.EventEmitter<void> = new vscode.EventEmitter();
 
     /**
      * Compiles the program and throws an error if the compile failed
@@ -109,197 +108,192 @@ class ProgramExecutionManager {
      */
     compile(executor: Executor): void {
         executor.preExec();
-                
         if (!isUndefined(executor.compileError)) {
             const fatal: boolean = isUndefined(executor.execFile);
-            this.displayInterface.emit(new CompileErrorEvent(executor.compileError, fatal));
-                
-            if (fatal) {
-                return;
-            }
+            this.compileError(executor.compileError, fatal);
         }
     }
 
-    /**
-     * Errors if the execution has been halted
-     */
-    checkForHalted(): void {
-        if (this.halted) {
-            throw new Error("Program has been halted!");
-        }
+    private compileError(msg: string, fatal: boolean = false) {
+        if (fatal) this.halted = true;
     }
-
+    
     /**
-     * Executes the program for a sepcific case and throws any errors if they are encountered.  It's returned as a promise
+     * Executes the program for a sepcific case.  Completion events are handled by the eventemitters
      * @param executor The executor
      * @param caseNo The case number
      * @param input The input data
      * @param output The output data
      */
-    executeCase(executor: Executor, caseNo: number, input: string, output: string | undefined): Promise<void> {
-        return new Promise((res, _) => {
-            const timeout = optionManager().get('buildAndRun', 'timeout'),
-                memSampleRate = optionManager().get('buildAndRun', 'memSample');
+    executeCase(executor: Executor, caseNo: number, input: string, output: string | undefined): Promise<Result> {
+        return new Promise((res, rej) => {
+            const timeout = optionManager!.get('buildAndRun', 'timeout'),
+                memSampleRate = optionManager!.get('buildAndRun', 'memSample');
 
             let proc = executor.exec();
             this.curProcs.push(proc);
-            let procOutput = "";
+
+            // State variables
+            let result: Result = new Result();
 
             if (proc === null) {
-                this.displayInterface.emit(new CompileErrorEvent(`Process for case ${caseNo} could not be initialized`, true));
-                res();
+                result.verdict = 'Internal Error';
+                result.exitStatus = 'ChildProcess could not be initialized'; 
+                res(result);
             }
-
             try {
                 proc.stdin.write(input);
-                this.displayInterface.emit(new BeginCaseEvent(input, output, caseNo));
-
-                if (!/\s$/.test(input)) {
-                    this.displayInterface.emit(new CompileErrorEvent(`Input for Case #${caseNo + 1} does not end in whitespace, this may cause issues (such as cin waiting forever for a delimiter)`, false));
-                }
+                if (!/\s$/.test(input))
+                    this.compileError(`Input of case ${caseNo} does not end in whitespace, this may cause stdin to wait forever for a delimiter`);
             }
             catch (e) {
-                this.displayInterface.emit(new BeginCaseEvent('STDIN of program closed prematurely.', output, caseNo));
+                result.verdict = 'Internal Error';
+                result.exitStatus = 'STDIN of child process closed prematurely.';
+                res(result);
             }
 
             const beginTime: number = getTime();
                 
-            // Event handlers and timed processes
+            // exit and proc error management
             proc.on('error', (error: Error) => {
-                this.displayInterface.emit(new CompileErrorEvent(`${error.name}: ${error.message}`, true));
-                res();
+                result.verdict = 'Internal Error';
+                result.exitStatus = `ChildProcess Error: ${error.name}: ${error.message}`;
+                res(result);
             });
-                
-            // tslint:disable: curly
             proc.on('exit', (code: number, signal: string) => {
                 clearTimeout(tleTimeout);
-                this.displayInterface.emit(new UpdateTimeEvent(getTime() - beginTime, caseNo));
-
                 let isCorrect;
-                if (!isUndefined(output) && output.length > 0) 
-                    isCorrect = compareOutput(output, procOutput);
-                else
-                    isCorrect = true;
-                
-                this.displayInterface.emit(new EndEvent(createExitMessage(code, signal), isCorrect, code !== 0, caseNo));
-                res();
+                if (!isUndefined(output) && output.length > 0) isCorrect = compareOutput(output, result.stdout);
+                else isCorrect = true;
+
+                // set exit status
+                result.exitStatus = createExitStatus(code, signal);
+                if (code !== 0) result.verdict = 'Runtime Error';
+                else if (signal === 'SIGTERM') result.verdict = 'Timeout';
+                else if (isCorrect) result.verdict = 'Correct';
+                else result.verdict = 'Incorrect';
+
+                // set runtime
+                result.time = getTime() - beginTime;
+
+                // Complete case
+                res(result);
             });
-            // tslint:enable: curly
             
+            // Stream management
             proc.stdout.on('readable', () => {
                 const data = proc.stdout.read();
-                if (data) {
-                    procOutput += data.toString();
-                    this.displayInterface.emit(new UpdateStdoutEvent(data.toString(), caseNo));
-                }
+                if (data) result.stdout += data.toString();
             });
-                
             proc.stderr.on('readable', () => {
                 const data = proc.stderr.read();
-                if (data) { this.displayInterface.emit(new UpdateStderrEvent(data.toString(), caseNo)); }
+                if (data) result.stderr += data.toString();
             });
             
-            // Memory and time live update
+            // memory and time management
             const memCheckInterval = setInterval(() => {
                 pidusage(proc.pid)
-                .then(stat => {
-                    this.displayInterface.emit(new UpdateTimeEvent(stat.elapsed, caseNo));
-                    this.displayInterface.emit(new UpdateMemoryEvent(stat.memory, caseNo));
-                })
-                .catch(_ => {
-                    clearInterval(memCheckInterval);
-                });
+                .then(stat => { result.memory = Math.max(result.memory, stat.memory); })
+                .catch(_ => { clearInterval(memCheckInterval); });
             }, memSampleRate);
-            
             const tleTimeout = setTimeout(() => proc.kill(), timeout);
         });
     }
+    
+    /**
+     * Errors if this.halted is true
+     */
+    private checkForHalted() { if (this.halted) throw new Error('Program halted!'); }
 
     /**
-     * Resets ths display for a new execution of a program; # of cases should be specified.  This function returns a promise that resolves when the response
-     * to the reset event is received from the webview
-     * @param caseCnt Number of cases
+     * Inits display for new cases
      */
-    async resetDisplay(caseCnt: number): Promise<void> {
-        return new Promise((res, _) => {
-            this.displayInterface.emit(new ResetEvent(caseCnt));
-            buildRunDI().waitForResetResponse().then(res);
+    private async initDisplay(caseCount: number) {
+        buildRunDI!.emit({
+            type: BuildRunEventTypes.Init, 
+            event: { caseCount }
         });
+        await buildRunDI!.waitForInitResponse();
     }
 
     /**
      * Runs the program
      */
     async run(): Promise<void> {
+        // Get important variables
         const src = getSourceFile();
-        const executor = this.curExecutor = getExecutor(src);
-        const cases = getTestCases();
+        const cases = testManager!.getCases();
 
+        // Initialization of state
+        this.halted = false;
+        this.executionCounter++;
+        this.curExecutor = getExecutor(src);
+
+        // Execute cases
         this.checkForHalted();
-        this.compile(executor);
-        this.resetDisplay(cases.length);
+        await this.initDisplay(cases.length);
+        this.compile(this.curExecutor);
+        this.checkForHalted();
         let counter = 0;
         for (const acase of cases) {
-            this.checkForHalted();
-            await this.executeCase(executor, counter++, acase.input, acase.output);
+            let res: Result | SkippedResult;
+            if (this.halted) {
+                res = new SkippedResult();
+                res.executionId = this.executionCounter;
+                res.caseno = counter++;
+            }
+            else {
+                res = await this.executeCase(this.curExecutor, counter++, acase.input, acase.output);
+                res.executionId = this.executionCounter;
+            }
+            this.onCompleteCase.fire();
         }
-        executor.postExec();
-        this.curExecutor = undefined;
-    }
 
-    /**
-     * Kills current running process
-     */
-    halt(): void {
-        for (const proc of this.curProcs) { proc.kill(); }
+        // Reset state
+        this.curExecutor.postExec();
+        this.curExecutor = undefined;
         this.curProcs.length = 0;
         this.halted = true;
-        errorIfUndefined(this.curExecutor, 'Current executor is undefined??').postExec();
     }
 
     /**
-     * Clears procs array (assuming execution finished)
+     * Kills all current running procs and clears the procs array
      */
-    clearProcs(): void {
+    private killAllProcs(): void {
+        for (const proc of this.curProcs) proc.kill();
         this.curProcs.length = 0;
     }
-}
 
-export class ProgramExecutionManagerDriver {
-    curExecution: ProgramExecutionManager | undefined = undefined;
-
-    constructor (
-        private readonly displayInterface: BuildRunDI
-    ) {
-        // Fill in if needed
+    /**
+     * Assuming that a case is currently running, this waits for the case to complete or for the specified
+     * timeout parameter.
+     */
+    private async waitForCase(timeout: number = 1000) {
+        return new Promise((res, rej) => {
+            if (this.halted) res();
+            const id = setTimeout(() => rej('Waiting for case timed out'), timeout);
+            this.onCompleteCase.event(() => {
+                clearTimeout(id);
+                res();
+            });
+        });
     }
 
     /**
-     * Attempts to compile and run whatever open program the use has
+     * Kills current running test case
      */
-    async run(): Promise<void> {
-        try {
-            this.curExecution = new ProgramExecutionManager(this.displayInterface);
-            await this.curExecution.run();
-            this.curExecution.clearProcs();
-            this.curExecution = undefined;
-        }
-        catch (e) {
-            vscode.window.showErrorMessage(e.toString());
-            console.log(e);
-        }
+    async haltCurrentCase() {
+        await this.waitForCase();
+        this.killAllProcs();
     }
 
     /**
-     * Halts a currently running process (if one exists)
+     * Kills current running test case and skips remaining test cases
      */
-    halt(): void {
-        if (!isUndefined(this.curExecution)) {
-            this.curExecution.halt();
-            this.curExecution = undefined;
-        }
-        // tslint:disable-next-line: curly
-        else
-            vscode.window.showErrorMessage('Attempted halt while no program was running!');
+    async halt() {
+        await this.waitForCase();
+        this.halted = true;
+        this.killAllProcs();
+        this.curExecutor!.postExec();
     }
 }

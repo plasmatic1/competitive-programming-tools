@@ -3,6 +3,20 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { isUndefined } from 'util';
 
+// tslint:disable: curly
+
+// =================================================================================================================
+// Utility functions
+// =================================================================================================================
+
+/**
+ * Undefined if the string is empty, otherwise the string itself
+ * @param string The string to transform
+ */
+export function undefinedIfEmpty(string: string): string | undefined {
+    return string.length > 0 ? string : undefined;
+}
+
 /**
  * Checks if a value is undefined and then throws an error if it is.
  * @param value The value to check
@@ -28,6 +42,32 @@ export function popUnsafe<T>(array: T[], message: string = 'Empty Array!'): T {
     return val;
 }
 
+// =================================================================================================================
+// Interacting with workspace files
+// =================================================================================================================
+
+/**
+ * Returns the path for a temp file with a given name.  Format is tmp-<name>-<random numbers> if name is specified and tmp-<random numbers> otherwise
+ * @param name The name of the temp file
+ */
+export function getTempFile(name: string | undefined = undefined): string {
+    const pref = 'tmp' + (isUndefined(name) ? '' : `-${name}`);
+    const used = new Set(fs.readdirSync(rootPath()));
+    let res;
+    do
+        res = pref + '-' + Math.random().toString().slice(1, 7);
+    while (used.has(res));
+    return res;
+}
+
+/**
+ * Returns the root path of vscode (where the application is currently open).
+ * An error will be thrown if the application is not open in a folder
+ */
+export function rootPath(): string {
+    return errorIfUndefined(vscode.workspace.rootPath, 'VSCode not open in a folder!');
+}
+
 /**
  * Reads a file from the path <workspace>/.vscode/<path>
  * @param filePath The path of the file relative to the .vscode folder
@@ -35,11 +75,7 @@ export function popUnsafe<T>(array: T[], message: string = 'Empty Array!'): T {
  * @returns The read data, or the default if it doesn't exist
  */
 export function readWorkspaceFile(filePath: string, defaultContent: string = ''): string {
-    if (isUndefined(vscode.workspace.rootPath)) {
-        throw new Error('Not in a workspace!');
-    }
-
-    const pathDir = path.join(vscode.workspace.rootPath, '.vscode'), fullFilePath = path.join(pathDir, filePath);
+    const pathDir = path.join(rootPath(), '.vscode'), fullFilePath = path.join(pathDir, filePath);
     if (!fs.existsSync(pathDir)) {
         fs.mkdirSync(pathDir);
     }
@@ -58,14 +94,18 @@ export function readWorkspaceFile(filePath: string, defaultContent: string = '')
  * @param data The data to write
  */
 export function writeWorkspaceFile(filePath: string, data: string): void {
-    if (isUndefined(vscode.workspace.rootPath)) {
-        throw new Error('Not in a workspace!');
-    }
-
-    const pathDir = path.join(vscode.workspace.rootPath, '.vscode');
+    const pathDir = path.join(rootPath(), '.vscode');
     if (!fs.existsSync(pathDir)) {
         fs.mkdirSync(pathDir);
     }
 
     fs.writeFileSync(path.join(pathDir, filePath), data);
+}
+
+/**
+ * Returns the absolute file path of a workspace file path (relative)
+ * @param filePath The path of the file (relative to the .vscode folder)
+ */
+export function workspaceFilePath(filePath: string): string {
+    return path.join(rootPath(), '.vscode', filePath);
 }

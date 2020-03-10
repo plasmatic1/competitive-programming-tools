@@ -86,7 +86,7 @@ export default {
     },
     data() {
         return {
-            // events: [],
+            executionId: -1000000000,
             cases: [],
             compileErrors: []
         }
@@ -107,41 +107,18 @@ export default {
 
             if (type === 'compileError') {
                 this.compileErrors.push(event.data);
-                if (event.fatal) {
+                if (event.fatal)
                     this.cases.length = 0;
-                }
             }
             else if (type === 'beginCase') {
-                curCase.verdict = 'jd';
+                curCase.verdict = 'judging';
                 curCase.stdin = event.input;
                 curCase.judgeOut = event.output;
             }
-            else if (type === 'updateTime') {
-                curCase.time = event.newElapsed;
-            }
-            else if (type === 'updateMemory') {
-                curCase.memory = event.newMemory;
-            }
-            else if (type === 'updateStdout') {
-                curCase.stdout += event.data;
-            }
-            else if (type === 'updateStderr') {
-                curCase.stderr += event.data;
-            }
             else if (type === 'end') {
-                curCase.exitInfo = event.endMsg;
-
-                // setting verdict
-                if (event.isRuntimeError)
-                    curCase.verdict = 're';
-                else {
-                    if (event.isCorrect)
-                        curCase.verdict = 'ac';
-                    else
-                        curCase.verdict = 'wa';
-                }
+                
             }
-            else if (type === 'reset') {
+            else if (type === 'init') {
                 this.cases.length = 0;
                 for (let i = 0; i < event.caseCnt; i++) {
                     this.cases.push({
@@ -159,6 +136,7 @@ export default {
                 }
 
                 this.compileErrors = [];
+                EventBus.$emit(EventTypes.PostEventToMain, EventTypes.BuildAndRun, { type: 'init' });
             }
         });
     },
