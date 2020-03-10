@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import { CompileErrorEvent, BeginCaseEvent, UpdateTimeEvent, EndEvent, UpdateStdoutEvent, UpdateStderrEvent, UpdateMemoryEvent, ResetEvent } from './events';
 import * as pidusage from 'pidusage';
 import { Executor, executors } from './executors';
 import { isUndefined, isNull } from 'util';
@@ -68,13 +67,13 @@ function getExecutor(src: string): Executor {
 
 class SkippedResult {
     executionId = -1; // The execution id of this result (this is an id assigned to it based on the execution).  This is to distinguish different test cases and prevent a certain race case.
-    caseno: number = -1;
+    caseId: number = -1;
     verdict: string = 'Skipped'; // Verdict
 }
 
 class Result {
     executionId = -1; // The execution id of this result (this is an id assigned to it based on the execution).  This is to distinguish different test cases and prevent a certain race case.
-    caseno: number = -1; // Test case number, 0-indexed
+    caseId: number = -1; // Test case number, 0-indexed
     stdin: string = ''; // Stdin data
     stdout: string = ''; // Stdout data
     stderr: string = ''; // Stderr data
@@ -121,11 +120,11 @@ export class ProgramExecutionManager {
     /**
      * Executes the program for a sepcific case.  Completion events are handled by the eventemitters
      * @param executor The executor
-     * @param caseNo The case number
+     * @param caseId The case number
      * @param input The input data
      * @param output The output data
      */
-    executeCase(executor: Executor, caseNo: number, input: string, output: string | undefined): Promise<Result> {
+    executeCase(executor: Executor, caseId: number, input: string, output: string | undefined): Promise<Result> {
         return new Promise((res, rej) => {
             const timeout = optionManager!.get('buildAndRun', 'timeout'),
                 memSampleRate = optionManager!.get('buildAndRun', 'memSample');
@@ -135,6 +134,7 @@ export class ProgramExecutionManager {
 
             // State variables
             let result: Result = new Result();
+            result.caseId = caseId;
 
             if (proc === null) {
                 result.verdict = 'Internal Error';
@@ -144,7 +144,7 @@ export class ProgramExecutionManager {
             try {
                 proc.stdin.write(input);
                 if (!/\s$/.test(input))
-                    this.compileError(`Input of case ${caseNo} does not end in whitespace, this may cause stdin to wait forever for a delimiter`);
+                    this.compileError(`Input of case ${caseId} does not end in whitespace, this may cause stdin to wait forever for a delimiter`);
             }
             catch (e) {
                 result.verdict = 'Internal Error';
@@ -222,7 +222,7 @@ export class ProgramExecutionManager {
     async run(): Promise<void> {
         // Get important variables
         const src = getSourceFile();
-        const cases = testManager!.getCases();
+        const cases = testManager!.getCases(optionManager!.get('buildAndRun', 'curTestSet'));
 
         // Initialization of state
         this.halted = false;
@@ -230,23 +230,27 @@ export class ProgramExecutionManager {
         this.curExecutor = getExecutor(src);
 
         // Execute cases
-        this.checkForHalted();
         await this.initDisplay(cases.length);
         this.compile(this.curExecutor);
-        this.checkForHalted();
         let counter = 0;
         for (const acase of cases) {
             let res: Result | SkippedResult;
             if (this.halted) {
                 res = new SkippedResult();
                 res.executionId = this.executionCounter;
-                res.caseno = counter++;
+                res.caseId = counter++;
             }
             else {
                 res = await this.executeCase(this.curExecutor, counter++, acase.input, acase.output);
                 res.executionId = this.executionCounter;
             }
+
+            // Fire event handlers and whatnot
             this.onCompleteCase.fire();
+            buildRunDI!.emit({
+                type: BuildRunEventTypes.EndCase,
+                event: res
+            });
         }
 
         // Reset state

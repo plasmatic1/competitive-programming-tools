@@ -6,7 +6,7 @@ import { OptionManager } from './options/options';
 import { TestManager } from './execute/tests';
 import { DisplayInterface } from './display/displayInterface';
 import { BuildRunDI } from './display/buildRunDisplayInterface';
-import { ProgramExecutionManagerDriver } from './execute/execute';
+import { ProgramExecutionManager } from './execute/execute';
 import { InputOutputDI } from './display/inputOutputDisplayInterface';
 import { OptionsDI } from './display/optionsDisplayInterface';
 
@@ -23,7 +23,7 @@ export let buildRunDI: BuildRunDI | undefined = undefined;
 export let inputOutputDI: InputOutputDI | undefined = undefined;
 export let optionsDI: OptionsDI | undefined = undefined;
 
-export let programExecutionManager: ProgramExecutionManagerDriver | undefined = undefined;
+export let programExecutionManager: ProgramExecutionManager | undefined = undefined;
 
 // ---------------------------------------------------------------------------
 // Activation Registration n stuff
@@ -42,7 +42,7 @@ export function activate(context: vscode.ExtensionContext) {
 	inputOutputDI = new InputOutputDI(displayInterface);
 	optionsDI = new OptionsDI(displayInterface, optionManager);
 
-	programExecutionManager = new ProgramExecutionManagerDriver(buildRunDI);
+	programExecutionManager = new ProgramExecutionManager();
 
 	// Misc. Commands
 	let resetDisplayHTML = vscode.commands.registerCommand('cp-tools.resetDisplayHTML', () => {

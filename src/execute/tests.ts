@@ -79,4 +79,10 @@ export class TestManager {
                 };
         });
     }
+    getCaseStructure(): any {
+        let res: any = {};
+        for (const [key, val] of this.testSets.entries())
+            res[key] = val;
+        return res;
+    }
 }

@@ -1,10 +1,10 @@
 import { DisplayInterface, EventType } from './displayInterface';
 
 export enum BuildRunEventTypes {
-    Init = 'init', // Inbound: Initializes (or Re-initializes the webview).  The following happens: 
-    CompileError = 'compileError', // 
-    BeginCase = 'beginCase', // Signals 
-    EndCase = 'endCase', // Signals
+    Init = 'init', // Inbound/Outbound: Initializes (or Re-initializes the webview) with the specified number of cases.  Parameters: caseCount
+    CompileError = 'compileError', // Outbound: There is a compile error.  Parameters: Same as execute.execute.CompileError
+    BeginCase = 'beginCase', // Outbound: A case is starting to be judged.  Parameters: executionId, caseno
+    EndCase = 'endCase', // Outbound: A case is done.  Parameters: Same as execute.execute.Result
 }
 
 // tslint:disable: curly

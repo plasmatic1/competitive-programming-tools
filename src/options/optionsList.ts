@@ -17,31 +17,14 @@ function tryParseInt(val: string | undefined): number | undefined {
 
 export const OPTIONS: Map<string, Map<string, OptionProperties>> = new Map([
     ['buildAndRun', new Map([
-        ['inputFile', {
-            defaultValue: 'input.txt',
-            label: 'Input File',
-            description: 'Path to the Input File',
+        ['curTestSet', {
+            defaultValue: 'default',
+            label: 'Current Test Set',
+            description: 'The name of the current test set.  This is modified using the Input/Output panel',
             type: 'string',
             setFunction: async () => {
-                let uris = await vscode.window.showOpenDialog({canSelectMany: false});
-    
-                if (isUndefined(uris)) {
-                    return undefined;
-                }
-                return uris[0].fsPath;
+                return optionManager!.get('buildAndRun', 'curTestSet');
             }
-        }],
-        ['caseDelimeter', {
-            defaultValue: '---',
-            label: 'Case Delimeter',
-            description: 'The delimeter that separates cases in the input file',
-            type: 'string',
-            setFunction: async () =>
-                await vscode.window.showInputBox({
-                    prompt: 'This is the string that\'s used to separate cases in the input file',
-                    placeHolder: 'New Case Delimeter',
-                    value: optionManager().get('buildAndRun', 'caseDelimeter')
-                })
         }],
         ['timeout', {
             defaultValue: 5000,
@@ -52,7 +35,7 @@ export const OPTIONS: Map<string, Map<string, OptionProperties>> = new Map([
                 tryParseInt(await vscode.window.showInputBox({
                     prompt: 'New Timeout',
                     placeHolder: 'timeout (ms)',
-                    value: optionManager().get('buildAndRun', 'timeout')
+                    value: optionManager!.get('buildAndRun', 'timeout')
                 }))
         }],
         ['memSample', {
@@ -64,11 +47,11 @@ export const OPTIONS: Map<string, Map<string, OptionProperties>> = new Map([
                 tryParseInt(await vscode.window.showInputBox({
                     prompt: 'New Sample Interval',
                     placeHolder: 'Sample Interval (ms)',
-                    value: optionManager().get('buildAndRun', 'memSample')
+                    value: optionManager!.get('buildAndRun', 'memSample')
                 }))
         }],
         ['charLimit', {
-            defaultValue: 500000,
+            defaultValue: 2000,
             label: 'Character Limit',
             description: 'The displays for stdout and stderr will be truncated to the given limit to prevent lag',
             type: 'number',
@@ -76,7 +59,7 @@ export const OPTIONS: Map<string, Map<string, OptionProperties>> = new Map([
                 tryParseInt(await vscode.window.showInputBox({
                     prompt: 'New Character limit',
                     placeHolder: 'Character Limit',
-                    value: optionManager().get('buildAndRun', 'charLimit')
+                    value: optionManager!.get('buildAndRun', 'charLimit')
                 }))
         }]
     ])],
