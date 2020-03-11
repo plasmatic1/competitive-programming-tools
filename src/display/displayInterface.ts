@@ -4,29 +4,28 @@ import * as fs from 'fs';
 import { isUndefined } from 'util';
 import { errorIfUndefined } from '../extUtils';
 
-export enum EventType {
-    BuildAndRun = 'buildAndRun',
-    InputOutput = 'inputOutput', // Not really used because the module is output only
-    Tools = 'tools',
-    Options = 'options',
-    Main = 'main' // Intended for the main app interface
-}
-
-export enum MainEventTypes {
-    FocusTab = 'focusTab' // focuses... a tab.  Event object should contain a string, detailing the tab to focus to
-}
-
 interface Event {
-    type: EventType;
-    event: { type: string, event: any };
+    type: string;
+    event: any;
 }
 
 // tslint:disable: curly
 export class DisplayInterface {
     public curView: vscode.WebviewPanel | undefined = undefined;
     public eventQueue: Event[] = [];
-    public eventHandlers: Map<EventType, ((arg0: any) => void)[]> = new Map();
-    public temporaryEventHandlers: Map<EventType, ((arg0: any) => void)[]> = new Map();
+    public eventHandlers: Map<string, ((arg0: any) => void)[]> = new Map();
+    public temporaryEventHandlers: Map<string, ((arg0: any) => void)[]> = new Map();
+
+    private htmlPath: string; // Full path to the HTML document
+
+    /**
+     * Initializes a display interface
+     * @param _htmlPath The path to the HTML document (for this interface) relative to <extensionPath>/out/assets/entrypoint/
+     * @param context The extension context of the extension, needed for resolving context.extensionPath
+     */
+    constructor(_htmlPath: string, private readonly webviewTitle: string, context: vscode.ExtensionContext) { 
+        this.htmlPath = path.join(path.join(context.extensionPath, 'out', 'assets', _htmlPath));
+    }
 
     /**
      * Opens a new CP Tools webview, or selects (focuses) it if it's already open.
@@ -40,8 +39,8 @@ export class DisplayInterface {
         else {
             // tslint:disable-next-line: no-duplicate-variable
             var display: vscode.WebviewPanel = vscode.window.createWebviewPanel(
-                'cpToolsDisplay',
-                'CP Tools',
+                'cpTools',
+                this.webviewTitle,
                 vscode.ViewColumn.Active,
                 {
                     enableScripts: true,
@@ -77,9 +76,8 @@ export class DisplayInterface {
                 
                 // Normal handlers
                 let handlers = this.eventHandlers.get(evt.type);
-                if (!isUndefined(handlers)) {
+                if (!isUndefined(handlers))
                     handlers.forEach(handle => handle(evt.event));
-                }
 
                 // Temp handlers
                 let temporaryHandlers = this.temporaryEventHandlers.get(evt.type);
@@ -121,7 +119,7 @@ export class DisplayInterface {
      */
     getDisplayHTML(context: vscode.ExtensionContext) { 
         let resourceDir = vscode.Uri.file(path.join(context.extensionPath, 'out', 'assets')).with({ scheme: 'vscode-resource' });
-        return fs.readFileSync(path.join(context.extensionPath, 'out', 'assets', 'display.html'))
+        return fs.readFileSync(this.htmlPath)
             .toString()
             .replace(/vscodeRoot/g, resourceDir.toString());
     }
@@ -142,7 +140,7 @@ export class DisplayInterface {
      * @param type Type of event
      * @param handler Event handler
      */
-    on(type: EventType, handler: (arg0: any) => void) {
+    on(type: string, handler: (arg0: any) => void) {
         let res = this.eventHandlers.get(type);
         if (isUndefined(res))
             this.eventHandlers.set(type, res = []);

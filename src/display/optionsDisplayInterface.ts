@@ -1,4 +1,4 @@
-import { DisplayInterface, EventType } from "./displayInterface";
+import { DisplayInterface } from "./displayInterface";
 import { OptionManager } from "../options/options";
 import { resetOptions, resetCategory, resetOption, setOption } from "../options/optionsUtils";
 import * as vscode from 'vscode';
@@ -9,7 +9,7 @@ import * as vscode from 'vscode';
  * Inbound refers to: What the event type means when it pretains to an event coming from the webview
  * Outbound refers to: What the event type means when it pretains to an event going to the webview
  */
-export enum OptionsEventTypes {
+export enum EventType {
     Ready = 'ready', // Inbound: Display Interface is ready
     Initialize = 'initialize', // Inbound: N/A, Outbound: Initialization Information
     SetOption = 'setOption', // Inbound: Webview wants an option changed.  Outbound: An option has been changed and the value should be updated
@@ -42,37 +42,31 @@ export interface CategoryInfo {
  */
 type AllOptionsInfo = { [key: string]: CategoryInfo };
 
-export class OptionsDI {
+export class OptionsDI extends DisplayInterface {
     constructor(
-        private readonly displayInterface: DisplayInterface,
+        context: vscode.ExtensionContext,
         private readonly optionManager: OptionManager
     ) {
+        super('options.html', 'CP Tools Options', context);
         // tslint:disable: curly
-        this.displayInterface.on(EventType.Options, event_ => {
-            const { event, type } = event_;
-
-            if (type === OptionsEventTypes.SetOption) {
-                setOption(optionManager, event.category, event.key).then(newValue => {
-                    this.sendSetOptionEvent(event.category, event.key, newValue);
-                }).catch(err => {
-                    vscode.window.showErrorMessage(`Error while setting option ${event.category}.${event.key}: ${err}`);
-                });
-            }
-            else if (type === OptionsEventTypes.Ready)
-                this.sendInitalizeEvent();
-            else if (type === OptionsEventTypes.ResetOptions) {
-                resetOptions(this.optionManager);
-                this.sendInitalizeEvent(); // Might as well just reset the whole UI at this point
-            }
-            else if (type === OptionsEventTypes.ResetCategory) {
-                resetCategory(this.optionManager, event);
-                for (const [ key, _ ] of this.optionManager.optionsFor(event))
-                    this.sendSetOptionEvent(event, key, this.optionManager.getDefault(event, key));
-            }
-            else if (type === OptionsEventTypes.ResetOption) {
-                resetOption(this.optionManager, event.category, event.key);
-                this.sendSetOptionEvent(event.category, event.key, this.optionManager.getDefault(event.category, event.key));
-            }
+        this.on(EventType.SetOption, evt => {
+            setOption(optionManager, evt.category, evt.key).then(newValue => {
+                this.sendSetOptionEvent(evt.category, evt.key, newValue);
+            }).catch(err => vscode.window.showErrorMessage(`Error while setting option ${evt.category}.${evt.key}: ${err}`));
+        });
+        this.on(EventType.Ready, _ => this.sendInitalizeEvent());
+        this.on(EventType.ResetOptions, _ => {
+            resetOptions(this.optionManager);
+            this.sendInitalizeEvent(); // Might as well just reset the whole UI at this point
+        });
+        this.on(EventType.ResetCategory, evt => {
+            resetCategory(this.optionManager, evt);
+            for (const [ key, _ ] of this.optionManager.optionsFor(evt))
+                this.sendSetOptionEvent(evt, key, this.optionManager.getDefault(evt, key));
+        });
+        this.on(EventType.ResetOption, evt => {
+            resetOption(this.optionManager, evt.category, evt.key);
+            this.sendSetOptionEvent(evt.category, evt.key, this.optionManager.getDefault(evt.category, evt.key));
         });
     }
 
@@ -83,15 +77,12 @@ export class OptionsDI {
      * @param value The new value
      */
     sendSetOptionEvent(categoryKey: string, optionKey: string, value: any) {
-        this.displayInterface.emit({
-            type: EventType.Options,
+        this.emit({
+            type: EventType.SetOption,
             event: {
-                type: OptionsEventTypes.SetOption,
-                event: {
-                    category: categoryKey,
-                    key: optionKey,
-                    value: value
-                }
+                category: categoryKey,
+                key: optionKey,
+                value: value
             }
         });
     }
@@ -100,12 +91,9 @@ export class OptionsDI {
      * Sends an 'initialize' event to the webview.
      */
     sendInitalizeEvent() {
-        this.displayInterface.emit({
-            type: EventType.Options,
-            event: {
-                type: OptionsEventTypes.Initialize,
-                event: this.getAllOptionsInfo()
-            }
+        this.emit({
+            type: EventType.Initialize,
+            event: this.getAllOptionsInfo()
         });
     }
 

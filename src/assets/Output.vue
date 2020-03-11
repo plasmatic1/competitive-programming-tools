@@ -1,9 +1,15 @@
 <template>
     <div>
-        <h1>Build and Run</h1>
+        <h1>Output of {{ this.sourceName }}</h1>
+
+        <div>
+            <div v-for="(event, index) in this.events" :key="index">
+                {{ event }}
+            </div>
+        </div>
 
         <div id="compileErrorDiv" v-if="this.compileErrors.length !== 0">
-            <h3>Compile/Data Info</h3>
+            <h3>Compile/Data Errors</h3>
             <p v-for="(error, index) in this.compileErrors" :key="index">
                 {{ error }}
             </p>
@@ -70,15 +76,13 @@
 </template>
 
 <script>
-// Event Stuff
-import EventBus from './eventBus';
-import EventTypes from './eventTypes';
 
-// Components
+// Imports
 import StreamText from './StreamText';
+import EventBus from './eventDispatcher.js';
 
 export default {
-    name: 'RunProgram',
+    name: 'Output',
     components: {
         StreamText
     },
@@ -87,8 +91,10 @@ export default {
     data() {
         return {
             executionId: -1000000000,
+            sourceName: 'N/A',
             cases: [],
-            compileErrors: []
+            compileErrors: [],
+            events: []
         }
     },
     methods: {
@@ -97,8 +103,37 @@ export default {
         }
     },
     mounted() {
-        EventBus.$on('buildAndRun', event_ => {
-            const { type, event } = event_;
+        EventBus.$on('init', evt => {
+            // Setting state variables
+            this.executionId = evt.executionId;
+            this.sourceName = evt.sourceName;
+            this.compileErrors = [];
+
+            // Initialize cases
+            this.cases.length = 0;
+            for (let i = 0; i < event.caseCnt; i++) {
+                this.cases.push({
+                    id: i,
+                    verdict: 'Waiting'
+                });
+            }
+
+            // Send response
+            this.events.push(`init event: ${JSON.stringify(evt)}`);
+            EventBus.$post('init');
+        });
+        EventBus.$on('compileError', evt => {
+            this.events.push(`compileError event: ${JSON.stringify(evt)}`);
+        });
+        EventBus.$on('beginCase', evt => {
+            this.events.push(`beginCase event: ${JSON.stringify(evt)}`);
+        });
+        EventBus.$on('endCase', evt => {
+            this.events.push(`endCase event: ${JSON.stringify(evt)}`);
+        });
+
+        const UNUSED = event_ => {
+            const event = event_.data;
             // console.log('buildAndRun: ', JSON.stringify(event));
             // this.events.push(`${type}: ${JSON.stringify(event)}`);
 
@@ -115,30 +150,7 @@ export default {
                 curCase.stdin = event.input;
                 curCase.judgeOut = event.output;
             }
-            else if (type === 'end') {
-                
-            }
-            else if (type === 'init') {
-                this.cases.length = 0;
-                for (let i = 0; i < event.caseCnt; i++) {
-                    this.cases.push({
-                        id: i,
-                        visible: true,
-                        stdin: '',
-                        stdout: '',
-                        judgeOut: undefined,
-                        stderr: '',
-                        time: -1,
-                        memory: -1,
-                        exitInfo: [],
-                        verdict: 'wj'
-                    });
-                }
-
-                this.compileErrors = [];
-                EventBus.$emit(EventTypes.PostEventToMain, EventTypes.BuildAndRun, { type: 'init' });
-            }
-        });
+        };
     },
     watch: {
 

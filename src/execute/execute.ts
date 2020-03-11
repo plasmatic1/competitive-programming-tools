@@ -3,9 +3,9 @@ import * as pidusage from 'pidusage';
 import { Executor, executors } from './executors';
 import { isUndefined, isNull } from 'util';
 import { popUnsafe, readWorkspaceFile, errorIfUndefined } from '../extUtils';
-import { optionManager, buildRunDI, testManager } from '../extension';
+import { optionManager, outputDI, testManager } from '../extension';
 import { ChildProcess } from 'child_process';
-import { BuildRunDI, BuildRunEventTypes } from '../display/buildRunDisplayInterface';
+import { EventType } from '../display/outputDisplayInterface';
 
 // tslint:disable: curly
 
@@ -95,7 +95,7 @@ export class ProgramExecutionManager {
     // state information
     private curProcs: ChildProcess[] = [];
     private executionCounter = -1;
-    private halted: boolean = false;
+    private halted: boolean = true;
     private curExecutor: Executor | undefined = undefined;
 
     // Result information
@@ -115,6 +115,10 @@ export class ProgramExecutionManager {
 
     private compileError(msg: string, fatal: boolean = false) {
         if (fatal) this.halted = true;
+        outputDI!.emit({
+            type: EventType.CompileError, 
+            event: msg
+        });
     }
     
     /**
@@ -135,6 +139,7 @@ export class ProgramExecutionManager {
             // State variables
             let result: Result = new Result();
             result.caseId = caseId;
+            result.executionId = this.executionCounter;
 
             if (proc === null) {
                 result.verdict = 'Internal Error';
@@ -201,19 +206,18 @@ export class ProgramExecutionManager {
     }
     
     /**
-     * Errors if this.halted is true
-     */
-    private checkForHalted() { if (this.halted) throw new Error('Program halted!'); }
-
-    /**
      * Inits display for new cases
      */
-    private async initDisplay(caseCount: number) {
-        buildRunDI!.emit({
-            type: BuildRunEventTypes.Init, 
-            event: { caseCount }
+    private async initDisplay(sourceFile: string, caseCount: number) {
+        outputDI!.emit({
+            type: EventType.Init, 
+            event: {
+                executionId: this.executionCounter,
+                caseCount,
+                sourceName: sourceFile.replace(/\\/g, '/').split('/').pop();
+            }
         });
-        await buildRunDI!.waitForInitResponse();
+        await outputDI!.waitForInitResponse();
     }
 
     /**
@@ -223,35 +227,42 @@ export class ProgramExecutionManager {
         // Get important variables
         const src = getSourceFile();
         const cases = testManager!.getCases(optionManager!.get('buildAndRun', 'curTestSet'));
+        // console.log(`ex: ${this.executionCounter+1}, got source file and cases`);
 
         // Initialization of state
         this.halted = false;
         this.executionCounter++;
         this.curExecutor = getExecutor(src);
+        // console.log(`ex: ${this.executionCounter}, got executor`);
 
         // Execute cases
-        await this.initDisplay(cases.length);
+        await this.initDisplay(src, cases.length);
+        // console.log(`ex: ${this.executionCounter}, display ready`);
         this.compile(this.curExecutor);
+        // console.log(`ex: ${this.executionCounter}, compiled`);
         let counter = 0;
         for (const acase of cases) {
+            // console.log(`ex: ${this.executionCounter}, beginning case ${counter}`);
             let res: Result | SkippedResult;
             if (this.halted) {
                 res = new SkippedResult();
                 res.executionId = this.executionCounter;
                 res.caseId = counter++;
             }
-            else {
+            else
                 res = await this.executeCase(this.curExecutor, counter++, acase.input, acase.output);
-                res.executionId = this.executionCounter;
-            }
 
             // Fire event handlers and whatnot
             this.onCompleteCase.fire();
-            buildRunDI!.emit({
-                type: BuildRunEventTypes.EndCase,
+            outputDI!.emit({
+                type: EventType.EndCase,
                 event: res
             });
         }
+
+        // console.log(`ex: ${this.executionCounter}, done, isHalted: ${this.halted}`);
+        // If halted externally, return now
+        if (this.halted) return;
 
         // Reset state
         this.curExecutor.postExec();
@@ -287,6 +298,7 @@ export class ProgramExecutionManager {
      * Kills current running test case
      */
     async haltCurrentCase() {
+        if (this.halted) return;
         await this.waitForCase();
         this.killAllProcs();
     }
@@ -294,10 +306,12 @@ export class ProgramExecutionManager {
     /**
      * Kills current running test case and skips remaining test cases
      */
-    async halt() {
+    async haltAll() {
+        if (this.halted) return;
         await this.waitForCase();
         this.halted = true;
         this.killAllProcs();
         this.curExecutor!.postExec();
+        this.curExecutor = undefined;
     }
 }

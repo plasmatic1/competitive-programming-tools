@@ -46,9 +46,6 @@
 </template>
 
 <script>
-// Event stuff
-import EventBus from './eventBus';
-import EventTypes from './eventTypes';
 
 export default {
     name: 'CaseData',

@@ -34,9 +34,6 @@
 </template>
 
 <script>
-import EventBus from './eventBus';
-import EventTypes from './eventTypes';
-
 export default {
     name: 'Options',
     props: {

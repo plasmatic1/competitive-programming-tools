@@ -17,7 +17,7 @@ export class TestManager {
     }
 
     readFromConfig(): void {
-        const data = JSON.parse(readWorkspaceFile('testSets.json', '{ default: [] }'));
+        const data = JSON.parse(readWorkspaceFile('testSets.json', '{ "default": [false] }'));
         for (const key of Object.keys(data))
             this.testSets.set(key, data[key]);
     }

@@ -73,7 +73,7 @@ export const OPTIONS: Map<string, Map<string, OptionProperties>> = new Map([
                 await vscode.window.showInputBox({
                     prompt: 'New Compiler Args',
                     placeHolder: 'C++ compiler args (space separated)',
-                    value: optionManager().get('compilerArgs', 'cpp')
+                    value: optionManager!.get('compilerArgs', 'cpp')
                 })
         }]
     ])]

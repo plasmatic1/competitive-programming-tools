@@ -2,7 +2,7 @@
 	"name": "cp-tools",
 	"displayName": "CP-Tools",
 	"description": "Some stuff to help with CP",
-	"version": "0.0.1",
+	"version": "2.0.0",
 	"publisher": "plasmatic1",
 	"engines": {
 		"vscode": "^1.41.0"
@@ -11,33 +11,39 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:cp-tools.open",
-		"onCommand:cp-tools.openTerminal",
-		"onCommand:cp-tools.buildAndRun",
+		"onCommand:cp-tools.openInput",
+		"onCommand:cp-tools.openOptions",
 		"onCommand:cp-tools.resetDisplayHTML",
+		"onCommand:cp-tools.removeTempFiles",
+		"onCommand:cp-tools.buildAndRun",
 		"onCommand:cp-tools.loadTemplates"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "cp-tools.open",
-				"title": "Open CP Tools Menu",
+				"command": "cp-tools.openInput",
+				"title": "Open CP Tools Test Data Menu",
 				"category": "CP Tools"
 			},
 			{
-				"command": "cp-tools.openTerminal",
-				"title": "Open CP Tools Terminal",
-				"category": "CP Tools"
-			},
-			{
-				"command": "cp-tools.buildAndRun",
-				"title": "Build and Run",
+				"command": "cp-tools.openOptions",
+				"title": "Open CP Tools Options Menu",
 				"category": "CP Tools"
 			},
 			{
 				"command": "cp-tools.resetDisplayHTML",
-				"title": "Reset/Reload Display HTML",
+				"title": "Reset display HTML for all displays (I/O, Output, Options) for debugging.  (WIP/NONFUNCTIONAL)",
+				"category": "CP Tools Debug"
+			},
+			{
+				"command": "cp-tools.removeTempFiles",
+				"title": "Remove all created temprary files.  (WIP/NONFUNCTIONAL)",
+				"category": "CP Tools"
+			},
+			{
+				"command": "cp-tools.buildAndRun",
+				"title": "Build and Run Current Open File",
 				"category": "CP Tools"
 			},
 			{
@@ -46,14 +52,20 @@
 				"category": "CP Tools"
 			}
 		],
+		"keybindings": [
+			{
+				"command": "cp-tools.buildAndRun",
+				"key": "ctrl+alt+b"
+			}
+		],
 		"viewsContainers": {},
 		"views": {},
 		"menus": {}
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
-		"parcel:build": "parcel build -d out/assets src/assets/display.html --public-url \"vscodeRoot\"",
-		"parcel:watch": "parcel watch -d out/assets src/assets/display.html --public-url \"vscodeRoot\" --no-hmr",
+		"parcel:build": "parcel build -d out/assets src/assets/entrypoint/input.html src/assets/entrypoint/output.html src/assets/entrypoint/options.html --public-url \"vscodeRoot\"",
+		"parcel:watch": "parcel watch -d out/assets src/assets/entrypoint/input.html src/assets/entrypoint/output.html src/assets/entrypoint/options.html --public-url \"vscodeRoot\" --no-hmr",
 		"compile": "tsc -p ./ && npm run parcel:build",
 		"watch": "tsc -watch -p ./ && npm run parcel:watch",
 		"postinstall": "node ./node_modules/vscode/bin/install",

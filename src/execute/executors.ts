@@ -49,7 +49,7 @@ class CPPExecutor implements Executor {
     preExec(): void {
         this.execFile = this.srcFile.substring(0, this.srcFile.length - 3) + 'exe';
 
-        const compileProc = sub.spawnSync('g++', ['-o', this.execFile, this.srcFile].concat(splitArgs(optionManager().get('compilerArgs', 'cpp')))),
+        const compileProc = sub.spawnSync('g++', ['-o', this.execFile, this.srcFile].concat(splitArgs(optionManager!.get('compilerArgs', 'cpp')))),
             compileProcStderr = compileProc.stderr.toString();
         
         if (compileProcStderr !== '') {
