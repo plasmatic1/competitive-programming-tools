@@ -91,6 +91,12 @@ class CompileError {
     fatal: boolean = false;
 }
 
+interface Execution {
+    srcName: string;
+    compileErrors: string[];
+    results: Result[];
+}
+
 export class ProgramExecutionManager {
     // state information
     private curProcs: ChildProcess[] = [];
@@ -100,6 +106,7 @@ export class ProgramExecutionManager {
 
     // Result information
     private onCompleteCase: vscode.EventEmitter<void> = new vscode.EventEmitter();
+    private previousExecution: Execution | undefined = undefined;
 
     /**
      * Compiles the program and throws an error if the compile failed
@@ -173,8 +180,8 @@ export class ProgramExecutionManager {
 
                 // set exit status
                 result.exitStatus = createExitStatus(code, signal);
-                if (code !== 0) result.verdict = 'Runtime Error';
-                else if (signal === 'SIGTERM') result.verdict = 'Timeout';
+                if (code !== 0 && signal === 'SIGTERM') result.verdict = 'Timeout';
+                else if (code !== 0) result.verdict = 'Runtime Error';
                 else if (isCorrect) result.verdict = 'Correct';
                 else result.verdict = 'Incorrect';
 
@@ -214,7 +221,7 @@ export class ProgramExecutionManager {
             event: {
                 executionId: this.executionCounter,
                 caseCount,
-                sourceName: sourceFile.replace(/\\/g, '/').split('/').pop();
+                sourceName: sourceFile.replace(/\\/g, '/').split('/').pop()
             }
         });
         await outputDI!.waitForInitResponse();

@@ -6,6 +6,11 @@ export enum EventType {
     CompileError = 'compileError', // Outbound: There is a compile error.  Parameters: Same as execute.execute.CompileError
     BeginCase = 'beginCase', // Outbound: A case is starting to be judged.  Parameters: executionId, caseno
     EndCase = 'endCase', // Outbound: A case is done.  Parameters: Same as execute.execute.Result
+
+    ViewAll = 'viewAll', // Inbound: View the info of all test cases as a file.  Parameters: None
+    View = 'view', // Inbound: View the info of one test case as a file.  Parameters: Event will be an integer, the integer is the index of the case to view
+    KillAll = 'killAll', // Inbound: Kill (halt) all test cases
+    Kill = 'kill', // Inbound: Kill current test case
 }
 
 // tslint:disable: curly

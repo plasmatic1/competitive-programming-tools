@@ -64,29 +64,31 @@
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
-		"parcel:build": "parcel build -d out/assets src/assets/entrypoint/input.html src/assets/entrypoint/output.html src/assets/entrypoint/options.html --public-url \"vscodeRoot\"",
-		"parcel:watch": "parcel watch -d out/assets src/assets/entrypoint/input.html src/assets/entrypoint/output.html src/assets/entrypoint/options.html --public-url \"vscodeRoot\" --no-hmr",
+		"parcel:build": "parcel build -d out/assets src/assets/entrypoint/output.html --public-url \"vscodeRoot\"",
+		"parcel:watch": "parcel watch -d out/assets src/assets/entrypoint/output.html --public-url \"vscodeRoot\" --no-hmr",
 		"compile": "tsc -p ./ && npm run parcel:build",
 		"watch": "tsc -watch -p ./ && npm run parcel:watch",
 		"postinstall": "node ./node_modules/vscode/bin/install",
 		"test": "npm run compile && node ./node_modules/vscode/bin/test"
 	},
 	"devDependencies": {
-		"typescript": "^3.3.1",
-		"vscode": "^1.1.28",
-		"tslint": "^5.12.1",
-		"@types/node": "^10.12.21",
 		"@types/mocha": "^2.2.42",
+		"@types/node": "^10.12.21",
 		"@types/pidusage": "^2.0.1",
+		"babel-core": "^6.26.3",
+		"babel-preset-env": "^1.7.0",
+		"babel-preset-react": "^6.24.1",
 		"parcel-bundler": "^1.12.4",
 		"sass": "^1.24.4",
-		"vue-template-compiler": "^2.6.11"
+		"tslint": "^5.12.1",
+		"typescript": "^3.3.1",
+		"vscode": "^1.1.28"
 	},
 	"dependencies": {
-		"@vue/component-compiler-utils": "^3.1.1",
 		"lodash": "^4.17.15",
 		"pidusage": "^2.0.17",
-		"vue": "^2.6.11",
-		"vue-hot-reload-api": "^2.3.4"
+		"react": "^16.13.0",
+		"react-dom": "^16.13.0",
+		"react-error-boundary": "^1.2.5"
 	}
 }
