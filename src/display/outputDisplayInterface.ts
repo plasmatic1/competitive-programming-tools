@@ -23,6 +23,18 @@ export class OutputDI extends DisplayInterface {
             for (let resp of this.initResponseQueue) resp();
             this.initResponseQueue.length = 0;
         });
+        this.on(EventType.ViewAll, () => {
+            // TODO: Implement handler
+        });
+        this.on(EventType.View, index => {
+            // TODO: Implement handler
+        });
+        this.on(EventType.KillAll, () => {
+            // TODO: Implement handler
+        });
+        this.on(EventType.Kill, () => {
+            // TODO: Implement handler
+        });
     }
 
     /**

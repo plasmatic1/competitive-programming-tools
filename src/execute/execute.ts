@@ -28,7 +28,7 @@ function createExitStatus(code: number, signal: string): string {
     let extra = '';
     if (code > 255) extra = ' (segfault?)';
     else if (code === 3) extra = ' (assertion failed)';
-    return 'Code:' + code.toString() + extra;
+    return 'Code: ' + code.toString() + extra;
 }
 
 /**

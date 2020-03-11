@@ -18,13 +18,17 @@ export class InputDI extends DisplayInterface {
         super('input.html', 'Test Cases', context);
         this.on(EventType.OpenCaseFile, evt => testManager!.openCaseFile(evt.key, evt.index, evt.isInput));
         this.on(EventType.CaseCommand, evt => { 
-            
+            // TODO: Implement handler
         });
         this.on(EventType.UpdateStructure, _ => this.updateStructure());
         this.on(EventType.UpdateAll, _ => this.updateAll());
         this.on(EventType.UpdateTestCase, evt => {
             fs.writeFileSync(testManager!.caseFilePath(evt.key, evt.index, evt.isInput), evt.newData);
             vscode.window.showInformationMessage(`Saved case data to test set ${evt.key}, case #${evt.index}`);
+            this.emit({
+                type: EventType.UpdateTestCase,
+                event: evt
+            });
         });
     }
 

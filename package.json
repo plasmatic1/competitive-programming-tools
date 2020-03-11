@@ -64,8 +64,8 @@
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
-		"parcel:build": "parcel build -d out/assets src/assets/entrypoint/output.html --public-url \"vscodeRoot\"",
-		"parcel:watch": "parcel watch -d out/assets src/assets/entrypoint/output.html --public-url \"vscodeRoot\" --no-hmr",
+		"parcel:build": "parcel build -d out/assets src/assets/entrypoint/input.html src/assets/entrypoint/output.html --public-url \"vscodeRoot\"",
+		"parcel:watch": "parcel watch -d out/assets src/assets/entrypoint/input.html src/assets/entrypoint/output.html --public-url \"vscodeRoot\" --no-hmr",
 		"compile": "tsc -p ./ && npm run parcel:build",
 		"watch": "tsc -watch -p ./ && npm run parcel:watch",
 		"postinstall": "node ./node_modules/vscode/bin/install",
@@ -88,7 +88,6 @@
 		"lodash": "^4.17.15",
 		"pidusage": "^2.0.17",
 		"react": "^16.13.0",
-		"react-dom": "^16.13.0",
-		"react-error-boundary": "^1.2.5"
+		"react-dom": "^16.13.0"
 	}
 }

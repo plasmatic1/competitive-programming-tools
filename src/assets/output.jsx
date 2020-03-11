@@ -60,12 +60,11 @@ h1 {
 
 </style> */}
         // "parcel:build": "parcel build -d out/assets src/assets/entrypoint/input.html src/assets/entrypoint/output.html src/assets/entrypoint/options.html --public-url \"vscodeRoot\"",
-        // "parcel:watch": "parcel watch -Ad out/assets src/assets/entrypoint/input.html src/assets/entrypoint/output.html src/assets/entrypoint/options.html --public-url \"vscodeRoot\" --no-hmr",
+        // "parcel:watch": "parcel watch -A out/assets src/assets/entrypoint/input.html src/assets/entrypoint/output.html src/assets/entrypoint/options.html --public-url \"vscodeRoot\" --no-hmr",
 
 import EventBus from './vscodeEventBus';
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { ErrorBoundary } from 'react-error-boundary';
 import * as _ from 'lodash';
 
 class OutputDisplay extends React.Component {
@@ -73,10 +72,14 @@ class OutputDisplay extends React.Component {
         super(props);
 
         this.state = {
+            // State variables
             executionId: -1000000000,
+            curViewedCase: -1, // Currently viewed case
             sourceName: 'N/A',
             cases: [],
             compileErrors: [],
+
+            // Debugging
             events: []
         };
 
@@ -95,7 +98,8 @@ class OutputDisplay extends React.Component {
 
             // Setting state variables
             this.setState({
-                executionId: evt.executionId,
+                executionId: Math.max(this.state.executionId, evt.executionId),
+                curViewedCase: -1, 
                 sourceName: evt.sourceName,
                 compileErrors: [],
                 cases: _cases
@@ -108,18 +112,21 @@ class OutputDisplay extends React.Component {
             EventBus.post('init');
         });
         EventBus.on('compileError', evt => {
+            if (evt.executionId != this.state.executionId) return; // Invalid execution id
             this.setState({
                 compileErrors: _.concat(this.state.compileErrors, evt),
                 events: _.concat(this.state.events, `compileError event: ${JSON.stringify(evt)}`)
             });
         });
         EventBus.on('beginCase', evt => {
+            if (evt.executionId != this.state.executionId) return; // Invalid execution id
             this.setState({
                 cases: _.set(this.state.cases, evt, { id: evt, verdict: 'Judging' }),
                 events: _.concat(this.state.events, `begin event: ${JSON.stringify(evt)}`)
             });
         });
         EventBus.on('endCase', evt => {
+            if (evt.executionId != this.state.executionId) return; // Invalid execution id
             this.setState({
                 cases: _.set(this.state.cases, evt.caseId, evt),
                 events: _.concat(this.state.events, `end event: ${JSON.stringify(evt)}`)
