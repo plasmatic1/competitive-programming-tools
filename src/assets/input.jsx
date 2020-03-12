@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import EventBus from './vscodeEventBus';
+import './scss/input.scss';
  
 // Key code constants
 const ENTER = 13, R = 82, S = 83;
@@ -178,38 +179,6 @@ class InputDisplay extends React.Component {
         );
     }
 }
-
-{/*
-<style lang="scss" scoped>
-
-@import 'scss/global.scss';
-@import 'scss/main.scss';
-
-textarea {
-    box-sizing: border-box;
-    resize: none;
-    width: 100%;
-}
-
-table {
-    width: 100%;
-}
-
-#buttons {
-    margin-bottom: 20px;
-}
-
-h3 {
-    color: map-get($theme, 5);
-    margin-top: 10px;
-    margin-bottom: 2px;
-}
-
-td {
-    color: $text-color;
-}
-
-</style>*/}
 
 let App = document.getElementById('app');
 ReactDOM.render(<InputDisplay />, App);

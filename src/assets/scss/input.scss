@@ -1,0 +1,26 @@
+@import './global.scss';
+@import './main.scss';
+
+textarea {
+    box-sizing: border-box;
+    resize: none;
+    width: 100%;
+}
+
+table {
+    width: 100%;
+}
+
+#buttons {
+    margin-bottom: 20px;
+}
+
+h3 {
+    color: map-get($theme, 5);
+    margin-top: 10px;
+    margin-bottom: 2px;
+}
+
+td {
+    color: $text-color;
+}

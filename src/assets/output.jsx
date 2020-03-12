@@ -1,71 +1,8 @@
-{/* <template>
-// General formatting
-h1 {
-    margin-top: 0;
-}
-
-#compileErrorDiv {
-    border: 1px solid map-get($theme, 3);
-    padding: 0 7px 2px 7px;
-    margin: 10px;
-
-    h3 {
-        margin-top: 5px;
-        margin-bottom: 2px;
-    }
-
-    p {
-        margin: 0 0 2px 0;
-        // border: 1px solid red;
-    }
-}
-
-.case-div {
-    margin-bottom: 30px;
-
-    h2 {
-        margin-bottom: 0;
-    }
-}
-
-// Verdict-related stuff
-#verdictDiv {
-    margin-left: 0;
-}
-
-.verdict {
-    margin-left: 7px;
-}
-
-.verdict-style-ac {
-    color: mix(map-get($theme, 4), green, 80%);
-    font-weight: bold;
-}
-
-.verdict-style-wa {
-    // color: red;
-    color: mix(map-get($theme, 4), red, 80%);
-    font-weight: bold;
-}
-
-.verdict-style-re {
-    color: mix(map-get($theme, 4), orange, 80%);
-    font-weight: bold;
-}
-
-.verdict-style-wj, .verdict-style-jd { // Waiting for judge
-    color: map-get($theme, 4);
-    font-style: italic;
-}
-
-</style> */}
-        // "parcel:build": "parcel build -d out/assets src/assets/entrypoint/input.html src/assets/entrypoint/output.html src/assets/entrypoint/options.html --public-url \"vscodeRoot\"",
-        // "parcel:watch": "parcel watch -A out/assets src/assets/entrypoint/input.html src/assets/entrypoint/output.html src/assets/entrypoint/options.html --public-url \"vscodeRoot\" --no-hmr",
-
-import EventBus from './vscodeEventBus';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import * as _ from 'lodash';
+import EventBus from './vscodeEventBus';
+import './scss/output.scss';
 
 class OutputDisplay extends React.Component {
     constructor(props) {

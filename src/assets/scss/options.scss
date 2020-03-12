@@ -1,0 +1,60 @@
+@import './global.scss';
+@import './main.scss';
+
+h1 {
+    color: map-get($theme, 5);
+    margin-top: 0px;
+    margin-bottom: 0;
+}
+
+.category-div {
+    margin-bottom: 49px;
+}
+
+.category-description {
+    font-style: italic;
+    margin-top: 2px;
+    margin-bottom: 22px;
+}
+
+.option-div {
+    margin-bottom: 30px;
+}
+
+.option-value-div {
+    margin: 3px 0;
+    
+    a {
+        cursor: pointer;
+        font-family: $font-family;
+        font-size: 10pt;
+        margin-right: 0.5em;
+    }
+}
+
+.option-heading {
+    font-weight: bold;
+    text-decoration: underline;
+    color: map-get($theme, 4);
+}
+
+.option-full-key {
+    font-style: italic;
+    color: map-get($theme, 3);
+}
+
+.option-type {
+    color: map-get($theme, 4);
+    font-family: $code-font-family;
+}
+
+.option-value {
+    span {
+        padding: 3px;
+        font-size: 10pt;
+        font-family: $code-font-family;
+        background-color: map-get($theme, 1);
+    }
+
+    margin-bottom: 4px;
+}
