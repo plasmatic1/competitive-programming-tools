@@ -23,12 +23,12 @@
 		"commands": [
 			{
 				"command": "cp-tools.openInput",
-				"title": "Open CP Tools Test Data Menu",
+				"title": "Open CP Tools Test Data/Input Menu",
 				"category": "CP Tools"
 			},
 			{
 				"command": "cp-tools.openOptions",
-				"title": "Open CP Tools Options Menu",
+				"title": "Open CP Tools Options/Configuration Menu",
 				"category": "CP Tools"
 			},
 			{
@@ -64,8 +64,8 @@
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
-		"parcel:build": "parcel build -d out/assets src/assets/entrypoint/input.html src/assets/entrypoint/output.html --public-url \"vscodeRoot\"",
-		"parcel:watch": "parcel watch -d out/assets src/assets/entrypoint/input.html src/assets/entrypoint/output.html --public-url \"vscodeRoot\" --no-hmr",
+		"parcel:build": "parcel build -d out/assets src/assets/entrypoint/input.html src/assets/entrypoint/output.html src/assets/entrypoint/options.html --public-url \"vscodeRoot\"",
+		"parcel:watch": "parcel watch -d out/assets src/assets/entrypoint/input.html src/assets/entrypoint/output.html src/assets/entrypoint/options.html --public-url \"vscodeRoot\" --no-hmr",
 		"compile": "tsc -p ./ && npm run parcel:build",
 		"watch": "tsc -watch -p ./ && npm run parcel:watch",
 		"postinstall": "node ./node_modules/vscode/bin/install",

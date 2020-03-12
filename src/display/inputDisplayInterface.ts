@@ -57,7 +57,7 @@ export class InputDI extends DisplayInterface {
                 };
             });
         this.emit({
-            type: EventType.UpdateStructure,
+            type: EventType.UpdateAll,
             event: cases
         });
     }

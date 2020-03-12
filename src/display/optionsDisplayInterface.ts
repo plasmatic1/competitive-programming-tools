@@ -1,5 +1,5 @@
+import { optionManager } from '../extension';
 import { DisplayInterface } from "./displayInterface";
-import { OptionManager } from "../options/options";
 import { resetOptions, resetCategory, resetOption, setOption } from "../options/optionsUtils";
 import * as vscode from 'vscode';
 
@@ -42,31 +42,29 @@ export interface CategoryInfo {
  */
 type AllOptionsInfo = { [key: string]: CategoryInfo };
 
+// tslint:disable: curly
 export class OptionsDI extends DisplayInterface {
-    constructor(
-        context: vscode.ExtensionContext,
-        private readonly optionManager: OptionManager
-    ) {
+    constructor(context: vscode.ExtensionContext) {
         super('options.html', 'CP Tools Options', context);
-        // tslint:disable: curly
+
         this.on(EventType.SetOption, evt => {
-            setOption(optionManager, evt.category, evt.key).then(newValue => {
+            setOption(optionManager!, evt.category, evt.key).then(newValue => {
                 this.sendSetOptionEvent(evt.category, evt.key, newValue);
             }).catch(err => vscode.window.showErrorMessage(`Error while setting option ${evt.category}.${evt.key}: ${err}`));
         });
         this.on(EventType.Ready, _ => this.sendInitalizeEvent());
         this.on(EventType.ResetOptions, _ => {
-            resetOptions(this.optionManager);
+            resetOptions(optionManager!);
             this.sendInitalizeEvent(); // Might as well just reset the whole UI at this point
         });
         this.on(EventType.ResetCategory, evt => {
-            resetCategory(this.optionManager, evt);
-            for (const [ key, _ ] of this.optionManager.optionsFor(evt))
-                this.sendSetOptionEvent(evt, key, this.optionManager.getDefault(evt, key));
+            resetCategory(optionManager!, evt);
+            for (const [ key, _ ] of optionManager!.optionsFor(evt))
+                this.sendSetOptionEvent(evt, key, optionManager!.getDefault(evt, key));
         });
         this.on(EventType.ResetOption, evt => {
-            resetOption(this.optionManager, evt.category, evt.key);
-            this.sendSetOptionEvent(evt.category, evt.key, this.optionManager.getDefault(evt.category, evt.key));
+            resetOption(optionManager!, evt.category, evt.key);
+            this.sendSetOptionEvent(evt.category, evt.key, optionManager!.getDefault(evt.category, evt.key));
         });
     }
 
@@ -103,14 +101,14 @@ export class OptionsDI extends DisplayInterface {
     getAllOptionsInfo(): AllOptionsInfo {
         let ret: AllOptionsInfo = {};
 
-        for (const categoryKey of this.optionManager.categories) {
+        for (const categoryKey of optionManager!.categories) {
             let options: { [key: string]: OptionInfo } = {};
-            for (const [key, option] of this.optionManager.optionsFor(categoryKey)) {
+            for (const [key, option] of optionManager!.optionsFor(categoryKey)) {
                 const { label, description, type } = option;
-                options[key] = { label, description, type, value: this.optionManager.get(categoryKey, key) };
+                options[key] = { label, description, type, value: optionManager!.get(categoryKey, key) };
             }
 
-            const { label, description } = this.optionManager.categoryProperties(categoryKey);
+            const { label, description } = optionManager!.categoryProperties(categoryKey);
             ret[categoryKey] = { label, description, options };
         }
 
