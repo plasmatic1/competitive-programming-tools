@@ -1,8 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import EventBus from './vscodeEventBus';
+import CommandHandler from '../commandHandler';
 import './scss/input.scss';
- 
+
 class InputDisplay extends React.Component {
     constructor(props) {
         super(props);
@@ -39,6 +40,12 @@ class InputDisplay extends React.Component {
             casesObj[caseUpdate.key][caseUpdate.index][caseUpdate.isInput ? 'input' : 'output'] = caseUpdate.newData;
         });
 
+        // Initialize command handler
+        this.commandHandler = new CommandHandler(
+            command => EventBus.post('caseCommand', command),
+            message => this.setState({ lastCommandOutput: message })
+        )
+
         // Add key listener
         this._keyListener = function(e) {
             const lowerKey = e.key.toLowerCase();
@@ -51,20 +58,6 @@ class InputDisplay extends React.Component {
                 EventBus.post('updateAll');
                 e.preventDefault();
             }
-
-            // Navigating current selected case
-            // else if (this.state.curTestIndex !== null && lowerKey === 'a') { // Move cur case left 
-            //     if (e.shiftKey)
-            //         this.setState({ curTestIndex: 0 });
-            //     else if (this.state.curTestIndex > 0)
-            //         this.setState({ curTestIndex: this.state.curTestIndex - 1 });
-            // }
-            // else if (this.state.curTestIndex !== null && lowerKey === 'd') { // Move cur case right
-            //     if (e.shiftKey)
-            //         this.setState({ curTestIndex: this.state.cases[this.state.curTestSet].length - 1 });
-            //     else if (this.state.curTestIndex < this.state.cases[this.state.curTestSet].length - 1)
-            //         this.setState({ curTestIndex: this.state.curTestIndex + 1 });
-            // }
         };
         document.addEventListener('keydown', this._keyListener.bind(this));
 
@@ -81,7 +74,7 @@ class InputDisplay extends React.Component {
      */
     dispatchCommand() {
         if (this.state.curCommand === null || this.state.curCommand.length === 0) return; // Empty command
-        EventBus.post('caseCommand', this.state.curCommand);
+        this.commandHandler.dispatchCommand(this.state.curCommand);
         this.setState({ curCommand: '' });
     }
 

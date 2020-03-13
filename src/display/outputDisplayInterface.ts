@@ -62,6 +62,7 @@ export class OutputDI extends DisplayInterface {
     constructor(context: vscode.ExtensionContext) {
         super('output.html', 'Execution Output', context);
 
+        // Event Handlers
         this.on(EventType.Init, _ => {
             for (let resp of this.initResponseQueue) resp();
             this.initResponseQueue.length = 0;
@@ -97,7 +98,7 @@ export class OutputDI extends DisplayInterface {
             writeCompileErrors(writer, res.compileErrors);
             writeResult(writer, testCase!);
             writer.close();
-            
+
             showFile(path);
         });
         this.on(EventType.Compare, index => {

@@ -2,6 +2,7 @@ import { DisplayInterface } from './displayInterface';
 import { testManager } from '../extension';
 import * as fs from 'fs';
 import * as vscode from 'vscode';
+import CommandHandler from '../commandHandler';
 
 export enum EventType {
     OpenCaseFile = 'openCaseFile', // Inbound: Opens a case file.  Parameters: key, index, isInput
@@ -13,13 +14,19 @@ export enum EventType {
 
 // tslint:disable: curly
 export class InputDI extends DisplayInterface {
+    commandHandler: CommandHandler;
+
     constructor(context: vscode.ExtensionContext) {
-        // Handle all case events
         super('input.html', 'Test Cases', context);
+
+        // Command handler
+        this.commandHandler = new CommandHandler(
+            command => this.emit({ type: EventType.CaseCommand, event: `Invalid command ${command}` }),
+            message => this.emit({ type: EventType.CaseCommand, event: message }));
+
+        // Handle all case events
         this.on(EventType.OpenCaseFile, evt => testManager!.openCaseFile(evt.key, evt.index, evt.isInput));
-        this.on(EventType.CaseCommand, evt => { 
-            // TODO: Implement handler
-        });
+        this.on(EventType.CaseCommand, evt => this.commandHandler.dispatchCommand(evt));
         this.on(EventType.UpdateStructure, _ => this.updateStructure());
         this.on(EventType.UpdateAll, _ => this.updateAll());
         this.on(EventType.UpdateTestCase, evt => {
@@ -30,6 +37,8 @@ export class InputDI extends DisplayInterface {
                 event: evt
             });
         });
+
+        // Register commands
     }
 
     /**
