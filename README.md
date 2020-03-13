@@ -1,141 +1,65 @@
-# cp-tools (Competitive Programming Tools)
+# cptools-fix README
 
-A set of tools to assist with Competitive Programming
+This is the README for your extension "cptools-fix". After writing up a brief description, we recommend including the following sections.
 
-## Main Features
+## Features
 
-### Build and Run
+Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
 
-The build and run command allows you to quickly run a single file on a set of predefined inputs that are specified though the configuration options.  Furthermore, it will also display basic stats such as the exit code, termination signal, elapsed time, memory usage, and the `stdout` and `stderr` streams.
+For example if there is an image subfolder under your extension project workspace:
 
-The set of inputs is defined by a user made input file.  Additional information about this is available in the `Commands` and `Configuration Options` sections.
+\!\[feature X\]\(images/feature-x.png\)
 
-*Note: The working directory of the executable will be the folder that it is located in (i.e. if the path of the executable is C:\\stuff\\program.exe the working directory will be C\\stuff\\)*
+> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
 
-### Templates
+## Requirements
 
-You can easily convert a folder of code templates (of algorithms and data structures) into vscode `snippets` using the `Load Templates` command.  Here are some basics on how they work:
+If you have any requirements or dependencies, add a section describing those and how to install and configure them.
 
-Take a look at an example template file:
+## Extension Settings
 
-```cpp
-#include <bits/stdc++.h>
+Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
 
-using namespace std;
+For example:
 
-//begintemplate for
-//description for loop template
-for (int i = 0; i < n; i++) {
-    cout << "test" << "\n";
-}
-//endtemplate for
+This extension contributes the following settings:
 
-// random comment
+* `myExtension.enable`: enable/disable this extension
+* `myExtension.thing`: set to `blah` to do something
 
-//begintemplate for2
-for (int i = 2; i < 46; i -= 5) {
-    cout << "bad" << "\n";
-    cout.flush();
-}
-//endtemplate for2
-```
+## Known Issues
 
-This creates two templates named `for` and `for2` (assuming that this file is directly inside the template directory).  Also note that only the template `for` has a description (`for loop template`) and that template names cannot have spaces.
+Calling out known issues can help limit users opening duplicate issues against your extension.
 
-You can also create a `config.json` file in your template directory which contains a few options:
+## Release Notes
 
-* **Ignore Paths (ignorePaths):** A list of paths (relative to the template directory) that should be ignored.  This defaults to `['.git', '.vscode']`.
-* **Replace Backslashes (replaceBackslashes):** Controls whether backslashes will be replaced with slashes in template names.  This defaults to `true`.
+Users appreciate release notes as you update your extension.
 
-Here is what a `config.json` file using the default configuration options would look like:
+### 1.0.0
 
-```
-{
-    "ignorePaths": [".git", ".vscode"],
-    "replaceBackslashes": true
-}
-```
+Initial release of ...
 
-If at any point a config option is invalid, missing, or the config file is not present altogether, the program will instead use the default configuration settings.
+### 1.0.1
 
-#### Additional Notes
+Fixed issue #.
 
-For a more exact format of how templates are specified:
+### 1.1.0
 
-* `//begintemplate <name>`: Signifies the start of a template with the name `<name>`.  Note that `<name>` cannot have any spaces.  Adding multiple `//begintemplate` directives without ending previous ones causes errors.
-* `//endtemplate <name>`: Ends a template with the name `<name>`.  Note that `<name>` must be the name of the last `//begintemplate` directive executed, otherwise it will throw an error.
-* `//description <description...>`: Unlike the `<name>` parameter, the `<description...>` parameter can have spaces.  This simply specifies the description for the current template.  Furthermore, multiple `//description` directives cannot be in the same template, and a `//description` directive must be inside of a template.
+Added features X, Y, and Z.
 
-Feel free to check the `src/test/templatesample` directory for some sample template usage (note that it also includes invalid directive usage for testing purposes).
+-----------------------------------------------------------------------------------------------------------
 
-### Supported Languages
+## Working with Markdown
 
-* **C++:** Compiled using the `g++` command, exact specifications are shown below.  The `g++` command should be accessible from the command prompt.
-* **Python:** Interpreted using the `py` command in the format `py <file name>`.  The `py` command should be accessible from the command prompt
+**Note:** You can author your README using Visual Studio Code.  Here are some useful editor keyboard shortcuts:
 
-## Commands
+* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux)
+* Toggle preview (`Shift+CMD+V` on macOS or `Shift+Ctrl+V` on Windows and Linux)
+* Press `Ctrl+Space` (Windows, Linux) or `Cmd+Space` (macOS) to see a list of Markdown snippets
 
-* **Build and Run (cp-tools.buildAndRun):** Compiles and runs the current open file on a set of predetermined test data.  See below in the configuration options for more information
-* **Open Input File (cp-tools.openInputFile):** Opens the input file used to supply input for the `cp-tools.buildAndRun` command
-* **Edit Option (cp-tools.editOption):** Edit a configuration option
-* **Reset Category (cp-tools.resetCategory):** Reset a configuration category
-* **Reset Options (cp-tools.resetOptions):** Resets all configuration options to their default values
-* **Cache Vue.js (cp-tools.cacheVue):** Saves vue.js locally in the .vscode folder.  Vue.js is used for the various interfaces this extension provides
-* **Uncache Vue.js (cp-tools.uncacheVue):** Deletes the local copy of vue.js.
+### For more information
 
-* **WORK IN PROGRESS:**
-    * **Load Templates (cp-tools.loadTemplates):** Load template folder to `snippets.json`
+* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
+* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
 
-## Configuration Options
-
-* **Build and Run (buildAndRun):** Configuration Options used by the `cp-tools.buildAndRun` command
-    * **Input File (buildAndRun.inputFile):** Path to the input file used to supply input for the `cp-tools.buildAndRun` command
-    * **Case Delimeter (buildAndRun.caseDelimeter):** In the input file, test cases are separated by a case delimiter, which is decided by this config option.  See below for an example
-    * **Timeout (buildAndRun.timeout):** If a program executed by the `cp-tools.buildAndRun` command runs for too long, it will be killed.  The amount of time to wait before manually killing the program is determined by this configuration option.  The time is given in milliseconds.
-    * **Sample Rate (buildAndRun.memSample):** Controls how quickly (time and) memory usage is sampled while the program is running.  The time is given in milliseconds.
-    * **Character Limit (buildAndRun.charLimit):** The display of the `stdout` and `stderr` streams will be truncated to the value specified by this option to prevent lag.
-    * **Reuse Webview (buildAndRun.reuseWebviews):** Normally when the `cp-tools.buildAndRun` command is executed, a new Webview Panel is created to display output.  By setting this option to `true` (or `Yes`), the command will now reuse existing Webviews for displaying output.  Additionally, the output display has a link on the bottom that will force VSCode to not reuse the Webview when clicked, which which for preserving output from previous runs of your program.
-* **Compiler/Interpreter Arguments (compilerArgs):** Additional arguments used by the compilers and interpreters when running or compiling a program
-    * **C++ (cpp):** The arguments used by the C++ compiler.  Assuming that the option value is `<args>`, the command `g++ -o <executable> <pathToOpenFile> <args>`.  Note that `g++` should be accesible to the command prompt for this to be able to compile properly.
-
-## Examples
-
-### Case Delimeters
-
-If the `buildAndRun.caseDelimeter` option has the value `---` and the contents of our input file is:
-
-```
-input 1
----input 2
----input 3
-```
-
-There would be three separate cases with these respective inputs: `input 1`, `input 2`, and `input 3`.
-
-## Installation
-
-1. Install `node.js`
-2. Install the `vsce` package (`npm install -g vsce`)
-3. Clone this repository and open a command prompt in the home folder of the repository
-4. Run the command `vsce package` to pack the extension.  Note that the modules being depended on may need to be installed first.  If that is the case, simply run the command `npm install`
-5. Run the command `code --install-extension <path to .vsix file generated>`
-
-Alternatively you can just run the provided install script after following the first three steps.
-
-## Todo List
-
-* Judge output also to compare
-* Allow templates to "include" other templates via a `//include` comment
-* Interactive stuff - gcj :)
-* Add more language support (shrug)
-    * Extra executor for plain C (but I don't think it's necessary)
-    * Java executor (:notlikeblob:)
-    * Nodejs related thing
-    * Haskell
-* Possibly better debugging tools
-    * Stuff related to gdb maybe
-* Become less awkward - workin on it
-
-### Bugs
-
-* If a program was kept running and the webview was closed, it would keep running.  So if a new instance was ran the output and whatnot from the old would show up in the new
+**Enjoy!**

@@ -1,5 +1,7 @@
-out
+out/
+testReact/
 node_modules
+.cache/
 .vscode-test/
 .vscode/ipch/
 src/test/samples/.vscode/

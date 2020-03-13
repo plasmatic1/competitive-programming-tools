@@ -1,103 +1,74 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
-import * as https from 'https';
-import * as vscode from 'vscode';
 import * as fs from 'fs';
-import * as optionsRegister from './options/register';
+import * as path from 'path';
+import * as vscode from 'vscode';
 import * as executeRegister from './execute/register';
 import * as templatesRegister from './template/register';
-import { join } from 'path';
+import * as optionsRegister from './options/register';
 import { OptionManager } from './options/options';
-import { errorIfUndefined } from './undefinedutils';
-import { isUndefined } from 'util';
+import { TestManager } from './execute/tests';
+import { OutputDI } from './display/outputDisplayInterface';
+import { ProgramExecutionManager } from './execute/execute';
+import { InputDI } from './display/inputDisplayInterface';
+import { OptionsDI } from './display/optionsDisplayInterface';
+import { rootPath } from './extUtils';
 
 // ---------------------------------------------------------------------------
 // Globals to export
 // ---------------------------------------------------------------------------
 
-var _extensionContext: vscode.ExtensionContext | undefined = undefined;
-var _optionManager: OptionManager | undefined = undefined;
+export let extensionContext: vscode.ExtensionContext | undefined = undefined;
+export let optionManager: OptionManager | undefined = undefined;
+export let testManager: TestManager | undefined = undefined;
 
-export function extensionContext(): vscode.ExtensionContext { return errorIfUndefined(_extensionContext, 'Extension not activated!'); }
-export function optionManager(): OptionManager { return errorIfUndefined(_optionManager, 'Extension not activated!'); }
+export let outputDI: OutputDI | undefined = undefined;
+export let inputDI: InputDI | undefined = undefined;
+export let optionsDI: OptionsDI | undefined = undefined;
+
+export let programExecutionManager: ProgramExecutionManager | undefined = undefined;
 
 // ---------------------------------------------------------------------------
 // Activation Registration n stuff
 // ---------------------------------------------------------------------------
 
-const VUE_URL: string = 'https://cdn.jsdelivr.net/npm/vue@2.6.10/dist/vue.min.js';
-const VUE_NAME: string = 'vue.min.js';
-export let VUE_PATH: string = 'path not set yet';
-
+// tslint:disable: curly
 export function activate(context: vscode.ExtensionContext) {
-	console.log('Congratulations, your extension "cp-tools" is now active!');
+	// Setting and Initializing Singletons
+	extensionContext = context;
+	optionManager = new OptionManager(extensionContext);
+	testManager = new TestManager(); testManager.readFromConfig();
 
-	// Setting context
-	_extensionContext = context;
-	_optionManager = new OptionManager(_extensionContext);
+	outputDI = new OutputDI(context);
+	inputDI = new InputDI(context);
+	optionsDI = new OptionsDI(context);
+
+	programExecutionManager = new ProgramExecutionManager();
 
 	// Misc. Commands
-	let openInputFileCommand = vscode.commands.registerCommand('cp-tools.openInputFile', () => {
-		const path = optionManager().get('buildAndRun', 'inputFile');
-		
-		if (!fs.existsSync(path)) {
-			vscode.window.showErrorMessage(`Could not find input file ${path}!`);
-			return;
+	let openInput = vscode.commands.registerCommand('cp-tools.openInput', () => inputDI?.openDisplay(context));
+	let openOutput = vscode.commands.registerCommand('cp-tools.openOutput', () => outputDI?.openDisplay(context));
+	let openOptions = vscode.commands.registerCommand('cp-tools.openOptions', () => optionsDI?.openDisplay(context));
+	let removeTemp = vscode.commands.registerCommand('cp-tools.removeTempFiles', () => {
+		for (const file of fs.readdirSync(rootPath())) {
+			if (file.startsWith('tmp'))
+				fs.unlinkSync(path.join(rootPath(), file));
 		}
-
-		vscode.commands.executeCommand('vscode.open', vscode.Uri.file(path));
+		vscode.window.showInformationMessage('Removed temporary files!');
 	});
 
-	let cacheVueCommand = vscode.commands.registerCommand('cp-tools.cacheVue', () => {
-		if (isUndefined(context.storagePath)) {
-			vscode.window.showErrorMessage('VSCode is currently not open to a folder!');
-			return;
-		}
-
-		vscode.window.showInformationMessage('Fetching vue.min.js...');
-
-		VUE_PATH = join(context.extensionPath, '.vscode', VUE_NAME);
-
-		https.get(VUE_URL, function(resp) {
-			vscode.window.showInformationMessage('Received response...');
-			let data = '';
-
-			resp.on('data', chunk => data += chunk );
-
-			resp.on('end', () => {
-				console.log(VUE_PATH);
-				fs.writeFileSync(VUE_PATH, data);
-				vscode.window.showInformationMessage(`Success! Saved vue.min.js to ${VUE_PATH}`);
-			});
-		}).on('error', (err: Error) => {
-			vscode.window.showErrorMessage(`Error while fetching vue.min.js: ${err.message}`);
-		});
-	});
-
-	let uncacheVueCommand = vscode.commands.registerCommand('cp-tools.uncacheVue', () => {
-		if (isUndefined(context.storagePath)) {
-			vscode.window.showErrorMessage('VSCode is currently not open to a folder!');
-			return;
-		}
-
-		if (!fs.existsSync(VUE_PATH)) {
-			vscode.window.showErrorMessage(`Vue.js not currently cached! (Current path for local Vue.js copy is ${VUE_PATH})`);
-			return;
-		}
-
-		fs.unlinkSync(VUE_PATH);
-		vscode.window.showInformationMessage('Success! Deleted local copy of Vue.js!');
-	});
-
-	context.subscriptions.push(openInputFileCommand);
-	context.subscriptions.push(cacheVueCommand);
-	context.subscriptions.push(uncacheVueCommand);
+	context.subscriptions.push(openInput);
+	context.subscriptions.push(openOutput);
+	context.subscriptions.push(openOptions);
+	context.subscriptions.push(removeTemp);
 
 	// Registering Other Commands
 	optionsRegister.registerViewsAndCommands(context);
 	executeRegister.registerViewsAndCommands(context);
 	templatesRegister.registerViewsAndCommands(context);
+
+	console.log('Initialized extension "cp-tools"');
 }
 
-// this method is called when your extension is deactivated
-export function deactivate() {}
+// cleanup
+export function deactivate() {
+	testManager!.writeToConfig();
+}

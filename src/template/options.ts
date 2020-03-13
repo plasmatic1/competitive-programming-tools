@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import { TemplateParser } from './parser';
 import { isUndefined } from 'util';
-import { errorIfUndefined } from '../undefinedutils';
+import { errorIfUndefined } from '../extUtils';
 
 export class Options {
     public ignorePaths: Set<string> = new Set(['.git', '.vscode']);

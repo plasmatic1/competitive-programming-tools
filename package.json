@@ -2,127 +2,102 @@
 	"name": "cp-tools",
 	"displayName": "CP-Tools",
 	"description": "Some stuff to help with CP",
-	"version": "0.0.1",
+	"version": "2.0.0",
 	"publisher": "plasmatic1",
 	"engines": {
-		"vscode": "^1.34.0"
+		"vscode": "^1.41.0"
 	},
 	"categories": [
 		"Other"
 	],
 	"activationEvents": [
+		"onCommand:cp-tools.openInput",
+		"onCommand:cp-tools.openOptions",
+		"onCommand:cp-tools.resetDisplayHTML",
+		"onCommand:cp-tools.removeTempFiles",
 		"onCommand:cp-tools.buildAndRun",
-		"onCommand:cp-tools.openInputFile",
-		"onCommand:cp-tools.editOption",
-		"onCommand:cp-tools.resetCategory",
-		"onCommand:cp-tools.resetOptions",
-		"onCommand:cp-tools.cacheVue",
-		"onCommand:cp-tools.uncacheVue",
-		"onCommand:cp-tools.loadTemplates",
-		"onView:options"
+		"onCommand:cp-tools.loadTemplates"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
+				"command": "cp-tools.openInput",
+				"title": "Open CP Tools Test Data/Input Menu",
+				"category": "CP Tools"
+			},
+			{
+				"command": "cp-tools.openOptions",
+				"title": "Open CP Tools Options/Configuration Menu",
+				"category": "CP Tools"
+			},
+			{
+				"command": "cp-tools.resetDisplayHTML",
+				"title": "Reset display HTML for all displays (I/O, Output, Options) for debugging.  (WIP/NONFUNCTIONAL)",
+				"category": "CP Tools Debug"
+			},
+			{
+				"command": "cp-tools.removeTempFiles",
+				"title": "Remove all created temprary files",
+				"category": "CP Tools"
+			},
+			{
 				"command": "cp-tools.buildAndRun",
-				"title": "Build and Run",
-				"category": "CP Tools Build and Run"
-			},
-			{
-				"command": "cp-tools.openInputFile",
-				"title": "Open Input File",
-				"category": "CP Tools Build and Run"
-			},
-			{
-				"command": "cp-tools.editOption",
-				"title": "Edit Option",
-				"category": "CP Tools Config",
-				"icon": "icons/edit-light.svg"
-			},
-			{
-				"command": "cp-tools.resetCategory",
-				"title": "Reset Category",
-				"category": "CP Tools Config",
-				"icon": "icons/refresh.svg"
-			},
-			{
-				"command": "cp-tools.resetOptions",
-				"title": "Reset Options",
-				"category": "CP Tools Config",
-				"icon": "icons/refresh.svg"
-			},
-			{
-				"command": "cp-tools.cacheVue",
-				"title": "Cache Vue.js",
-				"category": "CP Tools Optimization"
-			},
-			{
-				"command": "cp-tools.uncacheVue",
-				"title": "Uncache Vue.js",
-				"category": "CP Tools Optimization"
+				"title": "Build and Run Current Open File",
+				"category": "CP Tools"
 			},
 			{
 				"command": "cp-tools.loadTemplates",
 				"title": "Load Templates",
-				"category": "CP Tools Templates (WIP)"
+				"category": "CP Tools"
 			}
 		],
-		"viewsContainers": {
-			"activitybar": [
-				{
-					"id": "options",
-					"title": "Options",
-					"icon": "icons/settings.svg"
-				}
-			]
-		},
-		"views": {
-			"options": [
-				{
-					"id": "options",
-					"name": "All"
-				}
-			]
-		},
-		"menus": {
-			"view/item/context": [
-				{
-					"command": "cp-tools.editOption",
-					"group": "inline",
-					"when": "viewItem == key"
-				},
-				{
-					"command": "cp-tools.resetCategory",
-					"group": "inline",
-					"when": "viewItem == category"
-				}
-			],
-			"view/title": [
-				{
-					"command": "cp-tools.resetOptions",
-					"group": "navigation"
-				}
-			]
-		}
+		"keybindings": [
+			{
+				"command": "cp-tools.buildAndRun",
+				"key": "ctrl+alt+b"
+			},
+			{
+				"command": "cp-tools.openInput",
+				"key": "ctrl+alt+i"
+			},
+			{
+				"command": "cp-tools.openOptions",
+				"key": "ctrl+alt+o"
+			}
+		],
+		"viewsContainers": {},
+		"views": {},
+		"menus": {}
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
-		"copyFiles": "node os-specific-copy.js",
-		"compile": "tsc -p ./ && npm run copyFiles",
-		"watch": "tsc -watch -p ./",
+		"parcel:build": "parcel build -d out/assets src/assets/entrypoint/input.html src/assets/entrypoint/output.html src/assets/entrypoint/options.html --public-url \"vscodeRoot\"",
+		"parcel:watch": "parcel watch -d out/assets src/assets/entrypoint/input.html src/assets/entrypoint/output.html src/assets/entrypoint/options.html --public-url \"vscodeRoot\" --no-hmr",
+		"parcel:reactTest": "parcel -d testReact src/assets/entrypoint/input.html src/assets/entrypoint/output.html src/assets/entrypoint/options.html",
+		"compile": "tsc -p ./ && npm run parcel:build",
+		"watch": "tsc -watch -p ./ && npm run parcel:watch",
 		"postinstall": "node ./node_modules/vscode/bin/install",
 		"test": "npm run compile && node ./node_modules/vscode/bin/test"
 	},
 	"devDependencies": {
 		"@types/mocha": "^2.2.42",
-		"@types/node": "^10.14.7",
+		"@types/node": "^10.12.21",
 		"@types/pidusage": "^2.0.1",
+		"babel-core": "^6.26.3",
+		"babel-preset-env": "^1.7.0",
+		"babel-preset-react": "^6.24.1",
+		"parcel-bundler": "^1.12.4",
+		"sass": "^1.24.4",
 		"tslint": "^5.12.1",
 		"typescript": "^3.3.1",
 		"vscode": "^1.1.28"
 	},
 	"dependencies": {
-		"pidusage": "^2.0.17"
+		"lodash": "^4.17.15",
+		"pidusage": "^2.0.17",
+		"react": "^16.13.0",
+		"react-dom": "^16.13.0",
+		"react-read-more-less": "^0.1.6"
 	}
 }

@@ -1,0 +1,73 @@
+@import './global.scss';
+@import './main.scss';
+
+// General formatting
+#compileErrorDiv {
+    padding: 0 7px 2px 7px;
+    margin: 10px;
+    background: var(--vscode-text-code-block-background);
+
+    h2 {
+        margin-top: 0.4em;
+        margin-bottom: 0.2em;
+    }
+
+    p {
+        margin: 0 0 2px 0;
+        font-family: 'Courier New', Courier, monospace;
+    }
+}
+
+#streamOut {
+    display: flex;
+    width: 100%;
+
+    div {
+        margin: 0 25px 10px 0;
+        flex-basis: 50%;
+        background: var(--vscode-text-block-quote-background);
+
+        h3 {
+            margin-bottom: 4px;
+        }
+
+        textarea {
+            width: 100%;
+        }
+    }
+}
+
+// Selected Test case
+.selected-case {
+    font-weight: bolder;
+    text-decoration: underline;
+}
+
+// Verdict-related stuff
+$base-color: mix(white, black, 80%);
+
+.verdict-correct {
+    color: mix($base-color, lime, 75%);
+}
+
+.verdict-incorrect {
+    color: mix($base-color, crimson, 80%);
+}
+
+.verdict-runtime-error {
+    color: mix($base-color, goldenrod, 65%);
+}
+
+.verdict-timeout {
+    color: mix($base-color, black, 80%);
+}
+
+.verdict-internal-error {
+    color: mix($base-color, red, 70%);
+    font-weight: bold;
+}
+
+.verdict-waiting, .verdict-judging, .verdict-skipped {
+    color: mix($base-color, black, 80%);
+    font-style: italic;
+}

@@ -5,3 +5,7 @@ print(7)
 print()
 print()
 print()
+print()
+print()
+print()
+print('   hi') # extra lines
