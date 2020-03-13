@@ -1,9 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import * as _ from 'lodash';
+import ReadMore from 'react-read-more-less';
 import EventBus from './vscodeEventBus';
 import './scss/output.scss';
 
+const STATUS_LIM = 15;
 class OutputDisplay extends React.Component {
     constructor(props) {
         super(props);
@@ -110,6 +112,14 @@ class OutputDisplay extends React.Component {
     }
 
     /**
+     * Transforms a verdict to a CSS class
+     * @param {string} verdict The verdict
+     */
+    verdictToCSSClass(verdict) {
+        return `verdict-${verdict.toLowerCase().replace(/ /g, '-')}`;
+    }
+
+    /**
      * Returns the rendering for the row of a test case in the verdicts table
      * @param {object} testCase The test case to render
      */
@@ -126,7 +136,7 @@ class OutputDisplay extends React.Component {
         else {
             return (
                 <React.Fragment>
-                    <td>{testCase.exitStatus}</td>
+                    <td><ReadMore charLimit={STATUS_LIM} readMoreText={' >>>'} readLessText={' <<<'}>{testCase.exitStatus}</ReadMore></td>
                     <td>{testCase.time} ms</td>
                     <td>{testCase.memory} kb</td>
                 </React.Fragment>
@@ -177,7 +187,7 @@ class OutputDisplay extends React.Component {
                             this.state.cases.map((testCase, ind) =>
                                 <tr key={ind}>
                                     <td>{ind}</td>
-                                    <td>{testCase.verdict}</td>
+                                    <td class={this.verdictToCSSClass(testCase.verdict)}>{testCase.verdict}</td>
                                     {this.renderCase(testCase)}
                                     <td><a href="#" onClick={() => EventBus.post('view', ind)}>view</a></td>
                                     <td><a href="#" onClick={() => EventBus.post('compare', ind)}>compare</a></td>
@@ -194,7 +204,7 @@ class OutputDisplay extends React.Component {
                         <div class="selection">
                             <span>Test Cases:</span>
                             { this.state.cases.map((_, index) =>
-                                <a key={index} className={this.state.curViewedCase !== null && this.state.curViewedCase == index ? 'selected-case' : null}
+                                <a key={index} className={this.state.curViewedCase == index ? 'selected-case' : null}
                                     onClick={() => this.selectTestCase(index)}>[ {index} ]</a>
                             )}
                         </div>

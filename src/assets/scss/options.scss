@@ -3,18 +3,22 @@
 
 h1 {
     color: map-get($theme, 5);
-    margin-top: 0px;
+    margin-top: 1em;
     margin-bottom: 0;
+
+    button {
+        margin-left: 0.5em;
+    }
 }
 
 .category-div {
-    margin-bottom: 49px;
+    margin-bottom: 2.0em;
 }
 
 .category-description {
     font-style: italic;
-    margin-top: 2px;
-    margin-bottom: 22px;
+    margin-top: 0.1em;
+    margin-bottom: 1em;
 }
 
 .option-div {
@@ -22,7 +26,7 @@ h1 {
 }
 
 .option-value-div {
-    margin: 3px 0;
+    margin: 0.3em 0;
     
     a {
         cursor: pointer;
@@ -46,15 +50,20 @@ h1 {
 .option-type {
     color: map-get($theme, 4);
     font-family: $code-font-family;
+    margin-left: 0.1em;
+}
+
+.option-description {
+    font-style: italic;
+    opacity: 65%;
 }
 
 .option-value {
     span {
-        padding: 3px;
+        padding: 0.1em;
         font-size: 10pt;
         font-family: $code-font-family;
-        background-color: map-get($theme, 1);
     }
 
-    margin-bottom: 4px;
+    margin-bottom: 0.4em;
 }

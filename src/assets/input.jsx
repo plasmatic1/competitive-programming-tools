@@ -20,7 +20,7 @@ class InputDisplay extends React.Component {
             curTestOutput: null,
 
             // Test cases
-            cases: []
+            cases: {}
         };
         
         // Initialize other event handlers
@@ -41,12 +41,30 @@ class InputDisplay extends React.Component {
 
         // Add key listener
         this._keyListener = function(e) {
-            if (e.keyCode === Keys.ENTER) // user pressed enter
+            const lowerKey = e.key.toLowerCase();
+
+            if (e.key === 'Enter') // user pressed enter
                 this.dispatchCommand();
-            if (e.ctrlKey && e.key === 's') // user pressed Ctrl+S, Save current case 
+            else if (e.ctrlKey && lowerKey === 's') // user pressed Ctrl+S, Save current case 
                 this.saveCurTestCase();
-            if (e.ctrlKey && e.key === 'r') // user pressed Ctrl+R, Refresh all cases
+            else if (e.ctrlKey && lowerKey === 'r') { // user pressed Ctrl+R, Refresh all cases
                 EventBus.post('updateAll');
+                e.preventDefault();
+            }
+
+            // Navigating current selected case
+            // else if (this.state.curTestIndex !== null && lowerKey === 'a') { // Move cur case left 
+            //     if (e.shiftKey)
+            //         this.setState({ curTestIndex: 0 });
+            //     else if (this.state.curTestIndex > 0)
+            //         this.setState({ curTestIndex: this.state.curTestIndex - 1 });
+            // }
+            // else if (this.state.curTestIndex !== null && lowerKey === 'd') { // Move cur case right
+            //     if (e.shiftKey)
+            //         this.setState({ curTestIndex: this.state.cases[this.state.curTestSet].length - 1 });
+            //     else if (this.state.curTestIndex < this.state.cases[this.state.curTestSet].length - 1)
+            //         this.setState({ curTestIndex: this.state.curTestIndex + 1 });
+            // }
         };
         document.addEventListener('keydown', this._keyListener.bind(this));
 
@@ -62,7 +80,7 @@ class InputDisplay extends React.Component {
      * Sends a command back to the extension host
      */
     dispatchCommand() {
-        if (this.state.curCommand.length === 0) return; // Empty command
+        if (this.state.curCommand === null || this.state.curCommand.length === 0) return; // Empty command
         EventBus.post('caseCommand', this.state.curCommand);
         this.setState({ curCommand: '' });
     }
@@ -98,80 +116,91 @@ class InputDisplay extends React.Component {
     }
 
     render() {
+        const { curCommand } = this.state;
+
         return (
             <div>
                 <h1>Test Cases</h1>
-                <a href="#" onClick={() => EventBus.post('updateAll')}>Refresh (Ctrl+R)</a>
+                <a id="refresh-link" href="#" onClick={() => EventBus.post('updateAll')}>Refresh (Ctrl+R)</a>
 
                 {/* Command input/output */}
-                <input id="commandInput" placeholder="Type a command here..." value={this.state.curCommand} onChange={e => this.setState({ curCommand: e.target.value })}></input>
-                <button onClick={this.dispatchCommand()}>Run (Enter)</button>
+                <div id="command-input-div">
+                    <input placeholder="Type a command here..." value={curCommand} onChange={e => this.setState({ curCommand: e.target.value })}></input>
+                    <button onClick={() => this.dispatchCommand()}>Run (Enter)</button>
+                </div>
 
                 { this.state.lastCommandOutput &&
                     <p>{this.state.lastCommandOutput}</p>
                 }
 
-                {/* Display status of current test set and test case selection menu */}
-                { this.state.curTestSet ?
-                    <table>
-                        <col width="10em" />
-                        <col width="100%" />
+                <div id="test-set-display-div">
+                    {/* Display status of current test set and test case selection menu */}
+                    <div id="test-set-display">
+                        { this.state.curTestSet ?
+                            <table>
+                                <tr>
+                                    <th>Case</th>
+                                    <th>On/Off</th>
+                                    <th>Edit Input</th>
+                                    <th>Edit Output</th>
+                                </tr>
+                                { this.state.cases[this.state.curTestSet].map((testCase) => 
+                                    <tr key={testCase.index}>
+                                        <td>{testCase.index}</td>
+                                        <td>{testCase.disabled ? 'Disabled' : 'Not Disabled'}</td>
+                                        <td><a href="#" onClick={() => EventBus.post('openCaseFile', { key: this.state.curTestSet, index: testCase.index, isInput: true })}>Edit</a></td>
+                                        <td><a href="#" onClick={() => EventBus.post('openCaseFile', { key: this.state.curTestSet, index: testCase.index, isInput: false })}>Edit</a></td>
+                                    </tr>
+                                )}
+                            </table> :
+                            <p class="none-selected">No test set selected...</p>
+                        }
+                    </div>
 
-                        <tr>
-                            <th>Case</th>
-                            <th>On/Off</th>
-                            <th>Edit Input</th>
-                            <th>Edit Output</th>
-                        </tr>
-                        { this.state.cases[this.state.curTestSet].map((testCase) => 
-                            <tr key={testCase.index}>
-                                <td>{testCase.index}</td>
-                                <td>{testCase.disabled ? 'Disabled' : 'Not Disabled'}</td>
-                                <td><a href="#" onClick={() => EventBus.post('openCaseFile', { key: this.state.curTestSet, index: testCase.index, isInput: true })}>Edit</a></td>
-                                <td><a href="#" onClick={() => EventBus.post('openCaseFile', { key: this.state.curTestSet, index: testCase.index, isInput: false })}>Edit</a></td>
-                            </tr>
-                        )}
-                    </table> :
-                    <p>No test set selected...</p>
-                }
-
-                <h2>Test Sets</h2>
-                <ul>
-                    { Object.keys(this.state.cases).map(testSetName => 
-                        <li key={testSetName}>
-                            <a href="#" onClick={() => this.selectTestSet(testSetName)}>{testSetName}</a>
-                        </li>
-                    )}
-                </ul>
+                    <div id="test-set-list">
+                        <h2>Test Sets</h2>
+                        <ul>
+                            { Object.keys(this.state.cases).map(testSetName => 
+                                <li key={testSetName}>
+                                    <a href="#" onClick={() => this.selectTestSet(testSetName)}>{testSetName}</a>
+                                </li>
+                            )}
+                        </ul>
+                    </div>
+                </div>
 
                 {/* Select Test Case to Edit */}
                 { this.state.curTestSet &&
-                    <div>
+                    <div class="selection">
                         <span>Test Cases: </span>
                         { this.state.cases[this.state.curTestSet].map((_, index) =>
-                            <a href="#" key={index} onClick={() => this.selectTestCase(index)}>{index}</a>
+                            <a href="#" key={index} class={this.state.curTestIndex === index ? 'selected-case' : null}
+                                onClick={() => this.selectTestCase(index)}>[ {index} ]</a>
                         )}
                     </div>
                 }
 
                 {/* Editing test cases */}
-                { this.state.curTestIndex !== null ? (
-                    <div>
-                        <h3>Editing Case {this.state.curTestIndex}</h3>
+                <h2>Editing Case {this.state.curTestIndex}</h2>
+                <div>
+                    { this.state.curTestIndex !== null ? (
+                        <React.Fragment>
+                            <div id="data-input">
+                                <div>
+                                    <h3>Input</h3>
+                                    <textarea rows="20" value={this.state.curTestInput} onChange={e => this.setState({ curTestInput: e.target.value})}></textarea>
+                                </div>
 
-                        <h4>Input</h4>
-                        <div>
-                            <textarea value={this.state.curTestInput} onChange={e => this.setState({ curTestInput: e.target.value})}></textarea>
-                        </div>
+                                <div>
+                                    <h3>Output</h3>
+                                    <textarea rows="20" value={this.state.curTestOutput} onChange={e => this.setState({ curTestOutput: e.target.value})}></textarea>
+                                </div>
+                            </div>
 
-                        <h4>Output</h4>
-                        <div>
-                            <textarea value={this.state.curTestOutput} onChange={e => this.setState({ curTestOutput: e.target.value})}></textarea>
-                        </div>
-
-                        <button onClick={this.saveCurTestCase}>Save (Ctrl+S)</button>
-                    </div>
-                ) : <p>No test case selected...</p> }
+                            <button id="save-button" onClick={this.saveCurTestCase}>Save (Ctrl+S)</button>
+                        </React.Fragment>
+                    ) : <p class="none-selected">No test case selected...</p> }
+                </div>
             </div>
         );
     }

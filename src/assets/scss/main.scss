@@ -16,29 +16,24 @@ a:hover {
 
 // Title on top of every display
 h1 {
-    margin-top: 20px;
+    margin-top: 0.7em;
 }
 
+// Heading 2
 h2 {
-    margin-bottom: 7px;
+    margin-bottom: 0.2em;
 }
 
-// Buttons and Text Areas
+// Buttons and Text Areas/Inputs
 $border-color: var(--vscode-text-block-quote-border);
 $text-color: var(--vscode-foreground);
-
-textarea, button {
-    background: transparent;
-    border-color: $border-color;
-    color: $text-color;
-}
 
 button {
     // Fix cursor
     cursor: pointer;
 
     // General Stuff
-    border: 1px solid $border-color;
+    border: 1px solid $text-color;
     border-radius: 3px;
     font: 14pt $font-family;
     
@@ -54,8 +49,13 @@ button {
     font: 11pt $font-family !important;
 }
 
-// Making text areas a little nicer
-textarea {
+textarea, input, button {
+    background: transparent;
+    border-color: $border-color;
+    color: $text-color;
+}
+
+textarea, input {
     box-sizing: border-box;
     resize: none;
     width: 100%;
@@ -66,6 +66,29 @@ textarea {
     &::-webkit-scrollbar-thumb {
         background-color: map-get($theme, 4);
     } 
+}
+
+input {
+    border: 1px solid;
+    padding: 0.2em;
+}
+
+::placeholder {
+    color: $text-color;
+}
+
+// Table formatting 
+// Such as borders
+table {
+    border: 1px solid;
+    border-collapse: collapse;
+
+    tr {
+        th, td {
+            border: 1px solid;
+            padding: 4px;
+        }
+    }
 }
 
 // ===============================================================================================================

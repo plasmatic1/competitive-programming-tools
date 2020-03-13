@@ -1,26 +1,66 @@
 @import './global.scss';
 @import './main.scss';
 
-textarea {
-    box-sizing: border-box;
-    resize: none;
-    width: 100%;
+// For certain UI elements
+#refresh-link {
+    display: block;
+    font-size: 11pt;
+    margin-bottom: 0.3em;
 }
 
-table {
-    width: 100%;
+#command-input-div {
+    display: flex;
+
+    input {
+        flex-basis: 60em;
+        margin-right: 0.6em;
+    }
 }
 
-#buttons {
-    margin-bottom: 20px;
+#test-set-display-div {
+    display: flex;
+    margin: 1.5em 0.5em 3.0em 0;
+
+    #test-set-display {
+        margin-right: 1.6em;
+    }
+
+    #test-set-list {
+        h2 {
+            margin-top: 0;
+            margin-bottom: 0.1em;
+        }
+    }
 }
 
+#data-input {
+    display: flex;
+
+    div {
+        flex-basis: 45%;
+        margin-right: 0.5em;
+    }
+}
+
+#save-button {
+    margin-top: 0.3em;
+}
+
+// Fixes for other things
 h3 {
     color: map-get($theme, 5);
-    margin-top: 10px;
+    margin-top: 0;
     margin-bottom: 2px;
 }
 
-td {
-    color: $text-color;
+// Italicised text meaning that no element is selected
+.none-selected {
+    font-style: italic;
+    margin-top: 0.2em;
+}
+
+// Selected Test case
+.selected-case {
+    font-weight: bolder;
+    text-decoration: underline;
 }

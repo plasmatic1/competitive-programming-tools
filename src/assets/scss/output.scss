@@ -37,19 +37,6 @@
     }
 }
 
-// Verdict table
-table {
-    border: 1px solid;
-    border-collapse: collapse;
-
-    tr {
-        th, td {
-            border: 1px solid;
-            padding: 4px;
-        }
-    }
-}
-
 // Selected Test case
 .selected-case {
     font-weight: bolder;
@@ -57,27 +44,30 @@ table {
 }
 
 // Verdict-related stuff
-.verdict {
-    margin-left: 7px;
+$base-color: mix(white, black, 80%);
+
+.verdict-correct {
+    color: mix($base-color, green, 80%);
 }
 
-.verdict-style-ac {
-    color: mix(map-get($theme, 4), green, 80%);
+.verdict-incorrect {
+    color: mix($base-color, red, 80%);
+}
+
+.verdict-runtime-error {
+    color: mix($base-color, orange, 80%);
+}
+
+.verdict-timeout {
+    color: mix($base-color, black, 80%);
+}
+
+.verdict-internal-error {
+    color: mix($base-color, red, 80%);
     font-weight: bold;
 }
 
-.verdict-style-wa {
-    // color: red;
-    color: mix(map-get($theme, 4), red, 80%);
-    font-weight: bold;
-}
-
-.verdict-style-re {
-    color: mix(map-get($theme, 4), orange, 80%);
-    font-weight: bold;
-}
-
-.verdict-style-wj, .verdict-style-jd { // Waiting for judge
-    color: map-get($theme, 4);
+.verdict-waiting, .verdict-judging, .verdict-skipped { 
+    color: mix($base-color, black, 80%);
     font-style: italic;
 }

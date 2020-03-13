@@ -56,6 +56,14 @@
 			{
 				"command": "cp-tools.buildAndRun",
 				"key": "ctrl+alt+b"
+			},
+			{
+				"command": "cp-tools.openInput",
+				"key": "ctrl+alt+i"
+			},
+			{
+				"command": "cp-tools.openOptions",
+				"key": "ctrl+alt+o"
 			}
 		],
 		"viewsContainers": {},
@@ -90,6 +98,6 @@
 		"pidusage": "^2.0.17",
 		"react": "^16.13.0",
 		"react-dom": "^16.13.0",
-		"read-more-react": "^1.0.10"
+		"react-read-more-less": "^0.1.6"
 	}
 }

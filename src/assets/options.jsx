@@ -41,7 +41,7 @@ class OptionsDisplay extends React.Component {
                                         <span class="option-full-key"> ({categoryKey}.{optionKey})</span>
                                     </div>
 
-                                    <div>{option.description}</div>
+                                    <div class="option-description">{option.description}</div>
 
                                     <div class="option-value-div">
                                         <div class="option-value">
