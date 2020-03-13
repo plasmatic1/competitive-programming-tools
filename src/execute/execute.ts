@@ -28,7 +28,7 @@ function createExitStatus(code: number, signal: string): string {
     let extra = '';
     if (code > 255) extra = ' (segfault?)';
     else if (code === 3) extra = ' (assertion failed)';
-    return 'Code: ' + code.toString() + extra;
+    return 'Exit Code: ' + code.toString() + extra;
 }
 
 /**
@@ -145,12 +145,14 @@ export class ProgramExecutionManager {
     executeCase(executor: Executor, caseId: number, input: string, output: string | undefined): Promise<Result> {
         return new Promise((res, rej) => {
             const timeout = optionManager!.get('buildAndRun', 'timeout'),
-                memSampleRate = optionManager!.get('buildAndRun', 'memSample');
+                memSampleRate = optionManager!.get('buildAndRun', 'memSample'),
+                charLimit = optionManager!.get('buildAndRun', 'charLimit');
 
             let proc = executor.exec();
             this.curProcs.push(proc);
 
             // State variables
+            let truncatedStdout: boolean = false, truncatedStderr: boolean = false;
             let result: Result = new Result();
             result.caseId = caseId;
             result.executionId = this.executionCounter;
@@ -187,6 +189,10 @@ export class ProgramExecutionManager {
                 if (!isUndefined(output) && output.length > 0) isCorrect = compareOutput(output, result.stdout);
                 else isCorrect = true;
 
+                // Make sure that we know stderr and stdout are truncated if they are
+                if (truncatedStdout) result.stdout += ' ... [clipped]';
+                if (truncatedStderr) result.stderr += ' ... [clipped]';
+
                 // set exit status
                 result.exitStatus = createExitStatus(code, signal);
                 if (code !== 0 && signal === 'SIGTERM') result.verdict = 'Timeout';
@@ -204,11 +210,15 @@ export class ProgramExecutionManager {
             // Stream management
             proc.stdout.on('readable', () => {
                 const data = proc.stdout.read();
+                if (result.stdout.length === charLimit) return;
                 if (data) result.stdout += data.toString();
+                if (result.stdout.length > charLimit) { result.stdout = result.stdout.substring(0, charLimit); truncatedStdout = true; }
             });
             proc.stderr.on('readable', () => {
                 const data = proc.stderr.read();
+                if (result.stderr.length === charLimit) return;
                 if (data) result.stderr += data.toString();
+                if (result.stderr.length > charLimit) { result.stderr = result.stderr.substring(0, charLimit); truncatedStderr = true; }
             });
             
             // memory and time management

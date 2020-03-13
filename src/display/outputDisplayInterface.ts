@@ -1,11 +1,12 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { getTempFile } from '../extUtils';
+import { getTempFile, showFile } from '../extUtils';
 import { programExecutionManager } from '../extension';
 import { DisplayInterface } from './displayInterface';
-import { Result } from '../execute/execute';
+import { Result, SkippedResult } from '../execute/execute';
 import { isUndefined } from 'util';
 
+// tslint:disable: curly
 export enum EventType {
     Init = 'init', // Inbound/Outbound: Initializes (or Re-initializes the webview) with the specified number of cases.  Parameters: caseCount
     CompileError = 'compileError', // Outbound: There is a compile error.  Parameters: Same as execute.execute.CompileError
@@ -19,12 +20,48 @@ export enum EventType {
     Kill = 'kill', // Inbound: Kill current test case
 }
 
-// tslint:disable: curly
+/**
+ * Writes the result of a execution (as text) to a write stream (formatted).
+ * @param writer The write stream to write to
+ * @param result The execution result to write
+ */
+function writeResult(writer: fs.WriteStream, result: Result | SkippedResult): void {
+    writer.write(`== Case ${result.caseId}: ${result.verdict} =====\n`);
+    if (result instanceof Result) {
+        writer.write(`Time: ${result.time}ms\n`);
+        writer.write(`Memory: ${result.memory}kb\n`);
+        writer.write(result.exitStatus + '\n');
+        writer.write('\n');
+
+        writer.write('- Input ---\n');
+        writer.write(result.stdin + '\n');
+        writer.write('- Actual Output ---\n');
+        writer.write(result.stdout + '\n');
+        writer.write('- Expected Output ---\n');
+        writer.write(result.expectedStdout + '\n');
+        writer.write('- Error Stream ---\n');
+        writer.write(result.stderr + '\n');
+    } else writer.write('\n');
+}
+
+/**
+ * Writes the given compile errors (as text) to a write stream (formatted).
+ * @param writer The write stream to write to
+ * @param compileErrors The compile errors to write
+ */
+function writeCompileErrors(writer: fs.WriteStream, compileErrors: string[]) {
+    if (compileErrors.length > 0) {
+        writer.write('\n' + '== Compile/Data Errors =====\n');
+        writer.write(compileErrors.join('\n\n') + '\n\n');
+    }
+}
+
 export class OutputDI extends DisplayInterface {
     initResponseQueue: (() => void)[] = [];
 
     constructor(context: vscode.ExtensionContext) {
         super('output.html', 'Execution Output', context);
+
         this.on(EventType.Init, _ => {
             for (let resp of this.initResponseQueue) resp();
             this.initResponseQueue.length = 0;
@@ -35,9 +72,16 @@ export class OutputDI extends DisplayInterface {
                 vscode.window.showErrorMessage('No previous result present to view! (Is this an error?)');
                 return;
             }
-            let writer = fs.createWriteStream(getTempFile(`execution-${res.srcName}-${res.executionId}`));
-            // TODO: Implement handler
+            const srcName = res.srcName.replace(/\\/g, '/').split('/').pop(), path = getTempFile(`execution-${res.executionId}-${srcName}`);
+            let writer = fs.createWriteStream(path);
+
+            writer.write(`-=[ Output of ${srcName} ]=-\n`);
+            writer.write(`Execution ID: ${res.executionId}\n\n`);
+            writeCompileErrors(writer, res.compileErrors);
+            for (const result of res.results) writeResult(writer, result);
             writer.close();
+
+            showFile(path);
         });
         this.on(EventType.View, index => {
             const res = programExecutionManager?.previousExecution, testCase = res?.results[index];
@@ -45,9 +89,16 @@ export class OutputDI extends DisplayInterface {
                 vscode.window.showErrorMessage('No previous result present to view! (Is this an error?)');
                 return;
             }
-            let writer = fs.createWriteStream(getTempFile(`execution-${res.srcName}-${res.executionId}`));
-            // TODO: Implement handler
+            const srcName = res.srcName.replace(/\\/g, '/').split('/').pop(), path = getTempFile(`execution-${res.executionId}-${srcName}`);
+            let writer = fs.createWriteStream(path);
+
+            writer.write(`-=[ Output of case ${index} of ${srcName} ]=-\n`);
+            writer.write(`Execution ID: ${res.executionId}\n\n`);
+            writeCompileErrors(writer, res.compileErrors);
+            writeResult(writer, testCase!);
             writer.close();
+            
+            showFile(path);
         });
         this.on(EventType.Compare, index => {
             const res = programExecutionManager?.previousExecution, testCase = res?.results[index];
@@ -58,8 +109,8 @@ export class OutputDI extends DisplayInterface {
 
             if (testCase instanceof Result) {
                 const srcName = res.srcName.replace(/\\/g, '/').split('/').pop(),
-                    pathActual = getTempFile(`actual-out-${srcName}-${res.executionId}`),
-                    pathExpected = getTempFile(`expected-out-${srcName}-${res.executionId}`);
+                    pathActual = getTempFile(`actual-out-${res.executionId}-${srcName}`),
+                    pathExpected = getTempFile(`expected-out-${res.executionId}-${srcName}`);
                 fs.writeFileSync(pathActual, testCase.stdout);
                 fs.writeFileSync(pathExpected, testCase.expectedStdout);
                 vscode.commands.executeCommand('vscode.diff', vscode.Uri.file(pathActual), vscode.Uri.file(pathExpected), "Actual vs Expected Output");

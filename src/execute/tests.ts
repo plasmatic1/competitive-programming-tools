@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { readWorkspaceFile, writeWorkspaceFile, errorIfUndefined, workspaceFilePath, undefinedIfEmpty } from '../extUtils';
-import { isUndefined } from 'util';
+import { readWorkspaceFile, writeWorkspaceFile, errorIfUndefined, workspaceFilePath, undefinedIfEmpty, showFile } from '../extUtils';
 
 export interface Test {
     input: string;
@@ -38,8 +37,8 @@ export class TestManager {
     caseFilePath(key: string, index: number, isInput: boolean) { return workspaceFilePath(this._caseFilePath(key, index, isInput)); } // Assumed output if "isInput" is false
     getInput(key: string, index: number) { return readWorkspaceFile(this._caseFilePath(key, index, true)); }
     getOutput(key: string, index: number) { return readWorkspaceFile(this._caseFilePath(key, index, false)); }
-    openCaseFile(key: string, index: number, isInput: boolean): Thenable<vscode.TextDocument> {
-        return vscode.workspace.openTextDocument(this.caseFilePath(key, index, isInput));
+    openCaseFile(key: string, index: number, isInput: boolean) {
+        showFile(this.caseFilePath(key, index, isInput));
     }
 
     // Utility (In all functions, key means test set name)

@@ -51,9 +51,9 @@ export const OPTIONS: Map<string, Map<string, OptionProperties>> = new Map([
                 }))
         }],
         ['charLimit', {
-            defaultValue: 2000,
+            defaultValue: 2000000,
             label: 'Character Limit',
-            description: 'The displays for stdout and stderr will be truncated to the given limit to prevent lag',
+            description: 'The displays for stdout and stderr will be truncated to prevent memory/lag problems',
             type: 'number',
             setFunction: async () => 
                 tryParseInt(await vscode.window.showInputBox({

@@ -122,11 +122,17 @@ class OutputDisplay extends React.Component {
     /**
      * Returns the rendering for the row of a test case in the verdicts table
      * @param {object} testCase The test case to render
+     * @param {number} ind The index of the test case
      */
-    renderCase(testCase) {
+    renderCase(testCase, ind) {
+        const verdictClass = this.verdictToCSSClass(testCase.verdict);
         if (testCase.verdict === 'Waiting' || testCase.verdict === 'Judging' || testCase.verdict === 'Skipped') {
             return (
                 <React.Fragment>
+                    <td>{ind}</td>
+                    <td><span className={verdictClass}>{testCase.verdict}</span></td>
+                    <td>-</td>
+                    <td>-</td>
                     <td>-</td>
                     <td>-</td>
                     <td>-</td>
@@ -136,9 +142,13 @@ class OutputDisplay extends React.Component {
         else {
             return (
                 <React.Fragment>
+                    <td>{ind}</td>
+                    <td><span className={verdictClass}>{testCase.verdict}</span></td>
                     <td><ReadMore charLimit={STATUS_LIM} readMoreText={' >>>'} readLessText={' <<<'}>{testCase.exitStatus}</ReadMore></td>
                     <td>{testCase.time} ms</td>
                     <td>{testCase.memory} kb</td>
+                    <td><a href="#" onClick={() => EventBus.post('view', ind)}>view</a></td>
+                    <td><a href="#" onClick={() => EventBus.post('compare', ind)}>compare</a></td>
                 </React.Fragment>
             );
         }
@@ -186,11 +196,7 @@ class OutputDisplay extends React.Component {
                         {
                             this.state.cases.map((testCase, ind) =>
                                 <tr key={ind}>
-                                    <td>{ind}</td>
-                                    <td class={this.verdictToCSSClass(testCase.verdict)}>{testCase.verdict}</td>
-                                    {this.renderCase(testCase)}
-                                    <td><a href="#" onClick={() => EventBus.post('view', ind)}>view</a></td>
-                                    <td><a href="#" onClick={() => EventBus.post('compare', ind)}>compare</a></td>
+                                    {this.renderCase(testCase, ind)}
                                 </tr>
                             )
                         }

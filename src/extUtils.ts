@@ -42,6 +42,14 @@ export function popUnsafe<T>(array: T[], message: string = 'Empty Array!'): T {
     return val;
 }
 
+/**
+ * Opens the path given as a file and shows it in the text editor.  This is simply a shorthand
+ * @param path The path of the file to show
+ */
+export async function showFile(path: string) {
+    vscode.window.showTextDocument(await vscode.workspace.openTextDocument(vscode.Uri.file(path)));
+}
+
 // =================================================================================================================
 // Interacting with workspace files
 // =================================================================================================================

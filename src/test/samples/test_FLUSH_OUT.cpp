@@ -9,8 +9,8 @@ int main() {
     while (true) {
         cout << "Yes: " << ctr << endl; cout.flush();
         ctr++;
-        // if (ctr > 100)
-        //     break;
+        if (ctr > 1000000)
+            break;
     }
 
     return 0;
