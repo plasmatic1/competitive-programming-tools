@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import { readWorkspaceFile, writeWorkspaceFile, errorIfUndefined, workspaceFilePath, undefinedIfEmpty } from '../extUtils';
 import { isUndefined } from 'util';
 
-interface Test {
+export interface Test {
     input: string;
     output: string | undefined;
 }

@@ -55,9 +55,9 @@ export function getTempFile(name: string | undefined = undefined): string {
     const used = new Set(fs.readdirSync(rootPath()));
     let res;
     do
-        res = pref + '-' + Math.random().toString().slice(1, 7);
+        res = pref + '-' + Math.random().toString().slice(2, 8);
     while (used.has(res));
-    return res;
+    return path.join(rootPath(), res);
 }
 
 /**

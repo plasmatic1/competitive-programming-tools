@@ -2,39 +2,61 @@
 @import './main.scss';
 
 // General formatting
-h1 {
-    margin-top: 0;
-}
-
 #compileErrorDiv {
-    border: 1px solid map-get($theme, 3);
     padding: 0 7px 2px 7px;
     margin: 10px;
+    background: var(--vscode-text-code-block-background);
 
-    h3 {
-        margin-top: 5px;
-        margin-bottom: 2px;
+    h2 {
+        margin-top: 0.4em;
+        margin-bottom: 0.2em;
     }
 
     p {
         margin: 0 0 2px 0;
-        // border: 1px solid red;
+        font-family: 'Courier New', Courier, monospace;
     }
 }
 
-.case-div {
-    margin-bottom: 30px;
+#streamOut {
+    display: flex;
+    width: 100%;
 
-    h2 {
-        margin-bottom: 0;
+    div {
+        margin: 0 25px 10px 0;
+        flex-basis: 50%;
+        background: var(--vscode-text-block-quote-background);
+
+        h3 {
+            margin-bottom: 4px;
+        }
+
+        textarea {
+            width: 100%;
+        }
     }
+}
+
+// Verdict table
+table {
+    border: 1px solid;
+    border-collapse: collapse;
+
+    tr {
+        th, td {
+            border: 1px solid;
+            padding: 4px;
+        }
+    }
+}
+
+// Selected Test case
+.selected-case {
+    font-weight: bolder;
+    text-decoration: underline;
 }
 
 // Verdict-related stuff
-#verdictDiv {
-    margin-left: 0;
-}
-
 .verdict {
     margin-left: 7px;
 }

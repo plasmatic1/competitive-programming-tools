@@ -64,8 +64,3 @@ class OptionsDisplay extends React.Component {
 
 let App = document.getElementById('app');
 ReactDOM.render(<OptionsDisplay/>, App);
-
-/*
-<style lang="scss" scoped>
-
-*/

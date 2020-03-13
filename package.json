@@ -66,6 +66,7 @@
 		"vscode:prepublish": "npm run compile",
 		"parcel:build": "parcel build -d out/assets src/assets/entrypoint/input.html src/assets/entrypoint/output.html src/assets/entrypoint/options.html --public-url \"vscodeRoot\"",
 		"parcel:watch": "parcel watch -d out/assets src/assets/entrypoint/input.html src/assets/entrypoint/output.html src/assets/entrypoint/options.html --public-url \"vscodeRoot\" --no-hmr",
+		"parcel:reactTest": "parcel -d testReact src/assets/entrypoint/input.html src/assets/entrypoint/output.html src/assets/entrypoint/options.html",
 		"compile": "tsc -p ./ && npm run parcel:build",
 		"watch": "tsc -watch -p ./ && npm run parcel:watch",
 		"postinstall": "node ./node_modules/vscode/bin/install",
@@ -88,6 +89,7 @@
 		"lodash": "^4.17.15",
 		"pidusage": "^2.0.17",
 		"react": "^16.13.0",
-		"react-dom": "^16.13.0"
+		"react-dom": "^16.13.0",
+		"read-more-react": "^1.0.10"
 	}
 }

@@ -65,13 +65,17 @@ function getExecutor(src: string): Executor {
 // Result Classes
 // Note that executionId should always count up
 
-class SkippedResult {
+export class SkippedResult {
     executionId = -1; // The execution id of this result (this is an id assigned to it based on the execution).  This is to distinguish different test cases and prevent a certain race case.
     caseId: number = -1;
     verdict: string = 'Skipped'; // Verdict
+    stdin: string = ''; // Stdin data (SET THIS PROPERLY)
+    stdout: string = ''; // Stdout data (can leave as default)
+    stderr: string = ''; // Stderr data (can leave as default)
+    expectedStdout: string | undefined = undefined; // Expected stdout (SET THIS PROPERLY)
 }
 
-class Result {
+export class Result {
     executionId = -1; // The execution id of this result (this is an id assigned to it based on the execution).  This is to distinguish different test cases and prevent a certain race case.
     caseId: number = -1; // Test case number, 0-indexed
     stdin: string = ''; // Stdin data
@@ -86,15 +90,14 @@ class Result {
 
 class CompileError {
     executionId = -1; // The execution id of this result (this is an id assigned to it based on the execution).  This is to distinguish different test cases and prevent a certain race case.
-    verdict: string = 'Compile Error';
     message: string | undefined = undefined;
-    fatal: boolean = false;
 }
 
 interface Execution {
+    executionId: number;
     srcName: string;
     compileErrors: string[];
-    results: Result[];
+    results: (Result | SkippedResult)[];
 }
 
 export class ProgramExecutionManager {
@@ -106,7 +109,7 @@ export class ProgramExecutionManager {
 
     // Result information
     private onCompleteCase: vscode.EventEmitter<void> = new vscode.EventEmitter();
-    private previousExecution: Execution | undefined = undefined;
+    public previousExecution: Execution | undefined = undefined;
 
     /**
      * Compiles the program and throws an error if the compile failed
@@ -124,8 +127,12 @@ export class ProgramExecutionManager {
         if (fatal) this.halted = true;
         outputDI!.emit({
             type: EventType.CompileError, 
-            event: msg
+            event: {
+                executionId: this.executionCounter,
+                message: msg
+            }
         });
+        this.previousExecution!.compileErrors.push(msg);
     }
     
     /**
@@ -147,6 +154,8 @@ export class ProgramExecutionManager {
             let result: Result = new Result();
             result.caseId = caseId;
             result.executionId = this.executionCounter;
+            result.stdin = input;
+            result.expectedStdout = output;
 
             if (proc === null) {
                 result.verdict = 'Internal Error';
@@ -240,34 +249,42 @@ export class ProgramExecutionManager {
         this.halted = false;
         this.executionCounter++;
         this.curExecutor = getExecutor(src);
+        this.previousExecution = {
+            executionId: this.executionCounter,
+            srcName: src,
+            compileErrors: [],
+            results: [],
+        };
         // console.log(`ex: ${this.executionCounter}, got executor`);
 
         // Execute cases
-        await this.initDisplay(src, cases.length);
-        // console.log(`ex: ${this.executionCounter}, display ready`);
-        this.compile(this.curExecutor);
-        // console.log(`ex: ${this.executionCounter}, compiled`);
-        let counter = 0;
-        for (const acase of cases) {
-            // console.log(`ex: ${this.executionCounter}, beginning case ${counter}`);
+        await this.initDisplay(src, cases.length); // console.log(`ex: ${this.executionCounter}, display ready`);
+        this.compile(this.curExecutor); // console.log(`ex: ${this.executionCounter}, compiled`);
+        let counter = -1;
+        for (const acase of cases) { 
+            counter++; //console.log(`ex: ${this.executionCounter}, beginning case ${counter}`);
+            outputDI!.emit({ type: EventType.BeginCase, event: { executionId: this.executionCounter, caseId: counter }});
+
             let res: Result | SkippedResult;
             if (this.halted) {
                 res = new SkippedResult();
                 res.executionId = this.executionCounter;
-                res.caseId = counter++;
+                res.caseId = counter;
+                res.stdin = acase.input;
+                res.expectedStdout = acase.output;
             }
             else
-                res = await this.executeCase(this.curExecutor, counter++, acase.input, acase.output);
+                res = await this.executeCase(this.curExecutor, counter, acase.input, acase.output);
 
             // Fire event handlers and whatnot
-            this.onCompleteCase.fire();
             outputDI!.emit({
                 type: EventType.EndCase,
                 event: res
             });
-        }
+            this.previousExecution!.results.push(res);
+            this.onCompleteCase.fire();
+        }  //console.log(`ex: ${this.executionCounter}, done, isHalted: ${this.halted}`);
 
-        // console.log(`ex: ${this.executionCounter}, done, isHalted: ${this.halted}`);
         // If halted externally, return now
         if (this.halted) return;
 
@@ -290,13 +307,16 @@ export class ProgramExecutionManager {
      * Assuming that a case is currently running, this waits for the case to complete or for the specified
      * timeout parameter.
      */
-    private async waitForCase(timeout: number = 1000) {
-        return new Promise((res, rej) => {
-            if (this.halted) res();
-            const id = setTimeout(() => rej('Waiting for case timed out'), timeout);
-            this.onCompleteCase.event(() => {
+    private async waitForCase(timeout: number = 1000): Promise<void> {
+        return new Promise(res => {
+            const id = setTimeout(() => {
+                vscode.window.showErrorMessage('Waiting for case timed out');
+                res();
+            }, timeout);
+            let handle = this.onCompleteCase.event(() => {
                 clearTimeout(id);
                 res();
+                handle.dispose();
             });
         });
     }
@@ -306,8 +326,8 @@ export class ProgramExecutionManager {
      */
     async haltCurrentCase() {
         if (this.halted) return;
-        await this.waitForCase();
         this.killAllProcs();
+        await this.waitForCase();
     }
 
     /**
@@ -315,9 +335,9 @@ export class ProgramExecutionManager {
      */
     async haltAll() {
         if (this.halted) return;
-        await this.waitForCase();
         this.halted = true;
         this.killAllProcs();
+        await this.waitForCase();
         this.curExecutor!.postExec();
         this.curExecutor = undefined;
     }

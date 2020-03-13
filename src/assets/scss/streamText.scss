@@ -1,0 +1,19 @@
+@import 'scss/global.scss';
+@import 'scss/main.scss';
+
+textarea {
+    box-sizing: border-box;
+    resize: none;
+    width: 100%;
+
+    font-family: 'Courier';
+    color: map-get($theme, 4);
+
+    &::-webkit-scrollbar-thumb {
+        background-color: map-get($theme, 4);
+    } 
+}
+
+#if-empty {
+    font-style: italic;
+}

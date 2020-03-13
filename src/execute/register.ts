@@ -5,7 +5,9 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
     let buildRunCommand = vscode.commands.registerCommand('cp-tools.buildAndRun', async () => {
         outputDI!.openDisplay(context); // Set focus of display
         await programExecutionManager!.haltAll();
-        programExecutionManager!.run();
+        try {
+            programExecutionManager!.run();
+        } catch(e) { vscode.window.showErrorMessage(e.toString()); }
     });
         
     context.subscriptions.push(buildRunCommand);

@@ -3,9 +3,6 @@ import ReactDOM from 'react-dom';
 import EventBus from './vscodeEventBus';
 import './scss/input.scss';
  
-// Key code constants
-const ENTER = 13, R = 82, S = 83;
-
 class InputDisplay extends React.Component {
     constructor(props) {
         super(props);
@@ -44,11 +41,11 @@ class InputDisplay extends React.Component {
 
         // Add key listener
         this._keyListener = function(e) {
-            if (e.keyCode === ENTER) // user pressed enter
+            if (e.keyCode === Keys.ENTER) // user pressed enter
                 this.dispatchCommand();
-            if (e.ctrlKey && e.keyCode === S) // user pressed Ctrl+S, Save current case 
+            if (e.ctrlKey && e.key === 's') // user pressed Ctrl+S, Save current case 
                 this.saveCurTestCase();
-            if (e.ctrlKey && e.keyCode === R) // user pressed Ctrl+R, Refresh all cases
+            if (e.ctrlKey && e.key === 'r') // user pressed Ctrl+R, Refresh all cases
                 EventBus.post('updateAll');
         };
         document.addEventListener('keydown', this._keyListener.bind(this));

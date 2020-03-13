@@ -35,7 +35,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	outputDI = new OutputDI(context);
 	inputDI = new InputDI(context);
-	optionsDI = new OptionsDI(context, optionManager);
+	optionsDI = new OptionsDI(context);
 
 	programExecutionManager = new ProgramExecutionManager();
 

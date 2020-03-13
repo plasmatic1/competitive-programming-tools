@@ -8,10 +8,10 @@ if type == 1:
 elif type == 2:
     print('WA') # WA
 elif type == 3:
-    time.sleep(999999999) # TLE
+    time.sleep(999) # TLE
 elif type == 4:
     print('AC')
-    time.sleep(1000) # AC but wait
+    time.sleep(1) # AC but wait
 elif type == 5:
     assert 0 # RTE
 elif type == 6:

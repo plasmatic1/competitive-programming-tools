@@ -1,13 +1,31 @@
 @import './global.scss';
 
+// ===============================================================================================================
+// FIXES
+// ===============================================================================================================
+
 // MAKES SURE THE GODDAMN ORANGE BOX DOESN'T APPEAR
 *:focus {
     outline: 0 !important;
 }
 
+// Fix cursor hover for links even if they don't have an href
+a:hover {
+    cursor: pointer;
+}
+
+// Title on top of every display
+h1 {
+    margin-top: 20px;
+}
+
+h2 {
+    margin-bottom: 7px;
+}
+
 // Buttons and Text Areas
-$border-color: map-get($theme, 3);
-$text-color: map-get($theme, 4);
+$border-color: var(--vscode-text-block-quote-border);
+$text-color: var(--vscode-foreground);
 
 textarea, button {
     background: transparent;
@@ -36,6 +54,34 @@ button {
     font: 11pt $font-family !important;
 }
 
+// Making text areas a little nicer
+textarea {
+    box-sizing: border-box;
+    resize: none;
+    width: 100%;
+
+    font-family: 'Courier New', Courier, monospace;
+    color: map-get($theme, 4);
+
+    &::-webkit-scrollbar-thumb {
+        background-color: map-get($theme, 4);
+    } 
+}
+
+// ===============================================================================================================
+// Custom Elements
+// ===============================================================================================================
+
+// For selection menus made of links
+.selection {
+    font-size: 12pt;
+    margin-bottom: 0.2em;
+
+    :not(:first-child) {
+        margin-left: 0.5em;
+    }
+}
+
 // code {
 //     white-space: pre;
 // }
@@ -48,11 +94,6 @@ button {
 
 // table {
 //     margin: 5px;
-// }
-
-// .hiddenItem code {
-//     color: #888;
-//     font-style: italic;
 // }
 
 // .emptyItem code {
