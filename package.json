@@ -65,14 +65,11 @@
 				"command": "cp-tools.openOptions",
 				"key": "ctrl+alt+o"
 			}
-		],
-		"viewsContainers": {},
-		"views": {},
-		"menus": {}
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
-		"parcel:build": "parcel build -d out/assets src/assets/entrypoint/input.html src/assets/entrypoint/output.html src/assets/entrypoint/options.html --public-url \"vscodeRoot\"",
+		"parcel:build": "parcel build -d out/assets src/assets/entrypoint/input.html src/assets/entrypoint/output.html src/assets/entrypoint/options.html --public-url \"vscodeRoot\" --no-cache",
 		"parcel:watch": "parcel watch -d out/assets src/assets/entrypoint/input.html src/assets/entrypoint/output.html src/assets/entrypoint/options.html --public-url \"vscodeRoot\" --no-hmr",
 		"parcel:reactTest": "parcel -d testReact src/assets/entrypoint/input.html src/assets/entrypoint/output.html src/assets/entrypoint/options.html",
 		"compile": "tsc -p ./ && npm run parcel:build",
@@ -91,13 +88,13 @@
 		"sass": "^1.24.4",
 		"tslint": "^5.12.1",
 		"typescript": "^3.3.1",
-		"vscode": "^1.1.28"
-	},
-	"dependencies": {
-		"lodash": "^4.17.15",
-		"pidusage": "^2.0.17",
+		"vscode": "^1.1.28",
 		"react": "^16.13.0",
 		"react-dom": "^16.13.0",
-		"react-read-more-less": "^0.1.6"
+		"react-read-more-less": "^0.1.6",
+		"lodash": "^4.17.15"
+	},
+	"dependencies": {
+		"pidusage": "^2.0.17"
 	}
 }

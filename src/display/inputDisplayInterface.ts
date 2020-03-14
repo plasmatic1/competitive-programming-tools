@@ -77,6 +77,7 @@ export class InputDI extends DisplayInterface {
         // Delete commands
         this.commandHandler.registerCommand('delete', (_, __, key) => {
             const tm = testManager!;
+            if (key === 'default') return 'Cannot delete \'default\' test set';
             if (!tm.exists(key)) return `Test set '${key}' does not exist`;
             if (optionManager!.get('buildAndRun', 'curTestSet') === key) return `Cannot delete currently selected test set ${key}`;
 
