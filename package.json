@@ -38,7 +38,7 @@
 			},
 			{
 				"command": "cp-tools.removeTempFiles",
-				"title": "Remove all created temprary files",
+				"title": "Remove all created temporary files",
 				"category": "CP Tools"
 			},
 			{
