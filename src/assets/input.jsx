@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import EventBus from './vscodeEventBus';
 import CommandHandler from '../commandHandler';
 import './scss/input.scss';
+import { isUndefined } from 'util';
 
 class InputDisplay extends React.Component {
     constructor(props) {
@@ -25,14 +26,20 @@ class InputDisplay extends React.Component {
         };
         
         // Initialize other event handlers
-        EventBus.on('caseCommand', resp => {
-            if (resp.length > 0)
-                this.setState({ lastCommandOutput: resp });
-        });
-        EventBus.on('updateAll', cases => {
-            this.setState({ cases });
-            if (this.state.eurTestIndex !== null) // Refresh current open test case
-                this.selectTestCase(this.state.curTestIndex);
+        EventBus.on('caseCommand', resp => this.setState({ lastCommandOutput: resp }));
+        EventBus.on('updateAll', evt => {
+            this.setState({ cases: evt.cases }, () => {
+                let fixTestInput = () => {
+                    if (this.state.curTestInput !== null) { // assume that this.state.curTestOutput is also not null and that the curTestSet has not changed
+                        const testCase = evt.cases[this.state.curTestSet][this.state.curTestIndex];
+                        this.setState({ curTestInput: testCase.input, curTestOutput: testCase.output });
+                    }
+                };
+
+                if (this.state.curTestSet !== evt.curTestSet)
+                    this.selectTestSet(evt.curTestSet, fixTestInput);
+                else fixTestInput();
+            });
         });
         EventBus.on('updateStructure', _ => { throw new Error('Not implemented yet (defunct)'); });
         EventBus.on('updateCase', caseUpdate => {
@@ -42,9 +49,23 @@ class InputDisplay extends React.Component {
 
         // Initialize command handler
         this.commandHandler = new CommandHandler(
-            command => EventBus.post('caseCommand', command),
+            command => EventBus.post('caseCommand', { key: this.state.curTestSet, index: this.state.curTestIndex, command }),
             message => this.setState({ lastCommandOutput: message })
         )
+        this.commandHandler.registerCommand('listcommands', () => {
+            return 'Commands list: listcommands, select, selectcase, open, insert, insertcase, delete, deletecase, swap, swapcase, pushcase, rename, enable, disable'
+        }, ['help']);
+        this.commandHandler.registerCommand('select', key => {
+            if (isUndefined(this.state.cases[key])) return `Unknown test set '${key}'`;
+            this.selectTestSet(key);
+            return null;
+        }, ['sel', 's']);
+        this.commandHandler.registerCommand('selectcase', index => {
+            if (isNaN(parseInt(index))) return `${index} is not an integer`; index = parseInt(index);
+            if (this.state.cases[this.state.curTestSet].length <= index || index < 0) return `Index ${index} out of bounds`;
+            this.selectTestCase(index);
+            return null;
+        }, ['selcase', 'selc', 'sc']);
 
         // Add key listener
         this._keyListener = function(e) {
@@ -81,31 +102,44 @@ class InputDisplay extends React.Component {
     /**
      * Selects a test set (for viewing/editing)
      * @param {string} testSetName The name of the test set to select (assumed valud)
+     * @param {function} callback Callback for the setState call of this function
      */
-    selectTestSet(testSetName) {
-        this.setState({ 
-            curTestSet: testSetName,
-            curTestIndex: this.state.cases[testSetName].length > 0 ? 0 : -1
+    selectTestSet(testSetName, callback) {
+        this.setState({ curTestSet: testSetName }, () => {
+            this.selectTestCase(this.state.cases[testSetName].length > 0 ? 0 : null, callback);
+            EventBus.post('selectTestSet', testSetName);
         });
     }
 
     /**
      * Selects a test case (for viewing/editing)
      * @param {string} index The index of the test case to select
+     * @param {function} callback Callback for the setState call of this function
      */
-    selectTestCase(index) {
-        this.setState({
-            curTestIndex: index,
-            curTestInput: this.state.cases[this.state.curTestSet][index].input,
-            curTestOutput: this.state.cases[this.state.curTestSet][index].output,
-        });
+    selectTestCase(index, callback) {
+        if (index === null) {
+            this.setState({
+                curTestIndex: null,
+                curTestInput: null,
+                curTestOutput: null
+            }, callback);
+        }
+        else {
+            this.setState({
+                curTestIndex: index,
+                curTestInput: this.state.cases[this.state.curTestSet][index].input,
+                curTestOutput: this.state.cases[this.state.curTestSet][index].output,
+            }, callback);
+        }
     }
 
     /**
      * Save the data of the current edited test case
      */
     saveCurTestCase() {
-
+        const key = this.state.curTestSet, index = this.state.curTestIndex;
+        EventBus.post('updateCase', { key, index, isInput: true, newData: this.state.curTestInput });
+        EventBus.post('updateCase', { key, index, isInput: false, newData: this.state.curTestOutput });
     }
 
     render() {
@@ -123,13 +157,13 @@ class InputDisplay extends React.Component {
                 </div>
 
                 { this.state.lastCommandOutput &&
-                    <p>{this.state.lastCommandOutput}</p>
+                    <p style={{whitespace: 'pre'}}>{this.state.lastCommandOutput}</p>
                 }
 
                 <div id="test-set-display-div">
                     {/* Display status of current test set and test case selection menu */}
                     <div id="test-set-display">
-                        { this.state.curTestSet ?
+                        { !!this.state.curTestSet ?
                             <table>
                                 <tr>
                                     <th>Case</th>
@@ -137,12 +171,20 @@ class InputDisplay extends React.Component {
                                     <th>Edit Input</th>
                                     <th>Edit Output</th>
                                 </tr>
-                                { this.state.cases[this.state.curTestSet].map((testCase) => 
+                                { this.state.cases[this.state.curTestSet].map(testCase => 
                                     <tr key={testCase.index}>
-                                        <td>{testCase.index}</td>
-                                        <td>{testCase.disabled ? 'Disabled' : 'Not Disabled'}</td>
-                                        <td><a href="#" onClick={() => EventBus.post('openCaseFile', { key: this.state.curTestSet, index: testCase.index, isInput: true })}>Edit</a></td>
-                                        <td><a href="#" onClick={() => EventBus.post('openCaseFile', { key: this.state.curTestSet, index: testCase.index, isInput: false })}>Edit</a></td>
+                                        <td><span className={this.state.curTestIndex === testCase.index && 'selected-case'}>
+                                            {testCase.index}
+                                        </span></td>
+                                        <td><span className={['test-' + (testCase.disabled ? 'off' : 'on'), this.state.curTestIndex === testCase.index && 'selected-case'].join(' ')}>
+                                            {testCase.disabled ? 'Disabled' : 'Enabled'}
+                                        </span></td>
+                                        <td><span className={this.state.curTestIndex === testCase.index && 'selected-case'}>
+                                            <a onClick={() => EventBus.post('openCaseFile', { key: this.state.curTestSet, index: testCase.index, isInput: true })}>Edit</a>
+                                        </span></td>
+                                        <td><span className={this.state.curTestIndex === testCase.index && 'selected-case'}>
+                                            <a onClick={() => EventBus.post('openCaseFile', { key: this.state.curTestSet, index: testCase.index, isInput: false })}>Edit</a>
+                                        </span></td>
                                     </tr>
                                 )}
                             </table> :
@@ -153,9 +195,9 @@ class InputDisplay extends React.Component {
                     <div id="test-set-list">
                         <h2>Test Sets</h2>
                         <ul>
-                            { Object.keys(this.state.cases).map(testSetName => 
-                                <li key={testSetName}>
-                                    <a href="#" onClick={() => this.selectTestSet(testSetName)}>{testSetName}</a>
+                            { Object.entries(this.state.cases).map(([testSetName, testSet]) => 
+                                <li key={testSetName} class={this.state.curTestSet === testSetName ? 'selected-case' : null}>
+                                    <a onClick={() => this.selectTestSet(testSetName)}>[ {testSetName}, {testSet.length} cases ]</a>
                                 </li>
                             )}
                         </ul>
@@ -163,11 +205,11 @@ class InputDisplay extends React.Component {
                 </div>
 
                 {/* Select Test Case to Edit */}
-                { this.state.curTestSet &&
+                { !!this.state.curTestSet &&
                     <div class="selection">
                         <span>Test Cases: </span>
                         { this.state.cases[this.state.curTestSet].map((_, index) =>
-                            <a href="#" key={index} class={this.state.curTestIndex === index ? 'selected-case' : null}
+                            <a key={index} class={this.state.curTestIndex === index ? 'selected-case' : null}
                                 onClick={() => this.selectTestCase(index)}>[ {index} ]</a>
                         )}
                     </div>

@@ -9,7 +9,7 @@ export interface Test {
 
 // tslint:disable: curly
 export class TestManager {
-    testSets: Map<string, boolean[]>;
+    public testSets: Map<string, boolean[]>;
 
     constructor() {
         this.testSets = new Map();
@@ -44,6 +44,7 @@ export class TestManager {
     // Utility (In all functions, key means test set name)
     exists(key: string): boolean { return this.testSets.has(key); }
     addSet(key: string): void { this.testSets.set(key, []); }
+    removeSet(key: string): void { this.removeCases(key, 0, this.caseCount(key)); this.testSets.delete(key); }
     removeCases(key: string, index: number, count: number = 1) { // Note that indexes are 0-indexed
         this.get(key).splice(index, count);
         for (let i = index; i < index + count; i++) {

@@ -1,65 +1,67 @@
-# cptools-fix README
+# CP Tools
 
-This is the README for your extension "cptools-fix". After writing up a brief description, we recommend including the following sections.
+CP Tools is a helper extension for competitive programmers that use VSCode :)
 
-## Features
+## Build and Run (Execution)
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+Shortcut: Ctrl+Alt+B
+Command: `cp-tools.buildAndRun`
 
-For example if there is an image subfolder under your extension project workspace:
+Builds and runs the code on a user created set of test cases.  Output is displayed in a user friendly format, along with useful information such as exit status, execution time, memory used, etc.  The output can be directly viewed in the webview panel, but can also be converted to text form.  Additionally, expected output can be supplied, and the actual input will be compared against it (the extension also supports automatically diffing the actual and expected outputs).
 
-\!\[feature X\]\(images/feature-x.png\)
+_Note: it is recommended not to close the webview panel after running, as opening the webview itself takes some time and the extension reuses webview panels when running_
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+## Test Case Management
 
-## Requirements
+Shortcut: Ctrl+Alt+I
+Command: `cp-tools.openInput`
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+Opens up a menu for manipulating test cases.  Test cases are divided into "test sets", and a single test set is used as input for program during execution.  While the cases themselves are stored in files, there is support for editing those cases directly in the display, and there is also a console for quick editing of test data.
 
-## Extension Settings
+### Commands
+- listcommands: Lists all commands
+- open <in|out>: Opens the current selected test case (either input or output) (aka. o) 
+- select <test set>: Selects the current test set (aka. sel, s)
+- selectcase <test index>: Selects the current test case (in the curren test set) (aka. selcase, selc, sc)
+- insert <test set>: Creates a new test set (aka. ins, i)
+- insertcase <test index> [count=1]: Inserts [count] number of new test sets at the given index (in the current test set) (aka. inscase, insc, ic)
+- delete <test set>: Deletes the test set (aka. del, d)
+- deletecase <test index> [count=1]: Delete [count] number of new test sets at the given index (in the current test set) (aka. delcase, delc, dc)
+- swap <test set> <other test set>: Swaps the test sets (aka. sw)
+- swapcase <test index> <other test index>: Swaps the given test cases (of the current test set) (aka. swcase, swc)
+- rename <old name> <new name>: Renames the given test set (aka. ren, r)
+- pushcase [count=1]: Inserts [count] new test cases at the end (of the current test set) (aka. pcase, pc)
+- enable <test index>: Enables the given test index (of the current test set) (aka. en)
+- disable <test index>: Disables the given test index (of the current test set) (aka. dis)
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+## Code Templates
 
-For example:
+Command: `cp-tools.loadTemplates`
 
-This extension contributes the following settings:
+Converts a directory of code templates into VSCode snippets.
 
-* `myExtension.enable`: enable/disable this extension
-* `myExtension.thing`: set to `blah` to do something
+TODO
 
-## Known Issues
+## Configuration
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+Shortcut: Ctrl+Alt+O
+Command: `cp-tools.openOptions`
 
-## Release Notes
+CP Tools uses a separate webview for manipulating configuration data.  The UI should be relatively self-explanatory.
 
-Users appreciate release notes as you update your extension.
+## Additional Commands
 
-### 1.0.0
+- `cp-tools.removeTempFiles`
+    - Some of the other features (i.e. Build and Run) generate temporary files.  This command automatically clears all of them in your workspace directory (which is where they're normally generated)
 
-Initial release of ...
+# Next Steps/TODO List
 
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
------------------------------------------------------------------------------------------------------------
-
-## Working with Markdown
-
-**Note:** You can author your README using Visual Studio Code.  Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux)
-* Toggle preview (`Shift+CMD+V` on macOS or `Shift+Ctrl+V` on Windows and Linux)
-* Press `Ctrl+Space` (Windows, Linux) or `Cmd+Space` (macOS) to see a list of Markdown snippets
-
-### For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+- Test case preview for the test data display
+- `copy` command for input display
+- Number of test cases in execution by their test index (counting disabled cases)
+- Different checkers for comparing output and input
+- Adding a "live" timer for the "time" of a judging case (not super pertinent)
+- **FIX**: Support proper Ctrl+R (or another shortcut) reloading for the Test Data display
+- **FIX**: Refractor Commands implementation
+- **FIX**: Options display automatically reloads when the current test set is changed
+- **FIX**: Improve readme

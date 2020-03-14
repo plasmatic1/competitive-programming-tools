@@ -20,6 +20,7 @@ export interface CategoryProperties {
 // Class to export
 // ---------------------------------------------------------------------------
 
+// tslint:disable: curly
 export class OptionManager {
     constructor(
         private extensionContext: vscode.ExtensionContext
@@ -62,11 +63,9 @@ export class OptionManager {
      * @param key Option key
      * @param value New value
      */
-    set(category: string, key: string, value: any): void {
-        if (typeof value !== this.getProperties(category, key).type) {
-            throw new Error('Incorrect type!');
-        }
-        this.extensionContext.workspaceState.update(key, value);
+    set(category: string, key: string, value: any): Thenable<void> {
+        if (typeof value !== this.optionProperties(category, key).type) throw new Error(`Incorrect type ${typeof value}`);
+        return this.extensionContext.workspaceState.update(key, value);
     }
 
     /**

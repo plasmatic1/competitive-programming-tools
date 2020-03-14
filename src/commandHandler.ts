@@ -23,15 +23,16 @@ class CommandHandler {
     /**
      * Dispatches a command
      * @param fullCommand Command
+     * @param extra Extra arguments to send to the handler.  Note that extra arguments are sent first so that the content of actual arguments is always known
      */
-    dispatchCommand(fullCommand: string) {
+    dispatchCommand(fullCommand: string, ...extra: any[]) {
         const spl = fullCommand.split(' '), command = this.aliases.get(spl[0]);
         if (isUndefined(command)) {
             this.fallback(fullCommand); 
             return;
         }
 
-        const message = this.commands.get(command)!(...spl.slice(1));
+        const message = this.commands.get(command)!(...extra, ...spl.slice(1));
         this.onComplete(message);
     }
 

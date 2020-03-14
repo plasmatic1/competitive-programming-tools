@@ -64,3 +64,14 @@ h3 {
     font-weight: bolder;
     text-decoration: underline;
 }
+
+// Enabled/Disabled stuff
+$base-color: mix(white, black, 80%);
+
+.test-on {
+    color: mix($base-color, lime, 75%);
+}
+
+.test-off {
+    color: mix($base-color, crimson, 80%);
+}

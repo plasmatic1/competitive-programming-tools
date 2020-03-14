@@ -38,8 +38,6 @@
             window.addEventListener('message', event_ => {
                 const event = event_.data;
 
-                console.log('event data ' + JSON.stringify(event));
-
                 if (event.type === 'info') {
                     logApp.lines.push({ color: '#bcbcbc', text: '[INFO]: ' + event.text });
                 }

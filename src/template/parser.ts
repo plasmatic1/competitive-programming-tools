@@ -44,8 +44,6 @@ export class TemplateParser {
         for (const sub of fs.readdirSync(curPath)) {
             const adjPath = join(curPath, sub), stats = fs.lstatSync(adjPath);
 
-            // console.log(`path: ${curPath}, templatePath: ${templatePath}, adjPath: ${adjPath}, isDir: ${stats.isDirectory()}`);
-
             if (stats.isDirectory()) {
                 this.traverseFolder(adjPath, join(templatePath, sub));
             }

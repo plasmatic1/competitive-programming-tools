@@ -253,7 +253,6 @@ export class ProgramExecutionManager {
         // Get important variables
         const src = getSourceFile();
         const cases = testManager!.getCases(optionManager!.get('buildAndRun', 'curTestSet'));
-        // console.log(`ex: ${this.executionCounter+1}, got source file and cases`);
 
         // Initialization of state
         this.halted = false;
@@ -265,14 +264,13 @@ export class ProgramExecutionManager {
             compileErrors: [],
             results: [],
         };
-        // console.log(`ex: ${this.executionCounter}, got executor`);
 
         // Execute cases
-        await this.initDisplay(src, cases.length); // console.log(`ex: ${this.executionCounter}, display ready`);
-        this.compile(this.curExecutor); // console.log(`ex: ${this.executionCounter}, compiled`);
+        await this.initDisplay(src, cases.length); 
+        this.compile(this.curExecutor);
         let counter = -1;
         for (const acase of cases) { 
-            counter++; //console.log(`ex: ${this.executionCounter}, beginning case ${counter}`);
+            counter++;
             outputDI!.emit({ type: EventType.BeginCase, event: { executionId: this.executionCounter, caseId: counter }});
 
             let res: Result | SkippedResult;
@@ -293,7 +291,7 @@ export class ProgramExecutionManager {
             });
             this.previousExecution!.results.push(res);
             this.onCompleteCase.fire();
-        }  //console.log(`ex: ${this.executionCounter}, done, isHalted: ${this.halted}`);
+        } 
 
         // If halted externally, return now
         if (this.halted) return;

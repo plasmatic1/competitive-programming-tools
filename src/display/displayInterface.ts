@@ -67,7 +67,7 @@ export class DisplayInterface {
 
             // Handling events from the webview
             display.webview.onDidReceiveMessage(evt => {
-                console.log(JSON.stringify(evt));
+                // console.log(JSON.stringify(evt));
 
                 if (isUndefined(evt.type)) {
                     vscode.window.showErrorMessage('Received event from webview with unknown type!');

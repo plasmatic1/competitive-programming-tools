@@ -101,7 +101,6 @@ class OutputDisplay extends React.Component {
     renderCompileErrors() {
         if (this.state.compileErrors.length === 0) return (null);
         else {
-            console.log(this.state.compileErrors);
             return (
                 <div id="compileErrorDiv">
                     <h2>Compile/Data Errors</h2>
