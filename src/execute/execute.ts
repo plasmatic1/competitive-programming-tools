@@ -39,7 +39,7 @@ function createExitStatus(code: number, signal: string): string {
  */
 function compareOutput(output1: string, output2: string): boolean {
     // TODO: implement different comparison styles
-    return output1 === output2;
+    return output1.trim() === output2.trim();
 }
 
 /**

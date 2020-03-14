@@ -58,10 +58,13 @@ CP Tools uses a separate webview for manipulating configuration data.  The UI sh
 
 - Test case preview for the test data display
 - `copy` command for input display
-- Number of test cases in execution by their test index (counting disabled cases)
 - Different checkers for comparing output and input
+- Number of test cases in execution by their test index (counting disabled cases)
+- Output preview
 - Adding a "live" timer for the "time" of a judging case (not super pertinent)
-- **FIX**: Support proper Ctrl+R (or another shortcut) reloading for the Test Data display
+- **FIX**: Fix bug: attempting to delete the currently selected test case crashes input display.  Fix by resetting the selected index if it is deleted/not allowing deletion of selected case
+- **FIX**: Fix bug: attempting to rename the currently selected test set crashes input display
+- **FIX**: Fix bug: attempting to swap test sets when the current selected case has a higher index than the size of the other set, a crash happens
 - **FIX**: Refractor Commands implementation
 - **FIX**: Options display automatically reloads when the current test set is changed
 - **FIX**: Improve readme
