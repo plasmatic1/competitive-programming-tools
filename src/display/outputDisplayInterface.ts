@@ -38,7 +38,7 @@ function writeResult(writer: fs.WriteStream, result: Result | SkippedResult): vo
         writer.write('- Actual Output ---\n');
         writer.write(result.stdout + '\n');
         writer.write('- Expected Output ---\n');
-        writer.write(result.expectedStdout + '\n');
+        writer.write((result.expectedStdout === undefined ? '\n' : result.expectedStdout) + '\n');
         writer.write('- Error Stream ---\n');
         writer.write(result.stderr + '\n');
     } else writer.write('\n');

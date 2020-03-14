@@ -236,7 +236,7 @@ class OutputDisplay extends React.Component {
                             </div>
                             <div>
                                 <h3>Expected Output</h3>
-                                <textarea value={this.state.cases[this.state.curViewedCase].expectedStdout} rows="10" readonly />
+                                <textarea value={this.state.cases[this.state.curViewedCase].expectedStdout || '[This case has no expected output]'} rows="10" readonly />
                             </div>
                         </div>
                     </React.Fragment>
