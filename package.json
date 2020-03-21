@@ -90,6 +90,7 @@
 		"react": "^16.13.0",
 		"react-dom": "^16.13.0",
 		"react-read-more-less": "^0.1.6",
+		"react-error-boundary": "^1.2.5",
 		"sass": "^1.24.4",
 		"tslint": "^5.12.1",
 		"typescript": "^3.3.1",

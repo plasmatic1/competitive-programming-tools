@@ -72,7 +72,7 @@ export class SkippedResult {
     stdin: string = ''; // Stdin data (SET THIS PROPERLY)
     stdout: string = ''; // Stdout data (can leave as default)
     stderr: string = ''; // Stderr data (can leave as default)
-    expectedStdout: string | undefined = undefined; // Expected stdout (SET THIS PROPERLY)
+    expectedStdout: string | null = null; // Expected stdout (SET THIS PROPERLY)
 }
 
 export class Result {
@@ -81,7 +81,7 @@ export class Result {
     stdin: string = ''; // Stdin data
     stdout: string = ''; // Stdout data
     stderr: string = ''; // Stderr data
-    expectedStdout: string | undefined = undefined; // Expected stdout
+    expectedStdout: string | null = null; // Expected stdout
     verdict: string = 'Waiting'; // Verdict
     time: number = 0; // Time
     memory: number = 0;
@@ -142,7 +142,7 @@ export class ProgramExecutionManager {
      * @param input The input data
      * @param output The output data
      */
-    executeCase(executor: Executor, caseId: number, input: string, output: string | undefined): Promise<Result> {
+    executeCase(executor: Executor, caseId: number, input: string, output: string | null): Promise<Result> {
         return new Promise((res, rej) => {
             const timeout = optionManager!.get('buildAndRun', 'timeout'),
                 memSampleRate = optionManager!.get('buildAndRun', 'memSample'),
@@ -186,7 +186,7 @@ export class ProgramExecutionManager {
             proc.on('exit', (code: number, signal: string) => {
                 clearTimeout(tleTimeout);
                 let isCorrect;
-                if (!isUndefined(output) && output.length > 0) isCorrect = compareOutput(output, result.stdout);
+                if (output !== null && output.length > 0) isCorrect = compareOutput(output, result.stdout);
                 else isCorrect = true;
 
                 // Make sure that we know stderr and stdout are truncated if they are

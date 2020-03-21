@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import EventBus from './vscodeEventBus';
+import toErrorBoundedElement from './toErrorBoundedElement';
 import './scss/options.scss';
 
 class OptionsDisplay extends React.Component {
@@ -63,4 +64,5 @@ class OptionsDisplay extends React.Component {
 }
 
 let App = document.getElementById('app');
-ReactDOM.render(<OptionsDisplay/>, App);
+const ErrorBoundedDisplay = toErrorBoundedElement(OptionsDisplay);
+ReactDOM.render(<ErrorBoundedDisplay />, App);

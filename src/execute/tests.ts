@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { readWorkspaceFile, writeWorkspaceFile, errorIfUndefined, workspaceFilePath, undefinedIfEmpty, showFile } from '../extUtils';
+import { readWorkspaceFile, writeWorkspaceFile, errorIfUndefined, workspaceFilePath, nullIfEmpty, showFile } from '../extUtils';
 
 export interface Test {
     input: string;
-    output: string | undefined;
+    output: string | null;
 }
 
 // tslint:disable: curly
@@ -49,20 +49,25 @@ export class TestManager {
         this.get(key).splice(index, count);
         for (let i = index; i < index + count; i++) {
             for (const fileType of [false, true]) {
+                fs.unlinkSync(this.caseFilePath(key, i, fileType));
                 if (fs.existsSync(this.caseFilePath(key, i + count, fileType)))
                     fs.renameSync(this.caseFilePath(key, i + count, fileType), this.caseFilePath(key, i, fileType));
-                fs.unlinkSync(this.caseFilePath(key, i, fileType));
             }
         }
     }
     insertCases(key: string, index: number, count: number = 1): void { // Note that indexes are 0-indexed
-        this.get(key).splice(index, 0, ...new Array(count));
-        for (let i = index; i < index + count; i++) {
-            for (const fileType of [false, true]) {
+        this.get(key).splice(index, 0, ...new Array(count).fill(false));
+
+        // Shift (rename) cases at index>=index
+        for (let i = this.get(key).length; i >= index; i--) {
+            for (const fileType of [false, true])
                 if (fs.existsSync(this.caseFilePath(key, i, fileType)))
                     fs.renameSync(this.caseFilePath(key, i, fileType), this.caseFilePath(key, i + count, fileType));
+        }
+        // Create new test case files
+        for (let i = index; i < index + count; i++) {
+            for (const fileType of [false, true])
                 fs.closeSync(fs.openSync(this.caseFilePath(key, i, fileType), 'w'));
-            }
         }
     }
     pushCase(key: string): void { this.insertCases(key, this.caseCount(key)); }
@@ -75,7 +80,7 @@ export class TestManager {
                 const index = obj[1];
                 return {
                     input: this.getInput(key, index),
-                    output: undefinedIfEmpty(this.getOutput(key, index))
+                    output: nullIfEmpty(this.getOutput(key, index))
                 };
         });
     }

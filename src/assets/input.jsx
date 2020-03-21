@@ -1,7 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import EventBus from './vscodeEventBus';
-import CommandHandler from '../commandHandler';
+import toErrorBoundedElement from './toErrorBoundedElement';
+import { CommandHandler } from '../commandHandler';
 import './scss/input.scss';
 import { isUndefined } from 'util';
 
@@ -28,24 +29,40 @@ class InputDisplay extends React.Component {
         // Initialize other event handlers
         EventBus.on('caseCommand', resp => this.setState({ lastCommandOutput: resp }));
         EventBus.on('updateAll', evt => {
-            this.setState({ cases: evt.cases }, () => {
-                let fixTestInput = () => {
-                    if (this.state.curTestInput !== null) { // assume that this.state.curTestOutput is also not null and that the curTestSet has not changed
-                        const testCase = evt.cases[this.state.curTestSet][this.state.curTestIndex];
-                        this.setState({ curTestInput: testCase.input, curTestOutput: testCase.output });
-                    }
-                };
+            if (evt.curTestIndex === null) {
+                Object.assign(evt, {
+                    curTestInput: null,
+                    curTestOutput: null
+                });
+            }
+            else if (evt.curTestIndex !== undefined && evt.curTestIndex !== null) {
+                Object.assign(evt, {
+                    curTestInput: evt.cases[evt.curTestSet][evt.curTestIndex].input,
+                    curTestOutput: evt.cases[evt.curTestSet][evt.curTestIndex].output
+                });
+            }
 
-                if (this.state.curTestSet !== evt.curTestSet)
-                    this.selectTestSet(evt.curTestSet, fixTestInput);
-                else fixTestInput();
-            });
+            this.setState(evt);
         });
         EventBus.on('updateStructure', _ => { throw new Error('Not implemented yet (defunct)'); });
         EventBus.on('updateCase', caseUpdate => {
             const casesObj = this.state.cases;
             casesObj[caseUpdate.key][caseUpdate.index][caseUpdate.isInput ? 'input' : 'output'] = caseUpdate.newData;
         });
+
+        // Initialize command handler types
+        const testSetArg = {
+            isValid: (_, __, key) => this.state.cases[key] !== undefined ? null : `Test set '${key}' does not exist`,
+            parse: (_, __, key) => key
+        };
+        const testIndexArg = { // sometimes, you want to be able to input indexes "past the end" (i.e. when using insertCase to push a case at the end)
+            isValid: (key, _, index) => {
+                if (isNaN(parseInt(index))) return `${index} is not a number`;
+                const indexNum = parseInt(index);
+                return 0 <= indexNum && indexNum < this.state.cases[key].length ? null : `Test number ${indexNum} out of range`;
+            },
+            parse: (_, __, arg) => parseInt(arg)
+        };
 
         // Initialize command handler
         this.commandHandler = new CommandHandler(
@@ -54,18 +71,15 @@ class InputDisplay extends React.Component {
         )
         this.commandHandler.registerCommand('listcommands', () => {
             return 'Commands list: listcommands, select, selectcase, open, insert, insertcase, delete, deletecase, swap, swapcase, pushcase, rename, enable, disable'
-        }, ['help']);
-        this.commandHandler.registerCommand('select', key => {
-            if (isUndefined(this.state.cases[key])) return `Unknown test set '${key}'`;
+        }, [], false, false, ['help']);
+        this.commandHandler.registerCommand('select', (_, __, key) => {
             this.selectTestSet(key);
             return null;
-        }, ['sel', 's']);
-        this.commandHandler.registerCommand('selectcase', index => {
-            if (isNaN(parseInt(index))) return `${index} is not an integer`; index = parseInt(index);
-            if (this.state.cases[this.state.curTestSet].length <= index || index < 0) return `Index ${index} out of bounds`;
+        }, [testSetArg], false, false, ['sel', 's']);
+        this.commandHandler.registerCommand('selectcase', (_, __, index) => {
             this.selectTestCase(index);
             return null;
-        }, ['selcase', 'selc', 'sc']);
+        }, [testIndexArg], true, false, ['selcase', 'selc', 'sc']);
 
         // Add key listener
         this._keyListener = function(e) {
@@ -87,6 +101,7 @@ class InputDisplay extends React.Component {
     }
 
     componentWillUnmount() {
+        // Unregister key listener
         document.removeEventListener('keydown', this._keyListener);
     }
 
@@ -95,7 +110,7 @@ class InputDisplay extends React.Component {
      */
     dispatchCommand() {
         if (this.state.curCommand === null || this.state.curCommand.length === 0) return; // Empty command
-        this.commandHandler.dispatchCommand(this.state.curCommand);
+        this.commandHandler.dispatchCommand(this.state.curCommand.trim(), this.state.curTestSet, this.state.curTestIndex); // Trim curCommand so end whitespace isnt counted as arguments
         this.setState({ curCommand: '' });
     }
 
@@ -105,18 +120,23 @@ class InputDisplay extends React.Component {
      * @param {function} callback Callback for the setState call of this function
      */
     selectTestSet(testSetName, callback) {
+        if (this.state.curTestIndex !== null) this.saveCurTestCase();
         this.setState({ curTestSet: testSetName }, () => {
-            this.selectTestCase(this.state.cases[testSetName].length > 0 ? 0 : null, callback);
+            let newIndex = this.state.curTestIndex || 0;
+            if (newIndex >= this.state.cases[testSetName].length) newIndex = null;
+            console.log('newindex: ' + newIndex);
+            this.selectTestCase(newIndex, callback, false);
             EventBus.post('selectTestSet', testSetName);
         });
     }
 
     /**
      * Selects a test case (for viewing/editing)
-     * @param {string} index The index of the test case to select
+     * @param {string} index The index of the test case to select. Null can also be specified to deselect the currently selected test case.
      * @param {function} callback Callback for the setState call of this function
+     * @param {boolean} saveCases Whether to save the cases before switching indices, defaults to true.  Set this to false if saving the current test case would constitute a duplicate action
      */
-    selectTestCase(index, callback) {
+    selectTestCase(index, callback, saveCases=true) {
         if (index === null) {
             this.setState({
                 curTestIndex: null,
@@ -125,6 +145,7 @@ class InputDisplay extends React.Component {
             }, callback);
         }
         else {
+            if (saveCases) this.saveCurTestCase(); // Only save if a test case is actually selected
             this.setState({
                 curTestIndex: index,
                 curTestInput: this.state.cases[this.state.curTestSet][index].input,
@@ -138,6 +159,7 @@ class InputDisplay extends React.Component {
      */
     saveCurTestCase() {
         const key = this.state.curTestSet, index = this.state.curTestIndex;
+        if (key === null || index === null) return; // Can't save null test set!
         EventBus.post('updateCase', { key, index, isInput: true, newData: this.state.curTestInput });
         EventBus.post('updateCase', { key, index, isInput: false, newData: this.state.curTestOutput });
     }
@@ -228,11 +250,12 @@ class InputDisplay extends React.Component {
 
                                 <div>
                                     <h3>Output</h3>
-                                    <textarea rows="20" value={this.state.curTestOutput} onChange={e => this.setState({ curTestOutput: e.target.value})}></textarea>
+                                    <textarea rows="20" placeholder="[ no expected output ]" 
+                                        value={this.state.curTestOutput} onChange={e => this.setState({ curTestOutput: e.target.value})}></textarea>
                                 </div>
                             </div>
 
-                            <button id="save-button" onClick={this.saveCurTestCase}>Save (Ctrl+S)</button>
+                            <button id="save-button" onClick={this.saveCurTestCase.bind(this)}>Save (Ctrl+S)</button>
                         </React.Fragment>
                     ) : <p class="none-selected">No test case selected...</p> }
                 </div>
@@ -242,4 +265,5 @@ class InputDisplay extends React.Component {
 }
 
 let App = document.getElementById('app');
-ReactDOM.render(<InputDisplay />, App);
+const ErrorBoundedDisplay = toErrorBoundedElement(InputDisplay);
+ReactDOM.render(<ErrorBoundedDisplay />, App);

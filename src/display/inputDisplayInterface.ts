@@ -2,9 +2,10 @@ import { DisplayInterface } from './displayInterface';
 import { testManager, optionManager } from '../extension';
 import * as fs from 'fs';
 import * as vscode from 'vscode';
-import CommandHandler from '../commandHandler';
+import { CommandHandler, choiceArg, ArgType, intArg } from '../commandHandler';
 import { getTempFile } from '../extUtils';
 
+// tslint:disable: curly
 export enum EventType {
     OpenCaseFile = 'openCaseFile', // Inbound: Opens a case file.  Parameters: key, index, isInput
     CaseCommand = 'caseCommand', // Inbound: A command was run.  Parameters: key (current test set), index (current test case), command (command) | Outbound: Responding to a command.  Parameters: response is a string
@@ -14,7 +15,25 @@ export enum EventType {
     SelectTestSet = 'selectTestSet', // Inbound: Selects a test case (for running).  Parameters: event is a string (the case to select)
 }
 
-// tslint:disable: curly
+const testSetArg: ArgType = {
+    isValid: (_, __, key) => testManager!.exists(key) ? null : `Test set '${key}' does not exist`,
+    parse: (_, __, key) => key
+};
+const notTestSetArg: ArgType = { // Test set that doesn't exist
+    isValid: (_, __, key) => testManager!.exists(key) ? `Test set '${key}' already exists` : null,
+    parse: (_, __, key) => key
+};
+function testIndexArg(extendBy: number = 0): ArgType { // sometimes, you want to be able to input indexes "past the end" (i.e. when using insertCase to push a case at the end)
+    return { 
+        isValid: (key, _, index) => {
+            if (isNaN(parseInt(index))) return `${index} is not a number`;
+            const indexNum = parseInt(index);
+            return 0 <= indexNum && indexNum < testManager!.get(key!).length + extendBy ? null : `Test index ${indexNum} out of range`;
+        },
+        parse: (_, __, arg) => parseInt(arg)
+    };
+}
+
 export class InputDI extends DisplayInterface {
     commandHandler: CommandHandler;
 
@@ -33,7 +52,7 @@ export class InputDI extends DisplayInterface {
         this.on(EventType.UpdateAll, _ => this.updateAll());
         this.on(EventType.UpdateTestCase, evt => {
             fs.writeFileSync(testManager!.caseFilePath(evt.key, evt.index, evt.isInput), evt.newData);
-            vscode.window.showInformationMessage(`Saved case data to test set ${evt.key}, case #${evt.index}`);
+            vscode.window.showInformationMessage(`Saved data of test set ${evt.key} case #${evt.index}`);
             this.emit({
                 type: EventType.UpdateTestCase,
                 event: evt
@@ -42,72 +61,50 @@ export class InputDI extends DisplayInterface {
         this.on(EventType.SelectTestSet, evt => optionManager!.set('buildAndRun', 'curTestSet', evt));
 
         // Register commands
-        this.commandHandler.registerCommand('open', (curKey, curIdx, inOrOut) => {
-            const tm = testManager!;
-            if (!tm.exists(curKey)) return `Test set '${curKey}' does not exist`;
-            if (curIdx < 0 || curIdx > tm.caseCount(curKey)) return `Index ${curIdx} out of range`;
-            if (inOrOut !== 'in' && inOrOut !== 'out') return `Please either select in(put) or out(put), not ${inOrOut}`;
 
-            tm.openCaseFile(curKey, curIdx, inOrOut === 'in');
+        // Open command
+        this.commandHandler.registerCommand('open', (curKey, curIdx, inOrOut) => {
+            testManager!.openCaseFile(curKey!, curIdx!, inOrOut === 'in');
             return null;
-        });
+        }, [choiceArg('in', 'out')], true, true);
 
         // Insert commands
         this.commandHandler.registerCommand('insert', (_, __, key) => {
-            const tm = testManager!;
-            if (tm.exists(key)) return `Test set '${key}' already exists`;
-
-            tm.addSet(key);
-
+            testManager!.addSet(key);
             this.updateAll();
             return null;
-        }, ['ins', 'i']);
-        this.commandHandler.registerCommand('insertcase', (curKey, _, index, count = 1) => {
-            const tm = testManager!;
-            if (isNaN(parseInt(index))) return `${index} is not a number`; index = parseInt(index);
-            if (isNaN(parseInt(count))) return `${count} is not a number`; count = parseInt(count);
-            if (index < 0 || index > tm.caseCount(curKey)) return `Index ${index} out of range`;
-
-            tm.insertCases(curKey, index, count);
-
-            this.updateAll();
+        }, [notTestSetArg], false, false, ['ins', 'i']);
+        this.commandHandler.registerCommand('insertcase', (curKey, curIndex, index, count) => {
+            testManager!.insertCases(curKey!, index, count);
+            this.updateAll(curKey, curIndex);
             return null;
-        }, ['inscase', 'insc', 'ic']);
+        }, [testIndexArg(1), [intArg, 1]], true, false, ['inscase', 'insc', 'ic']);
 
         // Delete commands
-        this.commandHandler.registerCommand('delete', (_, __, key) => {
-            const tm = testManager!;
-            if (key === 'default') return 'Cannot delete \'default\' test set';
-            if (!tm.exists(key)) return `Test set '${key}' does not exist`;
-            if (optionManager!.get('buildAndRun', 'curTestSet') === key) return `Cannot delete currently selected test set ${key}`;
+        this.commandHandler.registerCommand('delete', (curKey, _, key) => {
+            if (key === 'default') return 'Cannot delete default test set';
+            testManager!.removeSet(key);
 
-            tm.removeSet(key);
-            this.updateAll();
-            
+            if (curKey === key) this.updateAll('default', null); // If current test set was deleted
+            else this.updateAll();
             return null;
-        }, ['del', 'd']);
-        this.commandHandler.registerCommand('deletecase', (curKey, _, index, count = 1) => {
-            const tm = testManager!;
-            if (isNaN(parseInt(index))) return `${index} is not a number`; index = parseInt(index);
-            if (isNaN(parseInt(count))) return `${count} is not a number`; count = parseInt(count);
-            const caseCount = tm.caseCount(curKey);
-            if (index < 0 || index > caseCount) return `Index ${index} out of bounds`;
+        }, [testSetArg], false, false, ['del', 'd']);
+        this.commandHandler.registerCommand('deletecase', (curKey, curIndex, index, count) => {
+            const caseCount = testManager!.caseCount(curKey!);
             if (count > caseCount - index) return `Delete ${count} out of range`;
+            testManager!.removeCases(curKey!, index, count);
 
-            tm.removeCases(curKey, index, count);
-
-            this.updateAll();
+            if (curIndex !== null && curIndex >= caseCount - count) this.updateAll(curKey, null); // If current test case was deleted
+            else this.updateAll(curKey, curIndex);
             return null;
-        }, ['delcase', 'delc', 'dc']);
+        }, [testIndexArg(), [intArg, 1]], true, false, ['delcase', 'delc', 'dc']);
 
         // Swap commands
-        this.commandHandler.registerCommand('swap', (_, __, key1, key2) => {
-            const tm = testManager!;
-            if (!tm.exists(key1)) return `Test set '${key1}' does not exist`;
-            if (!tm.exists(key2)) return `Test set '${key2}' does not exist`;
-            
+        this.commandHandler.registerCommand('swap', (curKey, curIndex, key1, key2) => {
+            if (key1 === key2) return 'Cannot swap same test sets';
+
             // Make temp files for key1
-            const cc1 = tm.caseCount(key1), cc2 = tm.caseCount(key2);
+            const tm = testManager!, cc1 = tm.caseCount(key1), cc2 = tm.caseCount(key2);
             const tmpInput = [], tmpOutput = [];
             for (let i = 0; i < cc1; i++) {
                 const tmpPathInput = getTempFile();
@@ -132,16 +129,14 @@ export class InputDI extends DisplayInterface {
             tm.testSets.set(key1, tm.get(key2));
             tm.testSets.set(key2, tmp);
             
-            this.updateAll();
+            // Run updateAll, make sure to unselect test case if test case is now out of bounds
+            if (curKey === key1 && curIndex !== null && curIndex >= tm.get(key1).length) this.updateAll(curKey, null);
+            else this.updateAll();
             return null;
-        }, ['sw']);
-        this.commandHandler.registerCommand('swapcase', (curKey, _, index1, index2) => {
-            const tm = testManager!;
-            if (isNaN(parseInt(index1))) return `${index1} is not a number`; index1 = parseInt(index1);
-            if (isNaN(parseInt(index2))) return `${index2} is not a number`; index2 = parseInt(index2);
-            const caseCount = tm.caseCount(curKey);
-            if (index1 < 0 || index1 > caseCount) return `Index ${index1} out of bounds`;
-            if (index2 < 0 || index2 > caseCount) return `Index ${index2} out of bounds`;
+        }, [testSetArg, testSetArg], false, false, ['sw']);
+        this.commandHandler.registerCommand('swapcase', (_curKey, _, index1, index2) => {
+            if (index1 === index2) return 'Cannot swap same test cases';
+            const tm = testManager!, curKey = _curKey!;
 
             // move index1 to tmp
             const tmpInput = getTempFile();
@@ -162,27 +157,22 @@ export class InputDI extends DisplayInterface {
 
             this.updateAll();
             return null;
-        }, ['swcase', 'swc']);
+        }, [testIndexArg(), testIndexArg()], true, false, ['swcase', 'swc']);
 
         // Push
-        this.commandHandler.registerCommand('pushcase', (curKey, _, count = 1) => {
-            const tm = testManager!;
-            if (isNaN(parseInt(count))) return `${count} is not a number`; count = parseInt(count);
-
-            tm.insertCases(curKey, tm.caseCount(curKey), count);
-
+        this.commandHandler.registerCommand('pushcase', (curKey, _, count) => {
+            testManager!.insertCases(curKey!, testManager!.caseCount(curKey!), count);
             this.updateAll();
             return null;
-        }, ['pcase', 'pc']);
+        }, [[intArg, 1]], true, false, ['pcase', 'pc']);
 
         // Rename
-        this.commandHandler.registerCommand('rename', (_, __, key1, key2) => {
-            const tm = testManager!;
-            if (!tm.exists(key1)) return `Test set '${key1}' does not exist`;
-            if (tm.exists(key2)) return `Test set '${key2}' already exists`;
+        this.commandHandler.registerCommand('rename', (curKey, curIndex, key1, key2) => {
+            if (key1 === key2) return 'Cannot rename same test sets';
+            if (key1 === 'default') return 'Cannot rename default test set';
             
             // Move files
-            const cc = tm.caseCount(key1);
+            const tm = testManager!, cc = tm.caseCount(key1);
             for (let i = 0; i < cc; i++) {
                 fs.renameSync(tm.caseFilePath(key1, i, true), tm.caseFilePath(key2, i, true));
                 fs.renameSync(tm.caseFilePath(key1, i, false), tm.caseFilePath(key2, i, false));
@@ -192,33 +182,22 @@ export class InputDI extends DisplayInterface {
             tm.testSets.set(key2, tm.get(key1));
             tm.testSets.delete(key1);
             
-            this.updateAll();
+            if (curKey === key1) this.updateAll(key2, curIndex);
+            else this.updateAll();
             return null;
-        }, ['ren', 'r']);
+        }, [testSetArg, notTestSetArg], false, false, ['ren', 'r']);
 
         // Enable/disable
         this.commandHandler.registerCommand('enable', (curKey, _, index) => {
-            const tm = testManager!;
-            if (isNaN(parseInt(index))) return `${index} is not a number`; index = parseInt(index);
-            const caseCount = tm.caseCount(curKey);
-            if (index < 0 || index > caseCount) return `Index ${index} out of bounds`;
-
-            tm.enableCase(curKey, index);
-
+            testManager!.enableCase(curKey!, index);
             this.updateAll();
             return null;
-        }, ['en']);
+        }, [testIndexArg()], true, false, ['en']);
         this.commandHandler.registerCommand('disable', (curKey, _, index) => {
-            const tm = testManager!;
-            if (isNaN(parseInt(index))) return `${index} is not a number`; index = parseInt(index);
-            const caseCount = tm.caseCount(curKey);
-            if (index < 0 || index > caseCount) return `Index ${index} out of bounds`;
-
-            tm.disableCase(curKey, index);
-
+            testManager!.disableCase(curKey!, index);
             this.updateAll();
             return null;
-        }, ['dis']);
+        }, [testIndexArg()], true, false, ['dis']);
     }
 
     /**
@@ -232,9 +211,11 @@ export class InputDI extends DisplayInterface {
     }
 
     /**
-     * Updates everything.
+     * 
+     * @param changeSelectedSet Optional, fill this parameter if you wish to change the current test set
+     * @param changeSelectedIndex Optional, fill this parameter if you wish to change the current test index
      */
-    updateAll(): void {
+    updateAll(changeSelectedSet?: string | null, changeSelectedIndex?: number | null): void {
         let cases: any = {};
         for (const [key, val] of testManager!.testSets.entries())
             cases[key] = val.map((disabled, index) => {
@@ -245,11 +226,13 @@ export class InputDI extends DisplayInterface {
                     output: testManager!.getOutput(key, index)
                 };
             });
+
         this.emit({
             type: EventType.UpdateAll,
             event: {
                 cases,
-                curTestSet: optionManager!.get('buildAndRun', 'curTestSet')
+                curTestSet: changeSelectedSet,
+                curTestIndex: changeSelectedIndex
             }
         });
     }

@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import * as _ from 'lodash';
 import ReadMore from 'react-read-more-less';
 import EventBus from './vscodeEventBus';
+import toErrorBoundedElement from './toErrorBoundedElement';
 import './scss/output.scss';
 
 const STATUS_LIM = 15;
@@ -104,7 +105,7 @@ class OutputDisplay extends React.Component {
             return (
                 <div id="compileErrorDiv">
                     <h2>Compile/Data Errors</h2>
-                    {this.state.compileErrors.map((error, ind) => <p key={ind}>{error}</p>)}
+                    {this.state.compileErrors.map((error, ind) => <pre key={ind}>{error}</pre>)}
                 </div>
             )
         }
@@ -247,4 +248,5 @@ class OutputDisplay extends React.Component {
 }
  
 let App = document.getElementById('app');
-ReactDOM.render(<OutputDisplay />, App);
+const ErrorBoundedDisplay = toErrorBoundedElement(OutputDisplay);
+ReactDOM.render(<ErrorBoundedDisplay />, App);

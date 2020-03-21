@@ -18,6 +18,14 @@ export function undefinedIfEmpty(string: string): string | undefined {
 }
 
 /**
+ * Null if the string is empty, otherwise the string itself.  This is almost identical to undefinedIfEmpty
+ * @param string The string to transform
+ */
+export function nullIfEmpty(string: string): string | null {
+    return string.length > 0 ? string : null;
+}
+
+/**
  * Checks if a value is undefined and then throws an error if it is.
  * @param value The value to check
  * @param message The error message to show
