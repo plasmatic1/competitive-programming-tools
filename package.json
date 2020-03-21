@@ -72,7 +72,8 @@
 		"parcel:build": "parcel build -d out/assets src/assets/entrypoint/input.html src/assets/entrypoint/output.html src/assets/entrypoint/options.html --public-url \"vscodeRoot\" --no-cache",
 		"parcel:watch": "parcel watch -d out/assets src/assets/entrypoint/input.html src/assets/entrypoint/output.html src/assets/entrypoint/options.html --public-url \"vscodeRoot\" --no-hmr",
 		"parcel:reactTest": "parcel -d testReact src/assets/entrypoint/input.html src/assets/entrypoint/output.html src/assets/entrypoint/options.html",
-		"compile": "tsc -p ./ && npm run parcel:build",
+		"copyFiles": "node os-specific-copy.js",
+		"compile": "tsc -p ./ && npm run copyFiles && npm run parcel:build",
 		"watch": "tsc -watch -p ./ && npm run parcel:watch",
 		"postinstall": "node ./node_modules/vscode/bin/install",
 		"test": "npm run compile && node ./node_modules/vscode/bin/test"

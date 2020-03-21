@@ -3,7 +3,6 @@ const os = require('os');
 const exec = require('child_process').exec;
 
 const PATHS = [
-    ['src\\execute\\display.html', 'out\\execute\\display.html'],
     ['src\\template\\logger.html', 'out\\template\\logger.html']
 ]
 
