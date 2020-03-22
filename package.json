@@ -1,9 +1,9 @@
 {
 	"name": "cp-tools",
-	"displayName": "CP-Tools",
-	"description": "Some stuff to help with CP",
+	"displayName": "Competitive Programming Tools",
+	"description": "See https://github.com/plasmatic1/cp-tools for more info!",
 	"version": "2.0.0",
-	"publisher": "plasmatic1",
+	"publisher": "plasmatic",
 	"engines": {
 		"vscode": "^1.41.0"
 	},

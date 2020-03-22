@@ -35,7 +35,7 @@ export function activate(context: vscode.ExtensionContext) {
 	// Setting and Initializing Singletons
 	extensionContext = context;
 	optionManager = new OptionManager(extensionContext);
-	testManager = new TestManager(); testManager.readFromConfig();
+	testManager = new TestManager();
 
 	outputDI = new OutputDI(context);
 	inputDI = new InputDI(context);
@@ -70,5 +70,4 @@ export function activate(context: vscode.ExtensionContext) {
 
 // cleanup
 export function deactivate() {
-	testManager!.writeToConfig();
 }

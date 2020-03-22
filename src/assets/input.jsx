@@ -77,7 +77,7 @@ class InputDisplay extends React.Component {
             return null;
         }, [testSetArg], false, false, ['sel', 's']);
         this.commandHandler.registerCommand('selectcase', (_, __, index) => {
-            this.selectTestCase(index);
+            this.saveAndSelectTestCase(index);
             return null;
         }, [testIndexArg], true, false, ['selcase', 'selc', 'sc']);
 
@@ -120,11 +120,9 @@ class InputDisplay extends React.Component {
      * @param {function} callback Callback for the setState call of this function
      */
     selectTestSet(testSetName, callback) {
-        if (this.state.curTestIndex !== null) this.saveCurTestCase();
         this.setState({ curTestSet: testSetName }, () => {
             let newIndex = this.state.curTestIndex || 0;
             if (newIndex >= this.state.cases[testSetName].length) newIndex = null;
-            console.log('newindex: ' + newIndex);
             this.selectTestCase(newIndex, callback, false);
             EventBus.post('selectTestSet', testSetName);
         });
@@ -136,7 +134,7 @@ class InputDisplay extends React.Component {
      * @param {function} callback Callback for the setState call of this function
      * @param {boolean} saveCases Whether to save the cases before switching indices, defaults to true.  Set this to false if saving the current test case would constitute a duplicate action
      */
-    selectTestCase(index, callback, saveCases=true) {
+    selectTestCase(index, callback) {
         if (index === null) {
             this.setState({
                 curTestIndex: null,
@@ -145,7 +143,6 @@ class InputDisplay extends React.Component {
             }, callback);
         }
         else {
-            if (saveCases) this.saveCurTestCase(); // Only save if a test case is actually selected
             this.setState({
                 curTestIndex: index,
                 curTestInput: this.state.cases[this.state.curTestSet][index].input,
@@ -162,6 +159,15 @@ class InputDisplay extends React.Component {
         if (key === null || index === null) return; // Can't save null test set!
         EventBus.post('updateCase', { key, index, isInput: true, newData: this.state.curTestInput });
         EventBus.post('updateCase', { key, index, isInput: false, newData: this.state.curTestOutput });
+    }
+
+    /**
+     * Saves the data of the current edited case, and selects a test case
+     * @param {number} index The index of case to select
+     */
+    saveAndSelectTestCase(index) {
+        this.saveCurTestCase();
+        this.selectTestCase(index);
     }
 
     render() {
@@ -219,7 +225,7 @@ class InputDisplay extends React.Component {
                         <ul>
                             { Object.entries(this.state.cases).map(([testSetName, testSet]) => 
                                 <li key={testSetName} class={this.state.curTestSet === testSetName ? 'selected-case' : null}>
-                                    <a onClick={() => this.selectTestSet(testSetName)}>[ {testSetName}, {testSet.length} cases ]</a>
+                                    <a onClick={this.selectTestSet.bind(this, testSetName)}>[ {testSetName}, {testSet.length} cases ]</a>
                                 </li>
                             )}
                         </ul>
@@ -232,7 +238,7 @@ class InputDisplay extends React.Component {
                         <span>Test Cases: </span>
                         { this.state.cases[this.state.curTestSet].map((_, index) =>
                             <a key={index} class={this.state.curTestIndex === index ? 'selected-case' : null}
-                                onClick={() => this.selectTestCase(index)}>[ {index} ]</a>
+                                onClick={this.saveAndSelectTestCase.bind(this, index)}>[ {index} ]</a>
                         )}
                     </div>
                 }

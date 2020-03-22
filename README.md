@@ -124,8 +124,6 @@ Any issue marked with **FIX** is a bug
 - Different checkers for comparing output and input
     - Support for custom checkers written in JS (use modules.export maybe?)
         - Also add some sample library checkers to make writing checkers easier
-- Move case info storage to local workspace storage
-    - Better persistence
 - Hacking panel (aka Stress testing/Edges cases)
 - `copy` command for input display
 - Input/Output preview for test data and execution panels
@@ -142,3 +140,4 @@ Any issue marked with **FIX** is a bug
 - `copy` command for input display
 - Adding a "live" timer for the execution time of a judging case (not super pertinent as final time is what really matters)
     - Small QoL update
+	

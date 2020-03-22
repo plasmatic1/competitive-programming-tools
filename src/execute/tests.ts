@@ -1,22 +1,31 @@
-import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { readWorkspaceFile, writeWorkspaceFile, errorIfUndefined, workspaceFilePath, nullIfEmpty, showFile } from '../extUtils';
+import { readWorkspaceFile, errorIfUndefined, workspaceFilePath, nullIfEmpty, showFile, writeWorkspaceFile } from '../extUtils';
+import { DEFAULT_CHECKER } from './checker';
 
 export interface Test {
     input: string;
     output: string | null;
 }
 
+export class TestSetInfo {
+    disabled: boolean[] = [];
+    checker: string = DEFAULT_CHECKER;
+
+    get length(): number {
+        return this.disabled.length;
+    }
+}
+
 // tslint:disable: curly
 export class TestManager {
-    public testSets: Map<string, boolean[]>;
+    public testSets: Map<string, TestSetInfo>;
 
     constructor() {
         this.testSets = new Map();
     }
 
     readFromConfig(): void {
-        const data = JSON.parse(readWorkspaceFile('testSets.json', '{ "default": [false] }'));
+        const data = JSON.parse(readWorkspaceFile('testSets.json', `{ "default": { "disabled": [false], "checker": ${DEFAULT_CHECKER} }`));
         for (const key of Object.keys(data))
             this.testSets.set(key, data[key]);
     }
@@ -29,8 +38,8 @@ export class TestManager {
     }
 
     // Utility/Internal Functions (Getters) (In all functions, key means test set name)
-    get(key: string): boolean[] { return errorIfUndefined(this.testSets.get(key), `Invalid set name ${key}!`); }
-    caseCount(key: string): number { return this.get(key).length; }
+    get(key: string): TestSetInfo { return errorIfUndefined(this.testSets.get(key), `Invalid set name ${key}!`); }
+    caseCount(key: string): number { return this.get(key).disabled.length; }
 
     // Input/output data interaction 
     private _caseFilePath(key: string, index: number, isInput: boolean) { return `tests_${key}_${index}_${isInput ? 'in' : 'out'}`; } // Assumed output if "isInput" is false
@@ -43,10 +52,10 @@ export class TestManager {
 
     // Utility (In all functions, key means test set name)
     exists(key: string): boolean { return this.testSets.has(key); }
-    addSet(key: string): void { this.testSets.set(key, []); }
+    addSet(key: string): void { this.testSets.set(key, new TestSetInfo()); }
     removeSet(key: string): void { this.removeCases(key, 0, this.caseCount(key)); this.testSets.delete(key); }
     removeCases(key: string, index: number, count: number = 1) { // Note that indexes are 0-indexed
-        this.get(key).splice(index, count);
+        this.get(key).disabled.splice(index, count);
         for (let i = index; i < index + count; i++) {
             for (const fileType of [false, true]) {
                 fs.unlinkSync(this.caseFilePath(key, i, fileType));
@@ -56,10 +65,10 @@ export class TestManager {
         }
     }
     insertCases(key: string, index: number, count: number = 1): void { // Note that indexes are 0-indexed
-        this.get(key).splice(index, 0, ...new Array(count).fill(false));
+        this.get(key).disabled.splice(index, 0, ...new Array(count).fill(false));
 
         // Shift (rename) cases at index>=index
-        for (let i = this.get(key).length; i >= index; i--) {
+        for (let i = this.get(key).disabled.length; i >= index; i--) {
             for (const fileType of [false, true])
                 if (fs.existsSync(this.caseFilePath(key, i, fileType)))
                     fs.renameSync(this.caseFilePath(key, i, fileType), this.caseFilePath(key, i + count, fileType));
@@ -71,10 +80,10 @@ export class TestManager {
         }
     }
     pushCase(key: string): void { this.insertCases(key, this.caseCount(key)); }
-    disableCase(key: string, index: number): void { this.get(key)[index] = true; }
-    enableCase(key: string, index: number): void { this.get(key)[index] = false; }
+    disableCase(key: string, index: number): void { this.get(key).disabled[index] = true; }
+    enableCase(key: string, index: number): void { this.get(key).disabled[index] = false; }
     getCases(key: string): Test[] { // only returns enabled cases
-        return this.get(key).map((disabled, index) => <[boolean, number]>[disabled, index])
+        return this.get(key).disabled.map((disabled, index) => <[boolean, number]>[disabled, index])
             .filter(obj => !obj[0])
             .map(obj => {
                 const index = obj[1];

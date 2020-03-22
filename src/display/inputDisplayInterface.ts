@@ -151,9 +151,9 @@ export class InputDI extends DisplayInterface {
             fs.renameSync(tmpOutput, tm.caseFilePath(curKey, index2, false));
 
             // Swap enabled/disabled
-            const tmp = tm.get(curKey)[index1];
-            tm.get(curKey)[index1] = tm.get(curKey)[index2];
-            tm.get(curKey)[index1] = tmp;
+            const tmp = tm.get(curKey).disabled[index1];
+            tm.get(curKey).disabled[index1] = tm.get(curKey).disabled[index2];
+            tm.get(curKey).disabled[index1] = tmp;
 
             this.updateAll();
             return null;
@@ -217,8 +217,9 @@ export class InputDI extends DisplayInterface {
      */
     updateAll(changeSelectedSet?: string | null, changeSelectedIndex?: number | null): void {
         let cases: any = {};
+        console.log(testManager!.testSets);
         for (const [key, val] of testManager!.testSets.entries())
-            cases[key] = val.map((disabled, index) => {
+            cases[key] = val.disabled.map((disabled, index) => {
                 return {
                     index,
                     disabled,
