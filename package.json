@@ -2,7 +2,7 @@
 	"name": "cp-tools",
 	"displayName": "Competitive Programming Tools",
 	"description": "See https://github.com/plasmatic1/cp-tools for more info!",
-	"version": "2.0.0",
+	"version": "2.1.0",
 	"publisher": "plasmatic",
 	"engines": {
 		"vscode": "^1.41.0"
