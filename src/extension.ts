@@ -12,6 +12,7 @@ import { InputDI } from './display/inputDisplayInterface';
 import { OptionsDI } from './display/optionsDisplayInterface';
 import { rootPath } from './extUtils';
 
+// tslint:disable: curly
 // ---------------------------------------------------------------------------
 // Globals to export
 // ---------------------------------------------------------------------------
@@ -26,6 +27,9 @@ export let optionsDI: OptionsDI | undefined = undefined;
 
 export let programExecutionManager: ProgramExecutionManager | undefined = undefined;
 
+// Test manager refresh loop
+let testManagerRefreshTimer: undefined | NodeJS.Timer = undefined;
+
 // ---------------------------------------------------------------------------
 // Activation Registration n stuff
 // ---------------------------------------------------------------------------
@@ -35,7 +39,7 @@ export function activate(context: vscode.ExtensionContext) {
 	// Setting and Initializing Singletons
 	extensionContext = context;
 	optionManager = new OptionManager(extensionContext);
-	testManager = new TestManager();
+	testManager = new TestManager(); testManager.readFromConfig();
 
 	outputDI = new OutputDI(context);
 	inputDI = new InputDI(context);
@@ -65,9 +69,15 @@ export function activate(context: vscode.ExtensionContext) {
 	executeRegister.registerViewsAndCommands(context);
 	templatesRegister.registerViewsAndCommands(context);
 
+	// Test manager refresh loop
+	testManagerRefreshTimer = setInterval(() => testManager!.writeToConfig(), optionManager!.get('misc', 'testSetBackupTime'));
+
 	console.log('Initialized extension "cp-tools"');
 }
 
 // cleanup
 export function deactivate() {
+	// Test set manager
+	if (testManagerRefreshTimer !== undefined) clearInterval(testManagerRefreshTimer);
+	testManager?.writeToConfig();
 }

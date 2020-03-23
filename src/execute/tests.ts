@@ -1,19 +1,20 @@
 import * as fs from 'fs';
 import { readWorkspaceFile, errorIfUndefined, workspaceFilePath, nullIfEmpty, showFile, writeWorkspaceFile } from '../extUtils';
-import { DEFAULT_CHECKER } from './checker';
 
 export interface Test {
+    index: number;
     input: string;
     output: string | null;
 }
 
+export interface TestSet {
+    tests: Test[];
+    checker: string | null;
+}
+
 export class TestSetInfo {
     disabled: boolean[] = [];
-    checker: string = DEFAULT_CHECKER;
-
-    get length(): number {
-        return this.disabled.length;
-    }
+    checker: string | null = null;
 }
 
 // tslint:disable: curly
@@ -25,7 +26,7 @@ export class TestManager {
     }
 
     readFromConfig(): void {
-        const data = JSON.parse(readWorkspaceFile('testSets.json', `{ "default": { "disabled": [false], "checker": ${DEFAULT_CHECKER} }`));
+        const data = JSON.parse(readWorkspaceFile('testSets.json', `{ "default": { "disabled": [false], "checker": null }}`));
         for (const key of Object.keys(data))
             this.testSets.set(key, data[key]);
     }
@@ -82,16 +83,20 @@ export class TestManager {
     pushCase(key: string): void { this.insertCases(key, this.caseCount(key)); }
     disableCase(key: string, index: number): void { this.get(key).disabled[index] = true; }
     enableCase(key: string, index: number): void { this.get(key).disabled[index] = false; }
-    getCases(key: string): Test[] { // only returns enabled cases
-        return this.get(key).disabled.map((disabled, index) => <[boolean, number]>[disabled, index])
-            .filter(obj => !obj[0])
-            .map(obj => {
-                const index = obj[1];
-                return {
-                    input: this.getInput(key, index),
-                    output: nullIfEmpty(this.getOutput(key, index))
-                };
-        });
+    getCases(key: string): TestSet { // only returns enabled cases
+        return {
+            checker: this.get(key).checker,
+            tests: this.get(key).disabled.map((disabled, index) => <[boolean, number]>[disabled, index])
+                .filter(obj => !obj[0])
+                .map(obj => {
+                    const index = obj[1];
+                    return {
+                        index,
+                        input: this.getInput(key, index),
+                        output: nullIfEmpty(this.getOutput(key, index))
+                    };
+            })
+        };
     }
     getCaseStructure(): any {
         let res: any = {};
@@ -99,4 +104,8 @@ export class TestManager {
             res[key] = val;
         return res;
     }
+
+    // Get/set checker
+    getChecker(key: string): string | null { return this.get(key).checker; }
+    setChecker(key: string, checker: string | null): void { this.get(key).checker = checker; }
 }

@@ -16,3 +16,5 @@ elif type == 5:
     assert 0 # RTE
 elif type == 6:
     exit(120324123) # Try to fake segfault
+elif type == 7:
+    print('whatever tbh this is to test maybe')

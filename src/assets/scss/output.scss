@@ -37,11 +37,19 @@
     }
 }
 
+#verdicts {
+    margin-bottom: 0.3em;
+}
+
 // Verdict-related stuff
 $base-color: mix(white, black, 80%);
 
 .verdict-correct {
     color: mix($base-color, lime, 75%);
+}
+
+.verdict-maybe {
+    color: mix($base-color, darkcyan, 40%);
 }
 
 .verdict-incorrect {

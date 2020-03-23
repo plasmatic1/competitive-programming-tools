@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { CommandHandler, choiceArg, ArgType, intArg } from '../commandHandler';
 import { getTempFile } from '../extUtils';
+import { chooseChecker } from '../execute/checker';
 
 // tslint:disable: curly
 export enum EventType {
@@ -13,6 +14,8 @@ export enum EventType {
     UpdateAll = 'updateAll', // Inbound: Request for everything update. | Outbound: Everything update.  Parameters: { cases: { key: Test[] }, curTestSet: string }
     UpdateTestCase = 'updateCase', // Inbound: Updates a test case.  Parameters: key, index, isInput, newData
     SelectTestSet = 'selectTestSet', // Inbound: Selects a test case (for running).  Parameters: event is a string (the case to select)
+    SetChecker = 'setChecker', // Inbound: Sets a checker.  Parameters: Event is a string (testSet to set)
+    ResetChecker = 'resetChecker' // Inbound: Resets the checker of a test set.  Parameters: Event is a string (testSet to set)
 }
 
 const testSetArg: ArgType = {
@@ -28,7 +31,7 @@ function testIndexArg(extendBy: number = 0): ArgType { // sometimes, you want to
         isValid: (key, _, index) => {
             if (isNaN(parseInt(index))) return `${index} is not a number`;
             const indexNum = parseInt(index);
-            return 0 <= indexNum && indexNum < testManager!.get(key!).length + extendBy ? null : `Test index ${indexNum} out of range`;
+            return 0 <= indexNum && indexNum < testManager!.get(key!).disabled.length + extendBy ? null : `Test index ${indexNum} out of range`;
         },
         parse: (_, __, arg) => parseInt(arg)
     };
@@ -47,6 +50,16 @@ export class InputDI extends DisplayInterface {
 
         // Handle all case events
         this.on(EventType.OpenCaseFile, evt => testManager!.openCaseFile(evt.key, evt.index, evt.isInput));
+        this.on(EventType.SetChecker, async (evt) => {
+            let checker = await chooseChecker();
+            if (checker !== undefined)
+                testManager!.setChecker(evt, checker);
+            this.updateAll();
+        });
+        this.on(EventType.ResetChecker, evt => {
+            testManager!.setChecker(evt, null);
+            this.updateAll();
+        });
         this.on(EventType.CaseCommand, evt => this.commandHandler.dispatchCommand(evt.command, evt.key, evt.index));
         this.on(EventType.UpdateStructure, _ => this.updateStructure());
         this.on(EventType.UpdateAll, _ => this.updateAll());
@@ -130,7 +143,7 @@ export class InputDI extends DisplayInterface {
             tm.testSets.set(key2, tmp);
             
             // Run updateAll, make sure to unselect test case if test case is now out of bounds
-            if (curKey === key1 && curIndex !== null && curIndex >= tm.get(key1).length) this.updateAll(curKey, null);
+            if (curKey === key1 && curIndex !== null && curIndex >= tm.get(key1).disabled.length) this.updateAll(curKey, null);
             else this.updateAll();
             return null;
         }, [testSetArg, testSetArg], false, false, ['sw']);
@@ -216,22 +229,24 @@ export class InputDI extends DisplayInterface {
      * @param changeSelectedIndex Optional, fill this parameter if you wish to change the current test index
      */
     updateAll(changeSelectedSet?: string | null, changeSelectedIndex?: number | null): void {
-        let cases: any = {};
-        console.log(testManager!.testSets);
+        let testSets: any = {};
         for (const [key, val] of testManager!.testSets.entries())
-            cases[key] = val.disabled.map((disabled, index) => {
-                return {
-                    index,
-                    disabled,
-                    input: testManager!.getInput(key, index),
-                    output: testManager!.getOutput(key, index)
-                };
-            });
+            testSets[key] = {
+                checker: val.checker,
+                cases: val.disabled.map((disabled, index) => {
+                    return {
+                        index,
+                        disabled,
+                        input: testManager!.getInput(key, index),
+                        output: testManager!.getOutput(key, index)
+                    };
+                })
+            };
 
         this.emit({
             type: EventType.UpdateAll,
             event: {
-                cases,
+                testSets,
                 curTestSet: changeSelectedSet,
                 curTestIndex: changeSelectedIndex
             }

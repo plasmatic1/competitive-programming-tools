@@ -27,25 +27,25 @@ class OptionsDisplay extends React.Component {
         return (
             <div>
                 { Object.entries(this.state.options).map(([categoryKey, category]) => 
-                    <div key={categoryKey} class="category-div">
+                    <div key={categoryKey} className="category-div">
                         <h1>{category.label}
                             <button onClick={() => EventBus.post('resetCategory', categoryKey)}>Reset Category</button>
                         </h1>
-                        <p class="category-description">{category.description}</p>
+                        <p className="category-description">{category.description}</p>
 
                         { Object.entries(category.options).map(([optionKey, option]) =>
-                            <div key={optionKey} class="option-div">
+                            <div key={optionKey} className="option-div">
                                 <div>
                                     <div>
-                                        <span class="option-heading">{option.label}</span>
-                                        <span class="option-type">[{option.type}]</span>
-                                        <span class="option-full-key"> ({categoryKey}.{optionKey})</span>
+                                        <span className="option-heading">{option.label}</span>
+                                        <span className="option-type">[{option.type}]</span>
+                                        <span className="option-full-key"> ({categoryKey}.{optionKey})</span>
                                     </div>
 
-                                    <div class="option-description">{option.description}</div>
+                                    <div className="option-description">{option.description}</div>
 
-                                    <div class="option-value-div">
-                                        <div class="option-value">
+                                    <div className="option-value-div">
+                                        <div className="option-value">
                                             <span>{option.value}</span>
                                         </div>
                                         <a href="#" onClick={() => EventBus.post('setOption', { category: categoryKey, key: optionKey })}>Edit</a>

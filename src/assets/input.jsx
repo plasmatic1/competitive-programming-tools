@@ -23,7 +23,7 @@ class InputDisplay extends React.Component {
             curTestOutput: null,
 
             // Test cases
-            cases: {}
+            testSets: {}
         };
         
         // Initialize other event handlers
@@ -37,8 +37,8 @@ class InputDisplay extends React.Component {
             }
             else if (evt.curTestIndex !== undefined && evt.curTestIndex !== null) {
                 Object.assign(evt, {
-                    curTestInput: evt.cases[evt.curTestSet][evt.curTestIndex].input,
-                    curTestOutput: evt.cases[evt.curTestSet][evt.curTestIndex].output
+                    curTestInput: evt.testSets.cases[evt.curTestSet][evt.curTestIndex].input,
+                    curTestOutput: evt.testSets.cases[evt.curTestSet][evt.curTestIndex].output
                 });
             }
 
@@ -46,20 +46,20 @@ class InputDisplay extends React.Component {
         });
         EventBus.on('updateStructure', _ => { throw new Error('Not implemented yet (defunct)'); });
         EventBus.on('updateCase', caseUpdate => {
-            const casesObj = this.state.cases;
-            casesObj[caseUpdate.key][caseUpdate.index][caseUpdate.isInput ? 'input' : 'output'] = caseUpdate.newData;
+            const casesObj = this.state.testSets;
+            casesObj[caseUpdate.key].cases[caseUpdate.index][caseUpdate.isInput ? 'input' : 'output'] = caseUpdate.newData;
         });
 
         // Initialize command handler types
         const testSetArg = {
-            isValid: (_, __, key) => this.state.cases[key] !== undefined ? null : `Test set '${key}' does not exist`,
+            isValid: (_, __, key) => this.state.testSets[key] !== undefined ? null : `Test set '${key}' does not exist`,
             parse: (_, __, key) => key
         };
         const testIndexArg = { // sometimes, you want to be able to input indexes "past the end" (i.e. when using insertCase to push a case at the end)
             isValid: (key, _, index) => {
                 if (isNaN(parseInt(index))) return `${index} is not a number`;
                 const indexNum = parseInt(index);
-                return 0 <= indexNum && indexNum < this.state.cases[key].length ? null : `Test number ${indexNum} out of range`;
+                return 0 <= indexNum && indexNum < this.state.testSets[key].cases.length ? null : `Test number ${indexNum} out of range`;
             },
             parse: (_, __, arg) => parseInt(arg)
         };
@@ -122,7 +122,7 @@ class InputDisplay extends React.Component {
     selectTestSet(testSetName, callback) {
         this.setState({ curTestSet: testSetName }, () => {
             let newIndex = this.state.curTestIndex || 0;
-            if (newIndex >= this.state.cases[testSetName].length) newIndex = null;
+            if (newIndex >= this.state.testSets[testSetName].cases.length) newIndex = null;
             this.selectTestCase(newIndex, callback, false);
             EventBus.post('selectTestSet', testSetName);
         });
@@ -145,8 +145,8 @@ class InputDisplay extends React.Component {
         else {
             this.setState({
                 curTestIndex: index,
-                curTestInput: this.state.cases[this.state.curTestSet][index].input,
-                curTestOutput: this.state.cases[this.state.curTestSet][index].output,
+                curTestInput: this.state.testSets[this.state.curTestSet].cases[index].input,
+                curTestOutput: this.state.testSets[this.state.curTestSet].cases[index].output,
             }, callback);
         }
     }
@@ -199,7 +199,7 @@ class InputDisplay extends React.Component {
                                     <th>Edit Input</th>
                                     <th>Edit Output</th>
                                 </tr>
-                                { this.state.cases[this.state.curTestSet].map(testCase => 
+                                { this.state.testSets[this.state.curTestSet].cases.map(testCase => 
                                     <tr key={testCase.index}>
                                         <td><span className={this.state.curTestIndex === testCase.index && 'selected-case'}>
                                             {testCase.index}
@@ -216,16 +216,16 @@ class InputDisplay extends React.Component {
                                     </tr>
                                 )}
                             </table> :
-                            <p class="none-selected">No test set selected...</p>
+                            <p className="none-selected">No test set selected...</p>
                         }
                     </div>
 
                     <div id="test-set-list">
                         <h2>Test Sets</h2>
                         <ul>
-                            { Object.entries(this.state.cases).map(([testSetName, testSet]) => 
-                                <li key={testSetName} class={this.state.curTestSet === testSetName ? 'selected-case' : null}>
-                                    <a onClick={this.selectTestSet.bind(this, testSetName)}>[ {testSetName}, {testSet.length} cases ]</a>
+                            { Object.entries(this.state.testSets).map(([testSetName, testSet]) => 
+                                <li key={testSetName} className={this.state.curTestSet === testSetName ? 'selected-case' : null}>
+                                    <a onClick={this.selectTestSet.bind(this, testSetName, undefined)}>[ {testSetName}, {testSet.cases.length} cases ]</a>
                                 </li>
                             )}
                         </ul>
@@ -234,13 +234,25 @@ class InputDisplay extends React.Component {
 
                 {/* Select Test Case to Edit */}
                 { !!this.state.curTestSet &&
-                    <div class="selection">
-                        <span>Test Cases: </span>
-                        { this.state.cases[this.state.curTestSet].map((_, index) =>
-                            <a key={index} class={this.state.curTestIndex === index ? 'selected-case' : null}
-                                onClick={this.saveAndSelectTestCase.bind(this, index)}>[ {index} ]</a>
-                        )}
-                    </div>
+                    <React.Fragment>
+                        <div className="selection">
+                            <span className="selection-title">Test Cases:</span>
+                            { this.state.testSets[this.state.curTestSet].cases.map((_, index) =>
+                                <a key={index} className={this.state.curTestIndex === index ? 'selected-case' : null}
+                                    onClick={this.saveAndSelectTestCase.bind(this, index)}>[ {index} ]</a>
+                            )}
+                        </div>
+                        <div className="selection selection-small">
+                            <span className="selection-title">Test Set:</span>
+                            <span className="selection-data">{this.state.curTestSet}</span>
+                        </div>
+                        <div className="selection selection-small">
+                            <span className="selection-title">Checker:</span>
+                            <span className="selection-data">{this.state.testSets[this.state.curTestSet].checker || '[ default checker ]'}</span>
+                            <a onClick={() => EventBus.post('setChecker', this.state.curTestSet)}>Set Checker</a>
+                            <a onClick={() => EventBus.post('resetChecker', this.state.curTestSet)}>Reset Checker</a>
+                        </div>
+                    </React.Fragment>
                 }
 
                 {/* Editing test cases */}
@@ -263,7 +275,7 @@ class InputDisplay extends React.Component {
 
                             <button id="save-button" onClick={this.saveCurTestCase.bind(this)}>Save (Ctrl+S)</button>
                         </React.Fragment>
-                    ) : <p class="none-selected">No test case selected...</p> }
+                    ) : <p className="none-selected">No test case selected...</p> }
                 </div>
             </div>
         );

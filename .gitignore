@@ -4,5 +4,5 @@ node_modules
 .cache/
 .vscode-test/
 .vscode/ipch/
-src/test/samples/.vscode/
+src/test/samples/.vscode/settings.json
 *.vsix

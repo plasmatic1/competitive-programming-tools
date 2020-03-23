@@ -1,3 +1,5 @@
 {
-  "presets": ["env", "react", "minify"]
+  "presets": ["env", "react", ["minify", {
+    "builtIns": false
+  }]]
 }

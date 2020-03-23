@@ -51,6 +51,14 @@ export function popUnsafe<T>(array: T[], message: string = 'Empty Array!'): T {
 }
 
 /**
+ * Normalizes all newlines to unix style (\n)
+ * @param str The input string
+ */
+export function normalizeOutput(str: string): string {
+    return str.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+}
+
+/**
  * Opens the path given as a file and shows it in the text editor.  This is simply a shorthand
  * @param path The path of the file to show
  */

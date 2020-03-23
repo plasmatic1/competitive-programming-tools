@@ -6,6 +6,7 @@ import { popUnsafe, readWorkspaceFile, errorIfUndefined } from '../extUtils';
 import { optionManager, outputDI, testManager } from '../extension';
 import { ChildProcess } from 'child_process';
 import { EventType } from '../display/outputDisplayInterface';
+import { CheckerFunction, getCheckerFunction, check } from './checker';
 
 // tslint:disable: curly
 
@@ -29,17 +30,6 @@ function createExitStatus(code: number, signal: string): string {
     if (code > 255) extra = ' (segfault?)';
     else if (code === 3) extra = ' (assertion failed)';
     return 'Exit Code: ' + code.toString() + extra;
-}
-
-/**
- * Compares two output string, based on configuration settings.  For example, if the output comparison style is set to "token", it will compare individual tokens, and if 
- * the output comparison style is set to "exact", it will compare exact values
- * @param output1 The first output string
- * @param output2 The second output string
- */
-function compareOutput(output1: string, output2: string): boolean {
-    // TODO: implement different comparison styles
-    return output1.trim() === output2.trim();
 }
 
 /**
@@ -68,6 +58,7 @@ function getExecutor(src: string): Executor {
 export class SkippedResult {
     executionId = -1; // The execution id of this result (this is an id assigned to it based on the execution).  This is to distinguish different test cases and prevent a certain race case.
     caseId: number = -1;
+    trueCaseId: number = -1; // True case number (when including disabled cases)
     verdict: string = 'Skipped'; // Verdict
     stdin: string = ''; // Stdin data (SET THIS PROPERLY)
     stdout: string = ''; // Stdout data (can leave as default)
@@ -78,6 +69,7 @@ export class SkippedResult {
 export class Result {
     executionId = -1; // The execution id of this result (this is an id assigned to it based on the execution).  This is to distinguish different test cases and prevent a certain race case.
     caseId: number = -1; // Test case number, 0-indexed
+    trueCaseId: number = -1; // True case number (when including disabled cases)
     stdin: string = ''; // Stdin data
     stdout: string = ''; // Stdout data
     stderr: string = ''; // Stderr data
@@ -106,6 +98,7 @@ export class ProgramExecutionManager {
     private executionCounter = -1;
     private halted: boolean = true;
     private curExecutor: Executor | undefined = undefined;
+    private checker: string | undefined = undefined;
 
     // Result information
     private onCompleteCase: vscode.EventEmitter<void> = new vscode.EventEmitter();
@@ -139,10 +132,12 @@ export class ProgramExecutionManager {
      * Executes the program for a sepcific case.  Completion events are handled by the eventemitters
      * @param executor The executor
      * @param caseId The case number
+     * @param caseId The true case number of the case, when including disabled cases
      * @param input The input data
      * @param output The output data
+     * @param checker The checker to use
      */
-    executeCase(executor: Executor, caseId: number, input: string, output: string | null): Promise<Result> {
+    executeCase(executor: Executor, caseId: number, trueCaseId: number, input: string, output: string | null, checker: CheckerFunction): Promise<Result> {
         return new Promise((res, rej) => {
             const timeout = optionManager!.get('buildAndRun', 'timeout'),
                 memSampleRate = optionManager!.get('buildAndRun', 'memSample'),
@@ -155,6 +150,7 @@ export class ProgramExecutionManager {
             let truncatedStdout: boolean = false, truncatedStderr: boolean = false;
             let result: Result = new Result();
             result.caseId = caseId;
+            result.trueCaseId = trueCaseId;
             result.executionId = this.executionCounter;
             result.stdin = input;
             result.expectedStdout = output;
@@ -185,20 +181,37 @@ export class ProgramExecutionManager {
             });
             proc.on('exit', (code: number, signal: string) => {
                 clearTimeout(tleTimeout);
-                let isCorrect;
-                if (output !== null && output.length > 0) isCorrect = compareOutput(output, result.stdout);
-                else isCorrect = true;
+
+                // Checker related IE and Maybe verdicts
+                let isCorrect, internalError = false, maybe = false;
+                if (this.checker?.startsWith('custom') || (output !== null && output.length > 0)) { // If the checker is custom, expected output is not always required
+                    try {
+                        isCorrect = check(checker, result.stdin, result.stdout, output);
+                    } catch (e) { // Checker problems man
+                        internalError = true;
+                        isCorrect = false;
+                        result.verdict = 'Internal Error';
+                        result.exitStatus = `Checker Error: ${e.stack}`;
+                    }
+                }
+                else {
+                    isCorrect = true;
+                    maybe = true;
+                    result.verdict = 'Maybe';
+                }
 
                 // Make sure that we know stderr and stdout are truncated if they are
                 if (truncatedStdout) result.stdout += ' ... [clipped]';
                 if (truncatedStderr) result.stderr += ' ... [clipped]';
 
                 // set exit status
-                result.exitStatus = createExitStatus(code, signal);
-                if (code !== 0 && signal === 'SIGTERM') result.verdict = 'Timeout';
-                else if (code !== 0) result.verdict = 'Runtime Error';
-                else if (isCorrect) result.verdict = 'Correct';
-                else result.verdict = 'Incorrect';
+                if (!internalError && !maybe) {
+                    result.exitStatus = createExitStatus(code, signal);
+                    if (code !== 0 && signal === 'SIGTERM') result.verdict = 'Timeout';
+                    else if (code !== 0) result.verdict = 'Runtime Error';
+                    else if (isCorrect) result.verdict = 'Correct';
+                    else result.verdict = 'Incorrect'; // Check if IE in case the result verdict was set already.  Don't want to overwrite it
+                }
 
                 // set runtime
                 result.time = getTime() - beginTime;
@@ -233,14 +246,20 @@ export class ProgramExecutionManager {
     
     /**
      * Inits display for new cases
+     * @param sourceFile The path of the source file being compiled
+     * @param caseCount The number of cases
+     * @param checker The checker being used
+     * @param testSet The test set being used to judge
      */
-    private async initDisplay(sourceFile: string, caseCount: number) {
+    private async initDisplay(sourceFile: string, caseCount: number, checker: string, testSet: string) {
         outputDI!.emit({
             type: EventType.Init, 
             event: {
                 executionId: this.executionCounter,
                 caseCount,
-                sourceName: sourceFile.replace(/\\/g, '/').split('/').pop()
+                sourceName: sourceFile.replace(/\\/g, '/').split('/').pop(),
+                checker,
+                testSet
             }
         });
         await outputDI!.waitForInitResponse();
@@ -255,6 +274,7 @@ export class ProgramExecutionManager {
         const cases = testManager!.getCases(optionManager!.get('buildAndRun', 'curTestSet'));
 
         // Initialization of state
+        this.checker = cases.checker || optionManager!.get('buildAndRun', 'defaultChecker');
         this.halted = false;
         this.executionCounter++;
         this.curExecutor = getExecutor(src);
@@ -266,10 +286,19 @@ export class ProgramExecutionManager {
         };
 
         // Execute cases
-        await this.initDisplay(src, cases.length); 
+        await this.initDisplay(src, cases.tests.length, this.checker!, optionManager!.get('buildAndRun', 'curTestSet')); 
+
+        // Compile and whatnot
         this.compile(this.curExecutor);
+        try {
+            var checkerFun = getCheckerFunction(this.checker!);
+        } catch (e) { // error with checker
+            this.compileError(`Checker Error: ${e.stack}`, true);
+        }
+
+        // Execute cases
         let counter = -1;
-        for (const acase of cases) { 
+        for (const acase of cases.tests) { 
             counter++;
             outputDI!.emit({ type: EventType.BeginCase, event: { executionId: this.executionCounter, caseId: counter }});
 
@@ -278,11 +307,12 @@ export class ProgramExecutionManager {
                 res = new SkippedResult();
                 res.executionId = this.executionCounter;
                 res.caseId = counter;
+                res.trueCaseId = acase.index;
                 res.stdin = acase.input;
                 res.expectedStdout = acase.output;
             }
             else
-                res = await this.executeCase(this.curExecutor, counter, acase.input, acase.output);
+                res = await this.executeCase(this.curExecutor, counter, acase.index, acase.input, acase.output, checkerFun!);
 
             // Fire event handlers and whatnot
             outputDI!.emit({

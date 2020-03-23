@@ -1,7 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import * as _ from 'lodash';
-import ReadMore from 'react-read-more-less';
 import EventBus from './vscodeEventBus';
 import toErrorBoundedElement from './toErrorBoundedElement';
 import './scss/output.scss';
@@ -16,6 +15,8 @@ class OutputDisplay extends React.Component {
             executionId: -1000000000,
             curViewedCase: null, // Currently viewed case
             sourceName: 'N/A',
+            checker: 'N/A',
+            testSet: 'N/A',
             cases: [],
             compileErrors: [],
 
@@ -38,6 +39,8 @@ class OutputDisplay extends React.Component {
                 executionId: Math.max(this.state.executionId, evt.executionId),
                 curViewedCase: evt.caseCount > 0 ? 0 : null, 
                 sourceName: evt.sourceName,
+                checker: evt.checker,
+                testSet: evt.testSet,
                 compileErrors: [],
                 cases: _cases
             });
@@ -144,7 +147,7 @@ class OutputDisplay extends React.Component {
                 <React.Fragment>
                     <td>{ind}</td>
                     <td><span className={verdictClass}>{testCase.verdict}</span></td>
-                    <td><ReadMore charLimit={STATUS_LIM} readMoreText={' >>>'} readLessText={' <<<'}>{testCase.exitStatus}</ReadMore></td>
+                    <td><span style={{ whiteSpace: 'pre' }}>{testCase.exitStatus}</span></td>
                     <td>{testCase.time} ms</td>
                     <td>{testCase.memory} kb</td>
                     <td><a href="#" onClick={() => EventBus.post('view', ind)}>view</a></td>
@@ -176,13 +179,13 @@ class OutputDisplay extends React.Component {
 
                 <h2>Verdicts</h2>
 
-                <div class="selection">
+                <div className="selection">
                     <a href="#" onClick={() => EventBus.post('viewAll')}>View All</a>
                     <a href="#" onClick={() => EventBus.post('kill')}>Kill Current</a>
                     <a href="#" onClick={() => EventBus.post('killAll')}>Kill All</a>
                 </div>
 
-                <div>
+                <div id="verdicts">
                     <table>
                         <tr>
                             <th>Case #</th>
@@ -196,18 +199,27 @@ class OutputDisplay extends React.Component {
                         {
                             this.state.cases.map((testCase, ind) =>
                                 <tr key={ind}>
-                                    {this.renderCase(testCase, ind)}
+                                    {this.renderCase(testCase, testCase.trueCaseId)}
                                 </tr>
                             )
                         }
                     </table>
                 </div>
 
+                <div className="selection selection-small">
+                    <span className="selection-title">Test Set:</span>
+                    <span className="selection-data">{this.state.testSet}</span>
+                </div>
+                <div className="selection selection-small">
+                    <span className="selection-title">Checker:</span>
+                    <span className="selection-data">{this.state.checker}</span>
+                </div>
+
                 {/* Select case to view */}
                 { this.state.cases.length > 0 && 
                     <React.Fragment>
                         <h2>Data</h2>
-                        <div class="selection">
+                        <div className="selection">
                             <span>Test Cases:</span>
                             { this.state.cases.map((_, index) =>
                                 <a key={index} className={this.state.curViewedCase == index ? 'selected-case' : null}

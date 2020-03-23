@@ -98,11 +98,23 @@ table {
 // For selection menus made of links
 .selection {
     font-size: 12pt;
-    margin-bottom: 0.2em;
+    margin-bottom: 0.1em;
 
     :not(:first-child) {
         margin-left: 0.5em;
     }
+
+    .selection-title {
+        font-weight: bold;
+    }
+}
+
+.selection-small {
+    font-size: 10pt !important;
+}
+
+.selection-data {
+    font-style: italic;
 }
 
 // Selected Test case

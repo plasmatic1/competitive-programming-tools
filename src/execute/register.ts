@@ -8,8 +8,8 @@ export function registerViewsAndCommands(context: vscode.ExtensionContext): void
             return;
         }
 
-        outputDI!.openDisplay(context); // Set focus of display
         await programExecutionManager!.haltAll();
+        outputDI!.openDisplay(context); // Set focus of display
         try {
             programExecutionManager!.run();
         } catch(e) { vscode.window.showErrorMessage(e.toString()); }
