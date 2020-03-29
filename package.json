@@ -11,12 +11,7 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:cp-tools.openInput",
-		"onCommand:cp-tools.openOptions",
-		"onCommand:cp-tools.resetDisplayHTML",
-		"onCommand:cp-tools.removeTempFiles",
-		"onCommand:cp-tools.buildAndRun",
-		"onCommand:cp-tools.loadTemplates"
+		"*"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -65,7 +60,22 @@
 				"command": "cp-tools.openOptions",
 				"key": "ctrl+alt+o"
 			}
-		]
+		],
+		
+		"languages": [{
+			"id": "log-output",
+			"mimetypes": [
+				"text/x-code-output"
+			],
+			"extensions": [
+				".log-output-test"
+			]
+		}],
+		"grammars": [{
+			"language": "log-output",
+			"scopeName": "log.output",
+			"path": "syntaxes/log-output.tmLanguage"
+		}]
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
@@ -79,6 +89,8 @@
 		"test": "npm run compile && node ./node_modules/vscode/bin/test"
 	},
 	"devDependencies": {
+		"@types/body-parser": "^1.19.0",
+		"@types/express": "^4.17.3",
 		"@types/mocha": "^2.2.42",
 		"@types/node": "^10.12.21",
 		"@types/pidusage": "^2.0.1",
@@ -97,6 +109,8 @@
 		"vscode": "^1.1.28"
 	},
 	"dependencies": {
+		"body-parser": "^1.19.0",
+		"express": "^4.17.1",
 		"pidusage": "^2.0.17"
 	}
 }

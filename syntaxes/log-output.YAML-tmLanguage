@@ -1,0 +1,17 @@
+scopeName: 'log.output'
+name: 'log-output'
+patterns:
+    - name: "markup.inserted, log.info"
+      match: "\\b(INFO)\\b"
+    - name: "markup.deleted, log.warning"
+      match: "\\b(WARN)\\b"
+    - name: "string.regexp, log.error"
+      match: "\\b(ERROR)\\b"
+    - name: "strong string.regexp, strong log.error"
+      match: "\\b(FATAL)\\b"
+    - name: "constant.language log.constant"
+      match: "\\b([0-9]+\.?[0-9]+|true|false|null)\\b"
+    - name: "string log.string"
+      match: "\"[^\"]*\""
+    - name: "string log.string"
+      match: "(?<![\w])'[^']*'"

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+	<key>scopeName</key>
+	<string>log.output</string>
+	<key>name</key>
+	<string>log-output</string>
+	<key>patterns</key>
+	<array>
+	  <dict>
+		<key>name</key>
+		<string>markup.inserted, log.info</string>
+		<key>match</key>
+		<string>\b(INFO)\b</string>
+	  </dict>
+	  <dict>
+		<key>name</key>
+		<string>markup.deleted, log.warning</string>
+		<key>match</key>
+		<string>\b(WARN)\b</string>
+	  </dict>
+	  <dict>
+		<key>name</key>
+		<string>string.regexp, log.error</string>
+		<key>match</key>
+		<string>\b(ERROR)\b</string>
+	  </dict>
+	  <dict>
+		<key>name</key>
+		<string>strong string.regexp, strong log.error</string>
+		<key>match</key>
+		<string>\b(FATAL)\b</string>
+	  </dict>
+	  <dict>
+		<key>name</key>
+		<string>constant.language log.constant</string>
+		<key>match</key>
+		<string>\b([0-9]+\.?[0-9]+|true|false|null)\b</string>
+	  </dict>
+	  <dict>
+		<key>name</key>
+		<string>string log.string</string>
+		<key>match</key>
+		<string>"[^"]*"</string>
+	  </dict>
+	  <dict>
+		<key>name</key>
+		<string>string log.string</string>
+		<key>match</key>
+		<string>(?&lt;![\w])'[^']*'</string>
+	  </dict>
+	</array>
+  </dict>
+</plist>

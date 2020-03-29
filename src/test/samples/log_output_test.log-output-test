@@ -1,0 +1,9 @@
+INFO test
+WARN test
+ERROR test
+FATAL test
+INFO "quoted string test"
+INFO false test
+INFO true test
+INFO null test
+INFO number test 0123456789, 3.141592, -0.1

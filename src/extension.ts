@@ -11,6 +11,8 @@ import { ProgramExecutionManager } from './execute/execute';
 import { InputDI } from './display/inputDisplayInterface';
 import { OptionsDI } from './display/optionsDisplayInterface';
 import { rootPath } from './extUtils';
+import { Bridge } from './companionBridge';
+import { Logger } from './logger';
 
 // tslint:disable: curly
 // ---------------------------------------------------------------------------
@@ -29,6 +31,12 @@ export let programExecutionManager: ProgramExecutionManager | undefined = undefi
 
 // Test manager refresh loop
 let testManagerRefreshTimer: undefined | NodeJS.Timer = undefined;
+
+// Output channel
+export let log: Logger | undefined = undefined;
+
+// Bridge
+let bridge: Bridge | undefined = undefined;
 
 // ---------------------------------------------------------------------------
 // Activation Registration n stuff
@@ -71,6 +79,28 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Test manager refresh loop
 	testManagerRefreshTimer = setInterval(() => testManager!.writeToConfig(), optionManager!.get('misc', 'testSetBackupTime'));
+
+	// Output channel
+	log = new Logger('Competitive Programming Tools');
+	log.show();
+
+	// Bridge
+	// Ref: https://github.com/jmerle/competitive-companion#the-format
+	bridge = new Bridge(problem => {
+		let setName = problem.name.toLowerCase().replace(/\s/g, '-').replace(/[^\w-]/g, '');
+		testManager!.addSet(setName);
+
+		let ind = 0;
+		for (let { input, output } of problem.tests) {
+			testManager!.pushCase(setName);
+			fs.writeFileSync(testManager!.caseFilePath(setName, ind, true), input);
+			fs.writeFileSync(testManager!.caseFilePath(setName, ind, false), output);
+
+			ind++;
+		}
+
+		inputDI!.updateAll();
+	});
 
 	console.log('Initialized extension "cp-tools"');
 }
