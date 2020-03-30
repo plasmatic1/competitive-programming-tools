@@ -30,6 +30,7 @@ export class Logger {
     }
 
     show() { this.log.show(); }
+    dispose() { this.log.dispose(); }
 
     // Log levels
     info(msg: string) { this.log.appendLine('INFO ' + msg); }

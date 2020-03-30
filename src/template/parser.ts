@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { Options, parseConfig } from './options';
 import { join } from 'path';
-import { Logger } from './logger';
+import { Logger } from '../logger';
 
 
 const CONFIG_PATH = 'config.json';
@@ -14,6 +14,7 @@ interface Template {
 }
 
 
+// tslint:disable: curly
 export class TemplateParser {
     public templates: [string, Template][] = [];
     public logger: Logger;
@@ -21,38 +22,27 @@ export class TemplateParser {
     public beginPath: string;
 
     constructor(context: vscode.ExtensionContext, beginPath: string) {
-        this.logger = new Logger(context);
+        this.logger = new Logger('Template Loading Log');
+        this.logger.show();
         this.beginPath = beginPath;
         this.options = parseConfig(join(this.beginPath, CONFIG_PATH), this);
-    }
-
-    info(text: string) { this.logger.log('info', text); }
-    success(text: string) { this.logger.log('success', text); }
-    warning(text: string) { this.logger.log('warning', text); }
-    error(text: string) { this.logger.log('error', text); }
-
-    async waitForInit() {
-        return this.logger.waitForInit();
     }
 
     // Traverses a template folder for template files
     traverseFolder(curPath: string = this.beginPath, templatePath: string = ''): void {
         if (this.options.ignorePaths.has(templatePath)) {
-            this.warning(`Skipping folder '${templatePath}' as defined in the configuration! (ignorePaths = ${this.setToString(this.options.ignorePaths)})`);
+            this.logger.warning(`Skipping folder '${templatePath}' as defined in the configuration! (ignorePaths = ${this.setToString(this.options.ignorePaths)})`);
         }
 
         for (const sub of fs.readdirSync(curPath)) {
             const adjPath = join(curPath, sub), stats = fs.lstatSync(adjPath);
 
-            if (stats.isDirectory()) {
+            if (stats.isDirectory())
                 this.traverseFolder(adjPath, join(templatePath, sub));
-            }
-            else if (stats.isFile()) {
+            else if (stats.isFile())
                 this.parseFile(adjPath, templatePath);
-            }
-            else {
-                this.error(`Skipping path '${adjPath}' as it's not a file or directory`);
-            }
+            else
+                this.logger.error(`Skipping path '${adjPath}' as it's not a file or directory`);
         }
     }
 
@@ -63,14 +53,14 @@ export class TemplateParser {
     // Parses a template file
     private parseFile(path: string, templatePath: string): void {
         if (this.options.ignorePaths.has(templatePath)) {
-            this.warning(`Skipping file '${templatePath}' as defined in the configuration! (ignorePaths = ${this.setToString(this.options.ignorePaths)})`);
+            this.logger.warning(`Skipping file '${templatePath}' as defined in the configuration! (ignorePaths = ${this.setToString(this.options.ignorePaths)})`);
         }
 
         let curTemplate: string[] = [], curName: string = '', curDescription: string = '';
         for (const line of fs.readFileSync(path).toString().split(/\r?\n/g)) {
             const logError = (message: string) => {
                 // Lambda declaration to not override `this` variable
-                this.error(`Skipping line '${line}' of path '${path}' ${message}`);
+                this.logger.error(`Skipping line '${line}' of path '${path}' ${message}`);
             };
 
             const spls = line.split(' ');
@@ -82,7 +72,7 @@ export class TemplateParser {
                     logError('as the last template has not been ended yet');
                 }
                 else {
-                    this.info(`Began new template '${join(templatePath, spls[1])}'`);
+                    this.logger.info(`Began new template '${join(templatePath, spls[1])}'`);
                     curName = spls[1];
                     curTemplate = [];
                     curDescription = '';
@@ -96,7 +86,7 @@ export class TemplateParser {
                     logError(`as a end template line must end the last begin template line (found ${spls[1]}, wanted ${curName})`);
                 }
                 else {
-                    this.success(`Parsed new template '${join(templatePath, curName)}'`);
+                    this.logger.info(`Parsed new template '${join(templatePath, curName)}'`);
                     this.templates.push([join(templatePath, curName), {
                         lines: curTemplate,
                         description: curDescription
@@ -107,22 +97,17 @@ export class TemplateParser {
                 }
             }
             else if (line.startsWith('//description')) {
-                if (spls.length === 1) {
+                if (spls.length === 1)
                     logError('as there is no description argument!');
-                }
-                else if (curName === '') {
+                else if (curName === '')
                     logError('as this is not within a template!');
-                }
-                else if (curDescription !== '') {
+                else if (curDescription !== '')
                     logError('as a description has already been given');
-                }
-                else {
+                else
                     curDescription = spls.slice(1).join(' ');
-                }
             }
-            else {
+            else
                 curTemplate.push(line);
-            }
         }
     }
 
