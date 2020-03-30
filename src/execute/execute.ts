@@ -2,8 +2,8 @@ import * as vscode from 'vscode';
 import * as pidusage from 'pidusage';
 import { Executor, executors } from './executors';
 import { isUndefined, isNull } from 'util';
-import { popUnsafe, readWorkspaceFile, errorIfUndefined } from '../extUtils';
-import { optionManager, outputDI, testManager } from '../extension';
+import { popUnsafe, errorIfUndefined } from '../extUtils';
+import { outputDI, testManager, log } from '../extension';
 import { ChildProcess } from 'child_process';
 import { EventType } from '../display/outputDisplayInterface';
 import { CheckerFunction, getCheckerFunction, check } from './checker';
@@ -48,7 +48,7 @@ function getSourceFile(): string {
 function getExecutor(src: string): Executor {
     const srcName = popUnsafe(src.split('\\')),
         ext = popUnsafe(srcName.split('.')), 
-        executorConstructor = errorIfUndefined(executors.get(ext), `Extension ${ext} not supported!`);
+        executorConstructor = errorIfUndefined(executors.get(ext), `File extension ${ext} not supported for running!`);
     return new executorConstructor(src);
 }
 
@@ -104,6 +104,9 @@ export class ProgramExecutionManager {
     private onCompleteCase: vscode.EventEmitter<void> = new vscode.EventEmitter();
     public previousExecution: Execution | undefined = undefined;
 
+    // Config
+    private config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('cptools.build');
+
     /**
      * Compiles the program and throws an error if the compile failed
      * @param src The source file path
@@ -138,10 +141,10 @@ export class ProgramExecutionManager {
      * @param checker The checker to use
      */
     executeCase(executor: Executor, caseId: number, trueCaseId: number, input: string, output: string | null, checker: CheckerFunction): Promise<Result> {
-        return new Promise((res, rej) => {
-            const timeout = optionManager!.get('buildAndRun', 'timeout'),
-                memSampleRate = optionManager!.get('buildAndRun', 'memSample'),
-                charLimit = optionManager!.get('buildAndRun', 'charLimit');
+        return new Promise((res, _) => {
+            const timeout = this.config.get<number>('timeout')!,
+                memSampleRate = this.config.get<number>('memSample')!,
+                charLimit = this.config.get<number>('charLimit')!;
 
             let proc = executor.exec();
             this.curProcs.push(proc);
@@ -271,10 +274,10 @@ export class ProgramExecutionManager {
     async run(): Promise<void> {
         // Get important variables
         const src = getSourceFile();
-        const cases = testManager!.getCases(optionManager!.get('buildAndRun', 'curTestSet'));
+        const cases = testManager!.getCases(this.config.get<string>('curTestSet')!);
 
         // Initialization of state
-        this.checker = cases.checker || optionManager!.get('buildAndRun', 'defaultChecker');
+        this.checker = cases.checker || this.config.get<string>('defaultChecker');
         this.halted = false;
         this.executionCounter++;
         this.curExecutor = getExecutor(src);
@@ -286,9 +289,10 @@ export class ProgramExecutionManager {
         };
 
         // Execute cases
-        await this.initDisplay(src, cases.tests.length, this.checker!, optionManager!.get('buildAndRun', 'curTestSet')); 
+        await this.initDisplay(src, cases.tests.length, this.checker!, this.config.get<string>('curTestSet')!); 
 
         // Compile and whatnot
+        log!.info(`Compling ${src}`);
         this.compile(this.curExecutor);
         try {
             var checkerFun = getCheckerFunction(this.checker!);
@@ -304,6 +308,7 @@ export class ProgramExecutionManager {
 
             let res: Result | SkippedResult;
             if (this.halted) {
+                log!.warning(`Skipping case ${acase.index}`);
                 res = new SkippedResult();
                 res.executionId = this.executionCounter;
                 res.caseId = counter;
@@ -311,8 +316,10 @@ export class ProgramExecutionManager {
                 res.stdin = acase.input;
                 res.expectedStdout = acase.output;
             }
-            else
+            else {
+                log!.info(`Executing case ${acase.index}`);
                 res = await this.executeCase(this.curExecutor, counter, acase.index, acase.input, acase.output, checkerFun!);
+            }
 
             // Fire event handlers and whatnot
             outputDI!.emit({
@@ -331,6 +338,7 @@ export class ProgramExecutionManager {
         this.curExecutor = undefined;
         this.curProcs.length = 0;
         this.halted = true;
+        log!.info('Done!');
     }
 
     /**

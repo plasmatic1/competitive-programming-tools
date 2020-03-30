@@ -22,11 +22,6 @@
 				"category": "CP Tools"
 			},
 			{
-				"command": "cp-tools.openOptions",
-				"title": "Open CP Tools Options/Configuration Menu",
-				"category": "CP Tools"
-			},
-			{
 				"command": "cp-tools.resetDisplayHTML",
 				"title": "Reset display HTML for all displays (I/O, Output, Options) for debugging.  (WIP/NONFUNCTIONAL)",
 				"category": "CP Tools Debug"
@@ -45,6 +40,58 @@
 				"command": "cp-tools.loadTemplates",
 				"title": "Load Templates",
 				"category": "CP Tools"
+			}
+		],
+		"configuration": [
+			{
+				"title": "Competitive Programming Tools - Build and Run",
+				"properties": {
+					"cptools.build.curTestSet": {
+						"type": "string",
+						"default": "default",
+						"description": "The name of the current test set.  This is modified using the Input/Output panel"
+					},
+					"cptools.build.defaultChecker": {
+						"type": "string",
+						"default": "tokens",
+						"description": "Default checker for test cases"
+					},
+					"cptools.build.timeout": {
+						"type": "number",
+						"default": 5000,
+						"description": "Maximum program execution time.  The program will timeout if this threshold is reached"
+					},
+					"cptools.build.memSample": {
+						"type": "number",
+						"default": 500,
+						"description": "How quickly memory and time are sampled when a program is running"
+					},
+					"cptools.build.charLimit": {
+						"type": "number",
+						"default": 2000000,
+						"description": "The displays for stdout and stderr will be truncated to prevent memory/lag problems"
+					}
+				}
+			},
+			{
+				"title": "Competitive Programming Tools - Compiler/Interpreter Configuration",
+				"properties": {
+					"cptools.compile.cpp": {
+						"type": "string",
+						"default": "-Wall -O0 -DLOCAL",
+						"description": "Compiler: g++ -o <executable> <source file> <args>"
+					}
+				}
+			},
+			{
+				"title": "Competitive Programming Tools - Miscallenous",
+				"properties": {
+					"cptools.misc.testSetBackupTime": {
+						"type": "number",
+						"default": 300000,
+						"description": "Time delay for backing up test set info (writing to .vscode/testSets.json).  VSCode must be reloaded for changes to take effect"
+					}
+				}
 			}
 		],
 		"keybindings": [

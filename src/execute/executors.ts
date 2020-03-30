@@ -1,7 +1,7 @@
 import * as sub from 'child_process';
 import * as fs from 'fs';
+import * as vscode from 'vscode';
 import { dirname } from 'path';
-import { optionManager } from '../extension';
 import { isUndefined } from 'util';
 
 // ---------------------------------------------------------------------------
@@ -41,15 +41,19 @@ class CPPExecutor implements Executor {
     execFile: string | undefined;
     compileError: string | undefined;
 
+    config: vscode.WorkspaceConfiguration;
+
     constructor(srcFile: string) {
         this.srcFile = srcFile;
         this.execFile = undefined;
+
+        this.config = vscode.workspace.getConfiguration('cptools.compile');
     }
 
     preExec(): void {
         this.execFile = this.srcFile.substring(0, this.srcFile.length - 3) + 'exe';
 
-        const compileProc = sub.spawnSync('g++', ['-o', this.execFile, this.srcFile].concat(splitArgs(optionManager!.get('compilerArgs', 'cpp')))),
+        const compileProc = sub.spawnSync('g++', ['-o', this.execFile, this.srcFile].concat(splitArgs(this.config.get<string>('cpp')!))),
             compileProcStderr = compileProc.stderr.toString();
         
         if (compileProcStderr !== '') {

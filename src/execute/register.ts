@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
-import { programExecutionManager, outputDI, optionManager } from '../extension';
+import { programExecutionManager, outputDI } from '../extension';
 
 export function registerViewsAndCommands(context: vscode.ExtensionContext): void {
     let buildRunCommand = vscode.commands.registerCommand('cp-tools.buildAndRun', async () => {
-        if (optionManager!.get('buildAndRun', 'curTestSet') === null) {
+        if (vscode.workspace.getConfiguration('cptools.build').get<string>('curTestSet') === undefined) {
             vscode.window.showErrorMessage('No test set selected!');
             return;
         }

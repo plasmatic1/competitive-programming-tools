@@ -1,5 +1,5 @@
 import { DisplayInterface } from './displayInterface';
-import { testManager, optionManager } from '../extension';
+import { testManager, log } from '../extension';
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { CommandHandler, choiceArg, ArgType, intArg } from '../commandHandler';
@@ -65,13 +65,16 @@ export class InputDI extends DisplayInterface {
         this.on(EventType.UpdateAll, _ => this.updateAll());
         this.on(EventType.UpdateTestCase, evt => {
             fs.writeFileSync(testManager!.caseFilePath(evt.key, evt.index, evt.isInput), evt.newData);
-            vscode.window.showInformationMessage(`Saved data of test set ${evt.key} case #${evt.index}`);
+            log!.info(`Saved data of test set ${evt.key} case #${evt.index}`);
             this.emit({
                 type: EventType.UpdateTestCase,
                 event: evt
             });
         });
-        this.on(EventType.SelectTestSet, evt => optionManager!.set('buildAndRun', 'curTestSet', evt));
+        this.on(EventType.SelectTestSet, evt => {
+            vscode.workspace.getConfiguration('cptools.build').update('curTestSet', evt);
+            log!.info(`Updated current test set to ${evt}`);
+        });
 
         // Register commands
 
