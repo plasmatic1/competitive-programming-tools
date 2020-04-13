@@ -13,102 +13,34 @@ class OutputDisplay extends React.Component {
         this.state = {
             // State variables
             executionId: -1000000000,
-            curViewedCase: null, // Currently viewed case
-            sourceName: 'N/A',
-            checker: 'N/A',
-            testSet: 'N/A',
-            cases: [],
-            compileErrors: [],
+            result: null
 
             // Debugging
             // events: []
         };
 
-        EventBus.on('init', evt => {
-            // Initialize cases
-            let _cases = [];
-            for (let i = 0; i < evt.caseCount; i++) {
-                _cases.push({
-                    id: i,
-                    verdict: 'Waiting'
+        // Update cases
+        EventBus.on('update', evt => {
+            if (evt.executionId >= this.state.executionId) {
+                this.setState({
+                    executionId: evt.executionId,
+                    result: evt
                 });
             }
-
-            // Setting state variables
-            this.setState({
-                executionId: Math.max(this.state.executionId, evt.executionId),
-                curViewedCase: evt.caseCount > 0 ? 0 : null, 
-                sourceName: evt.sourceName,
-                checker: evt.checker,
-                testSet: evt.testSet,
-                compileErrors: [],
-                cases: _cases
-            });
-
-            // Send response
-            // this.setState({
-            //     events: _.concat(this.state.events, `init event: ${JSON.stringify(evt)}`)
-            // });
-            EventBus.post('init');
         });
-        EventBus.on('compileError', evt => {
-            if (evt.executionId != this.state.executionId) return; // Invalid execution id
-            this.setState({
-                compileErrors: _.concat(this.state.compileErrors, evt.message),
-                // events: _.concat(this.state.events, `compileError event: ${JSON.stringify(evt)}`)
-            });
-        });
-        EventBus.on('beginCase', evt => {
-            if (evt.executionId != this.state.executionId) return; // Invalid execution id
-            this.setState({
-                cases: _.set(this.state.cases, evt.caseId, { id: evt.caseId, verdict: 'Judging' }),
-                // events: _.concat(this.state.events, `begin event: ${JSON.stringify(evt)}`)
-            });
-        });
-        EventBus.on('endCase', evt => {
-            if (evt.executionId != this.state.executionId) return; // Invalid execution id
-            this.setState({
-                cases: _.set(this.state.cases, evt.caseId, evt),
-                // events: _.concat(this.state.events, `end event: ${JSON.stringify(evt)}`)
-            });
-        });
-
-        // Keyboard shortcuts
-        this._keyListener = function(e) {
-            if (e.key.toLowerCase() === 'a') { // Move cur case left 
-                if (this.state.curViewedCase !== null) {
-                    if (e.shiftKey)
-                        this.setState({ curViewedCase: 0 });
-                    else if (this.state.curViewedCase > 0)
-                        this.setState({ curViewedCase: this.state.curViewedCase - 1 });
-                }
-            }
-            if (e.key.toLowerCase() === 'd') { // Move cur case right
-                if (this.state.curViewedCase !== null) {
-                    if (e.shiftKey)
-                        this.setState({ curViewedCase: this.state.cases.length - 1 });
-                    else if (this.state.curViewedCase < this.state.cases.length - 1)
-                        this.setState({ curViewedCase: this.state.curViewedCase + 1 });
-                }
-            }
-        };
-        document.addEventListener('keydown', this._keyListener.bind(this));
-    }
-
-    componentWillUnmount() {
-        document.removeEventListener('keydown', this._keyListener);
     }
 
     /**
      * Returns the rendering for the compile/data errors
      */
     renderCompileErrors() {
-        if (this.state.compileErrors.length === 0) return (null);
+        const errs = this.state.result.compileErrors;
+        if (errs.length === 0) return (null);
         else {
             return (
                 <div id="compileErrorDiv">
                     <h2>Compile/Data Errors</h2>
-                    {this.state.compileErrors.map((error, ind) => <pre key={ind}>{error}</pre>)}
+                    {errs.map((error, ind) => <pre key={ind}>{error}</pre>)}
                 </div>
             )
         }

@@ -126,8 +126,8 @@
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
-		"parcel:build": "parcel build -d out/assets src/assets/entrypoint/input.html src/assets/entrypoint/output.html --public-url \"vscodeRoot\" --no-cache",
-		"parcel:watch": "parcel watch -d out/assets src/assets/entrypoint/input.html src/assets/entrypoint/output.html --public-url \"vscodeRoot\" --no-hmr",
+		"parcel:build": "parcel build -d out/assets src/assets/entrypoint/output.html --public-url \"vscodeRoot\" --no-cache",
+		"parcel:watch": "parcel watch -d out/assets src/assets/entrypoint/output.html --public-url \"vscodeRoot\" --no-hmr",
 		"parcel:reactTest": "parcel -d testReact src/assets/entrypoint/input.html src/assets/entrypoint/output.html",
 		"copyFiles": "node os-specific-copy.js",
 		"compile": "tsc -p ./ && npm run copyFiles && npm run parcel:build",

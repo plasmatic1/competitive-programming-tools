@@ -55,34 +55,29 @@ function getExecutor(src: string): Executor {
 // Result Classes
 // Note that executionId should always count up
 
-export class SkippedResult {
-    executionId = -1; // The execution id of this result (this is an id assigned to it based on the execution).  This is to distinguish different test cases and prevent a certain race case.
-    caseId: number = -1;
-    trueCaseId: number = -1; // True case number (when including disabled cases)
-    verdict: string = 'Skipped'; // Verdict
-    stdin: string = ''; // Stdin data (SET THIS PROPERLY)
-    stdout: string = ''; // Stdout data (can leave as default)
-    stderr: string = ''; // Stderr data (can leave as default)
-    expectedStdout: string | null = null; // Expected stdout (SET THIS PROPERLY)
-}
-
 export class Result {
-    executionId = -1; // The execution id of this result (this is an id assigned to it based on the execution).  This is to distinguish different test cases and prevent a certain race case.
-    caseId: number = -1; // Test case number, 0-indexed
-    trueCaseId: number = -1; // True case number (when including disabled cases)
-    stdin: string = ''; // Stdin data
+    // These properties are set later on after initial construction
     stdout: string = ''; // Stdout data
     stderr: string = ''; // Stderr data
-    expectedStdout: string | null = null; // Expected stdout
     verdict: string = 'Waiting'; // Verdict
     time: number = 0; // Time
     memory: number = 0;
     exitStatus: string = 'Code: 0';
+
+    constructor(public executionId: number,
+            public caseId: number,
+            public trueCaseId: number,
+            public stdin: string,
+            public expectedStdout: string | null
+    ) {}
 }
 
-class CompileError {
-    executionId = -1; // The execution id of this result (this is an id assigned to it based on the execution).  This is to distinguish different test cases and prevent a certain race case.
-    message: string | undefined = undefined;
+export class SkippedResult extends Result {
+    verdict: string = 'Skipped'; // Verdict
+}
+
+export class JudgingResult extends Result {
+    verdict: string = 'Judging'; // Verdict
 }
 
 interface Execution {
@@ -101,8 +96,7 @@ export class ProgramExecutionManager {
     private checker: string | undefined = undefined;
 
     // Result information
-    private onCompleteCase: vscode.EventEmitter<void> = new vscode.EventEmitter();
-    public previousExecution: Execution | undefined = undefined;
+    public curExecution: Execution | undefined = undefined;
 
     // Config
     private config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('cptools.build');
@@ -119,16 +113,17 @@ export class ProgramExecutionManager {
         }
     }
 
+    private updateView(): void {
+        outputDI!.emit({
+            type: EventType.Update,
+            event: this.curExecution
+        });
+    }
+
     private compileError(msg: string, fatal: boolean = false) {
         if (fatal) this.halted = true;
-        outputDI!.emit({
-            type: EventType.CompileError, 
-            event: {
-                executionId: this.executionCounter,
-                message: msg
-            }
-        });
-        this.previousExecution!.compileErrors.push(msg);
+        this.curExecution!.compileErrors.push(msg);
+        this.updateView();
     }
     
     /**
@@ -151,12 +146,7 @@ export class ProgramExecutionManager {
 
             // State variables
             let truncatedStdout: boolean = false, truncatedStderr: boolean = false;
-            let result: Result = new Result();
-            result.caseId = caseId;
-            result.trueCaseId = trueCaseId;
-            result.executionId = this.executionCounter;
-            result.stdin = input;
-            result.expectedStdout = output;
+            let result: Result = new Result(this.executionCounter, caseId, trueCaseId, input, output);
 
             if (proc === null) {
                 result.verdict = 'Internal Error';
@@ -248,27 +238,6 @@ export class ProgramExecutionManager {
     }
     
     /**
-     * Inits display for new cases
-     * @param sourceFile The path of the source file being compiled
-     * @param caseCount The number of cases
-     * @param checker The checker being used
-     * @param testSet The test set being used to judge
-     */
-    private async initDisplay(sourceFile: string, caseCount: number, checker: string, testSet: string) {
-        outputDI!.emit({
-            type: EventType.Init, 
-            event: {
-                executionId: this.executionCounter,
-                caseCount,
-                sourceName: sourceFile.replace(/\\/g, '/').split('/').pop(),
-                checker,
-                testSet
-            }
-        });
-        await outputDI!.waitForInitResponse();
-    }
-
-    /**
      * Runs the program
      */
     async run(): Promise<void> {
@@ -281,15 +250,12 @@ export class ProgramExecutionManager {
         this.halted = false;
         this.executionCounter++;
         this.curExecutor = getExecutor(src);
-        this.previousExecution = {
+        this.curExecution = {
             executionId: this.executionCounter,
             srcName: src,
             compileErrors: [],
             results: [],
         };
-
-        // Execute cases
-        await this.initDisplay(src, cases.tests.length, this.checker!, this.config.get<string>('curTestSet')!); 
 
         // Compile and whatnot
         log!.info(`Compling ${src}`);
@@ -304,17 +270,13 @@ export class ProgramExecutionManager {
         let counter = -1;
         for (const acase of cases.tests) { 
             counter++;
-            outputDI!.emit({ type: EventType.BeginCase, event: { executionId: this.executionCounter, caseId: counter }});
+            this.curExecution!.results.push(new JudgingResult(this.executionCounter, counter, acase.index, '' , ''));
+            this.updateView();
 
             let res: Result | SkippedResult;
             if (this.halted) {
                 log!.warning(`Skipping case ${acase.index}`);
-                res = new SkippedResult();
-                res.executionId = this.executionCounter;
-                res.caseId = counter;
-                res.trueCaseId = acase.index;
-                res.stdin = acase.input;
-                res.expectedStdout = acase.output;
+                res = new SkippedResult(this.executionCounter, counter, acase.index, acase.input, acase.output);
             }
             else {
                 log!.info(`Executing case ${acase.index}`);
@@ -322,12 +284,8 @@ export class ProgramExecutionManager {
             }
 
             // Fire event handlers and whatnot
-            outputDI!.emit({
-                type: EventType.EndCase,
-                event: res
-            });
-            this.previousExecution!.results.push(res);
-            this.onCompleteCase.fire();
+            this.curExecution!.results[this.curExecution!.results.length - 1] = res;
+            this.updateView();
         } 
 
         // If halted externally, return now
@@ -359,11 +317,6 @@ export class ProgramExecutionManager {
                 vscode.window.showErrorMessage('Waiting for case timed out');
                 res();
             }, timeout);
-            let handle = this.onCompleteCase.event(() => {
-                clearTimeout(id);
-                res();
-                handle.dispose();
-            });
         });
     }
 

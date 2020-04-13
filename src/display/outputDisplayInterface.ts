@@ -8,10 +8,8 @@ import { isUndefined } from 'util';
 
 // tslint:disable: curly
 export enum EventType {
-    Init = 'init', // Inbound/Outbound: Initializes (or Re-initializes the webview) with the specified number of cases.  Parameters: caseCount
-    CompileError = 'compileError', // Outbound: There is a compile error.  Parameters: Same as execute.execute.CompileError
-    BeginCase = 'beginCase', // Outbound: A case is starting to be judged.  Parameters: executionId, caseno
-    EndCase = 'endCase', // Outbound: A case is done.  Parameters: Same as execute.execute.Result
+    Update = 'update', // Outbound: Update case info
+    SaveCase = 'saveCase', // Inbound: Saved a case: (file name, cases)
 
     ViewAll = 'viewAll', // Inbound: View the info of all test cases as a file.  Parameters: None
     View = 'view', // Inbound: View the info of one test case as a file.  Parameters: Event will be an integer, the integer is the index of the case to view
@@ -63,12 +61,8 @@ export class OutputDI extends DisplayInterface {
         super('output.html', 'Execution Output', context);
 
         // Event Handlers
-        this.on(EventType.Init, _ => {
-            for (let resp of this.initResponseQueue) resp();
-            this.initResponseQueue.length = 0;
-        });
         this.on(EventType.ViewAll, () => {
-            const res = programExecutionManager?.previousExecution;
+            const res = programExecutionManager?.curExecution;
             if (isUndefined(res)) {
                 vscode.window.showErrorMessage('No previous result present to view! (Is this an error?)');
                 return;
@@ -85,7 +79,7 @@ export class OutputDI extends DisplayInterface {
             showFile(path);
         });
         this.on(EventType.View, index => {
-            const res = programExecutionManager?.previousExecution, testCase = res?.results[index];
+            const res = programExecutionManager?.curExecution, testCase = res?.results[index];
             if (isUndefined(res)) {
                 vscode.window.showErrorMessage('No previous result present to view! (Is this an error?)');
                 return;
@@ -102,7 +96,7 @@ export class OutputDI extends DisplayInterface {
             showFile(path);
         });
         this.on(EventType.Compare, index => {
-            const res = programExecutionManager?.previousExecution, testCase = res?.results[index];
+            const res = programExecutionManager?.curExecution, testCase = res?.results[index];
             if (isUndefined(res)) {
                 vscode.window.showErrorMessage('No previous result present to view! (Is this an error?)');
                 return;
@@ -119,6 +113,11 @@ export class OutputDI extends DisplayInterface {
         });
         this.on(EventType.KillAll, () => programExecutionManager!.haltAll());
         this.on(EventType.Kill, () => programExecutionManager!.haltCurrentCase());
+
+        // Save case
+        this.on(EventType.SaveCase, (path, ) => {
+            
+        });
     }
 
     /**
