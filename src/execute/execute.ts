@@ -1,12 +1,14 @@
 import * as vscode from 'vscode';
+import * as fs from 'fs';
 import * as pidusage from 'pidusage';
 import { Executor, executors } from './executors';
 import { isUndefined, isNull } from 'util';
 import { popUnsafe, errorIfUndefined } from '../extUtils';
-import { outputDI, testManager, log } from '../extension';
+import { outputDI, log } from '../extension';
 import { ChildProcess } from 'child_process';
 import { EventType } from '../display/outputDisplayInterface';
 import { CheckerFunction, getCheckerFunction, check } from './checker';
+import { getSet as readSet } from './tests';
 
 // tslint:disable: curly
 
@@ -64,8 +66,7 @@ export class Result {
     memory: number = 0;
     exitStatus: string = 'Code: 0';
 
-    constructor(public executionId: number,
-            public caseId: number,
+    constructor(public caseId: number,
             public trueCaseId: number,
             public stdin: string,
             public expectedStdout: string | null
@@ -83,6 +84,8 @@ export class JudgingResult extends Result {
 interface Execution {
     executionId: number;
     srcName: string;
+    checker: string;
+    testSetPath: string;
     compileErrors: string[];
     results: (Result | SkippedResult)[];
 }
@@ -93,7 +96,6 @@ export class ProgramExecutionManager {
     private executionCounter = -1;
     private halted: boolean = true;
     private curExecutor: Executor | undefined = undefined;
-    private checker: string | undefined = undefined;
 
     // Result information
     public curExecution: Execution | undefined = undefined;
@@ -146,7 +148,7 @@ export class ProgramExecutionManager {
 
             // State variables
             let truncatedStdout: boolean = false, truncatedStderr: boolean = false;
-            let result: Result = new Result(this.executionCounter, caseId, trueCaseId, input, output);
+            let result: Result = new Result(caseId, trueCaseId, input, output);
 
             if (proc === null) {
                 result.verdict = 'Internal Error';
@@ -177,7 +179,7 @@ export class ProgramExecutionManager {
 
                 // Checker related IE and Maybe verdicts
                 let isCorrect, internalError = false, maybe = false;
-                if (this.checker?.startsWith('custom') || (output !== null && output.length > 0)) { // If the checker is custom, expected output is not always required
+                if (this.curExecution?.checker?.startsWith('custom') || (output !== null && output.length > 0)) { // If the checker is custom, expected output is not always required
                     try {
                         isCorrect = check(checker, result.stdin, result.stdout, output);
                     } catch (e) { // Checker problems man
@@ -236,51 +238,65 @@ export class ProgramExecutionManager {
             const tleTimeout = setTimeout(() => proc.kill(), timeout);
         });
     }
-    
+
     /**
-     * Runs the program
+     * Reruns a single test case and updates the UI.  This assumes that the case was from curExecution
+     * @param testIdx The (actual) index of the test case to rerun
      */
+    async runSingleTest(testIdx: number) {
+        // TODO: Implement
+    }
+    
     async run(): Promise<void> {
         // Get important variables
-        const src = getSourceFile();
-        const cases = testManager!.getCases(this.config.get<string>('curTestSet')!);
+        const src = getSourceFile(), testsPath = this.config.get<string>('curTestSet');
 
         // Initialization of state
-        this.checker = cases.checker || this.config.get<string>('defaultChecker');
         this.halted = false;
         this.executionCounter++;
         this.curExecutor = getExecutor(src);
         this.curExecution = {
             executionId: this.executionCounter,
             srcName: src,
+            checker: '',
+            testSetPath: testsPath || '',
             compileErrors: [],
             results: [],
         };
 
+        // Setup test data and checker
+        let tests = null;
+        if (testsPath === undefined || !fs.existsSync(testsPath))
+            this.compileError(`Test set path ${testsPath} does not exist!`);
+        else {
+            tests = readSet(testsPath);
+            this.curExecution.checker = tests.checker || this.config.get<string>('defaultChecker') || '';
+            try {
+                var checkerFun = getCheckerFunction(this.curExecution.checker);
+            } catch (e) { // error with checker
+                this.compileError(`Checker Error: ${e.stack}`, true);
+            }
+        }
+
         // Compile and whatnot
         log!.info(`Compling ${src}`);
         this.compile(this.curExecutor);
-        try {
-            var checkerFun = getCheckerFunction(this.checker!);
-        } catch (e) { // error with checker
-            this.compileError(`Checker Error: ${e.stack}`, true);
-        }
 
         // Execute cases
         let counter = -1;
-        for (const acase of cases.tests) { 
+        for (const test of tests?.tests || []) { 
             counter++;
-            this.curExecution!.results.push(new JudgingResult(this.executionCounter, counter, acase.index, '' , ''));
+            this.curExecution!.results.push(new JudgingResult(counter, test.index, '' , ''));
             this.updateView();
 
             let res: Result | SkippedResult;
             if (this.halted) {
-                log!.warning(`Skipping case ${acase.index}`);
-                res = new SkippedResult(this.executionCounter, counter, acase.index, acase.input, acase.output);
+                log!.warning(`Skipping case ${test.index}`);
+                res = new SkippedResult(counter, test.index, '', '');
             }
             else {
-                log!.info(`Executing case ${acase.index}`);
-                res = await this.executeCase(this.curExecutor, counter, acase.index, acase.input, acase.output, checkerFun!);
+                log!.info(`Executing case ${test.index}`);
+                res = await this.executeCase(this.curExecutor, counter, test.index, test.input, test.output, checkerFun!);
             }
 
             // Fire event handlers and whatnot
@@ -308,35 +324,20 @@ export class ProgramExecutionManager {
     }
 
     /**
-     * Assuming that a case is currently running, this waits for the case to complete or for the specified
-     * timeout parameter.
-     */
-    private async waitForCase(timeout: number = 1000): Promise<void> {
-        return new Promise(res => {
-            const id = setTimeout(() => {
-                vscode.window.showErrorMessage('Waiting for case timed out');
-                res();
-            }, timeout);
-        });
-    }
-
-    /**
      * Kills current running test case
      */
-    async haltCurrentCase() {
+    haltCurrentCase() {
         if (this.halted) return;
         this.killAllProcs();
-        await this.waitForCase();
     }
 
     /**
      * Kills current running test case and skips remaining test cases
      */
-    async haltAll() {
+    haltAll() {
         if (this.halted) return;
         this.halted = true;
         this.killAllProcs();
-        await this.waitForCase();
         this.curExecutor!.postExec();
         this.curExecutor = undefined;
     }

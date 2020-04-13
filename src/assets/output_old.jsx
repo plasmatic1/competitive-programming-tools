@@ -37,9 +37,12 @@ class OutputDisplay extends React.Component {
         const errs = this.state.result.compileErrors;
         if (errs.length === 0) return (null);
         else {
-            return [
-                <p>Compile/Data Errors</p>
-            ] + errs.map((error, ind) => <pre key={ind}>{error}</pre>)
+            return (
+                <div id="compileErrorDiv">
+                    <h2>Compile/Data Errors</h2>
+                    {errs.map((error, ind) => <pre key={ind}>{error}</pre>)}
+                </div>
+            )
         }
     }
 
@@ -95,16 +98,14 @@ class OutputDisplay extends React.Component {
     }
 
     render() {
-        if (this.state.result === null)
-            return null;
-
-        let { srcName, testSetPath, checker } = this.state.result;
         return (
             <div>
-                <p class="bold">Output of {srcName}</p>
-                <p>Test Set: {testSetPath}</p>
-                <p>Checker: {checker}</p>
-                <p></p>
+                <h1>Output of {this.state.sourceName}</h1>
+
+                {/* <div>
+                    <h3>Events</h3>
+                    {this.state.events.map((event, ind) => <p key={ind}>{event.toString()}</p>)}
+                </div> */}
 
                 {this.renderCompileErrors()}
 
@@ -137,6 +138,14 @@ class OutputDisplay extends React.Component {
                     </table>
                 </div>
 
+                <div className="selection selection-small">
+                    <span className="selection-title">Test Set:</span>
+                    <span className="selection-data">{this.state.testSet}</span>
+                </div>
+                <div className="selection selection-small">
+                    <span className="selection-title">Checker:</span>
+                    <span className="selection-data">{this.state.checker}</span>
+                </div>
 
                 {/* Select case to view */}
                 { this.state.cases.length > 0 && 

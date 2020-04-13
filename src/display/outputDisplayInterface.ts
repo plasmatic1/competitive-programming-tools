@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { getTempFile, showFile } from '../extUtils';
-import { programExecutionManager } from '../extension';
+import { programExecutionManager, log } from '../extension';
 import { DisplayInterface } from './displayInterface';
 import { Result, SkippedResult } from '../execute/execute';
 import { isUndefined } from 'util';
@@ -9,7 +9,7 @@ import { isUndefined } from 'util';
 // tslint:disable: curly
 export enum EventType {
     Update = 'update', // Outbound: Update case info
-    SaveCase = 'saveCase', // Inbound: Saved a case: (file name, cases)
+    SaveCases = 'saveCases', // Inbound: Save edited cases from output panel (file name, cases)
 
     ViewAll = 'viewAll', // Inbound: View the info of all test cases as a file.  Parameters: None
     View = 'view', // Inbound: View the info of one test case as a file.  Parameters: Event will be an integer, the integer is the index of the case to view
@@ -115,8 +115,10 @@ export class OutputDI extends DisplayInterface {
         this.on(EventType.Kill, () => programExecutionManager!.haltCurrentCase());
 
         // Save case
-        this.on(EventType.SaveCase, (path, ) => {
-            
+        this.on(EventType.SaveCases, evt => {
+            const { path, cases } = evt;
+            // TODO: Implement
+            log!.info(`Saved cases to ${path}`);
         });
     }
 

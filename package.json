@@ -48,8 +48,8 @@
 				"properties": {
 					"cptools.build.curTestSet": {
 						"type": "string",
-						"default": "default",
-						"description": "The name of the current test set.  This is modified using the Input/Output panel"
+						"default": "",
+						"description": "The path to the current test set (file).  This can be set with a file picker using the cp-tools.setCurTestSet command"
 					},
 					"cptools.build.defaultChecker": {
 						"type": "string",
@@ -86,11 +86,6 @@
 			{
 				"title": "Competitive Programming Tools - Miscallenous",
 				"properties": {
-					"cptools.misc.testSetBackupTime": {
-						"type": "number",
-						"default": 300000,
-						"description": "Time delay for backing up test set info (writing to .vscode/testSets.json).  VSCode must be reloaded for changes to take effect"
-					}
 				}
 			}
 		],
